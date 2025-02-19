@@ -1,12 +1,21 @@
-[package]
-name = "soroban-test-helpers"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+  "crates/soroban-test-helpers",
+  "crates/soroban-test-helpers-usage"
+]
 
-[lib]
-proc-macro = true
+default-members = ["crates/soroban-test-helpers"]
 
-[dependencies]
+# Explicitly set the resolver to version 2, which is the default for packages
+# with edition >= 2021.
+# https://doc.rust-lang.org/edition-guide/rust-2021/default-cargo-resolver.html
+resolver = "2"
+
+[workspace.dependencies]
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"
+soroban-sdk = "21.0.0"
+
+# members
+soroban-test-helpers = { path = "crates/soroban-test-helpers" }

@@ -1,0 +1,11 @@
+[package]
+name = "soroban-test-helpers-usage"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+soroban-test-helpers.workspace = true
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
