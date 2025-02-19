@@ -13,7 +13,6 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let fn_block = &item_fn.block;
     let fn_args = &sig.inputs;
 
-    // Whether 1 or none contracts will be declared.
     let arg_binding_and_ty = match fn_args
       .into_iter()
       .map(|arg| {
@@ -40,15 +39,13 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let first_ty = arg_binding_and_ty.first()
         .map(|(_binding, ty)| ty)
         .expect("at least one argument required");
-
     let env_init = quote! { let env = <#first_ty>::default(); };
 
+    // extracts the following arguments (Addresses) and generates them passing the env as paramenter.
     let arg_inits = arg_binding_and_ty.iter().enumerate().map(|(i, (_arg_binding, arg_ty))| {
         if i == 0 { 
-            // Use 'env' instead of 'e'
             quote! { env.clone() }
         } else {
-            // Use 'env' instead of 'e'
             quote! { <#arg_ty>::generate(&env) }
         }
     });
