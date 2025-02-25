@@ -1,0 +1,14 @@
+[package]
+name = "soroban-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio.workspace = true
+stellar-rpc-client.workspace = true
+stellar-xdr.workspace = true
+stellar-strkey.workspace = true
+ed25519-dalek.workspace = true
+sha2.workspace = true
+rand.workspace = true
+hex.workspace = true
