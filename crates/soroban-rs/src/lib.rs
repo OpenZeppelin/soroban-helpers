@@ -6,4 +6,4 @@ pub use provider::Provider;
 pub use signer::Signer;
 pub use contract::Contract;
 
-pub use stellar_xdr::curr::{ScVal, ScAddress};
+pub use stellar_xdr::curr::{ScVal, ScAddress, AccountId};

@@ -2,11 +2,7 @@ use std::fs;
 use rand;
 use sha2::{Digest, Sha256};
 use stellar_xdr::curr::{
-    ContractExecutable, ContractIdPreimage, ContractIdPreimageFromAddress, CreateContractArgs,
-    CreateContractArgsV2, Hash, HashIdPreimage, HashIdPreimageContractId, HostFunction,
-    InvokeHostFunctionOp, Memo, Operation, OperationBody, Preconditions, ScAddress, ScVal,
-    SequenceNumber, SorobanAuthorizationEntry, SorobanAuthorizedFunction, SorobanAuthorizedInvocation,
-    SorobanCredentials, Transaction, TransactionExt, Uint256, VecM, WriteXdr, Limits
+    ContractExecutable, ContractIdPreimage, ContractIdPreimageFromAddress, CreateContractArgs, CreateContractArgsV2, Hash, HashIdPreimage, HashIdPreimageContractId, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Limits, Memo, Operation, OperationBody, OperationResult, Preconditions, ScAddress, ScSymbol, ScVal, SequenceNumber, SorobanAuthorizationEntry, SorobanAuthorizedFunction, SorobanAuthorizedInvocation, SorobanCredentials, Transaction, TransactionExt, TransactionResultResult, Uint256, VecM, WriteXdr
 };
 use crate::{Provider, Signer};
 
@@ -209,19 +205,89 @@ impl Contract {
             }
         }
     }
-    
-    // Add methods to interact with the deployed contract
-    pub async fn call(
+
+    pub async fn invoke(
         &self,
         contract_id: &stellar_strkey::Contract,
         function_name: &str,
         args: Vec<ScVal>,
         provider: &Provider,
         signer: &mut Signer,
-    ) -> Result<Vec<ScVal>, Box<dyn std::error::Error>> {
-        // Implementation for calling contract functions
-        // This would create a transaction to invoke the contract function
-        // Similar to the deploy method but using InvokeContract
-        todo!("Implement contract function calling")
+    ) -> Result<ScVal, Box<dyn std::error::Error>> {
+        let account_id = signer.account_id().clone();
+        let account_details = provider.get_account(&account_id.to_string()).await?;
+        let sequence: i64 = account_details.seq_num.into();
+
+        let invoke_contract_args = InvokeContractArgs {
+            contract_address: ScAddress::Contract(Hash(contract_id.0)),
+            function_name: ScSymbol(function_name.try_into().unwrap()),
+            args: args.try_into()?,
+        };
+
+        let invoke_operation = Operation {
+            source_account: None,
+            body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
+                host_function: HostFunction::InvokeContract(invoke_contract_args),
+                auth: VecM::default(),
+            }),
+        };
+        
+        let mut invoke_tx = Transaction {
+            fee: DEFAULT_TRANSACTION_FEES,
+            seq_num: SequenceNumber(sequence + 1),
+            source_account: account_id.into(),
+            cond: Preconditions::None,
+            memo: Memo::None,
+            operations: vec![invoke_operation].try_into().unwrap(),
+            ext: TransactionExt::V0,
+        };
+        
+        let tx_envelope = signer.sign_transaction(&invoke_tx, provider.network_id())?;
+        let simulation = provider.simulate_transaction(&tx_envelope).await?;
+        
+        invoke_tx.fee = invoke_tx.fee.max(
+            u32::try_from(DEFAULT_TRANSACTION_FEES as u64 + simulation.min_resource_fee)
+                .expect("Transaction fee too high"),
+        );
+        
+        if let Ok(tx_data) = simulation.transaction_data() {
+            invoke_tx.ext = TransactionExt::V1(tx_data);
+        }
+        
+        let tx_envelope = signer.sign_transaction(&invoke_tx, provider.network_id())?;
+        let result = provider.send_transaction(&tx_envelope).await?;
+
+        if let Some(tx_result) = result.result {
+            if let TransactionResultResult::TxSuccess(op_results) = &tx_result.result {
+                if let Some(result_meta) = &result.result_meta {
+                    if let Some(return_value) = extract_return_value(result_meta) {
+                        return Ok(return_value);
+                    }
+                }
+                
+                if let Some(op_result) = op_results.first() {
+                    if let OperationResult::OpInner(stellar_xdr::curr::OperationResultTr::InvokeHostFunction(invoke_result)) = op_result {
+                        if let stellar_xdr::curr::InvokeHostFunctionResult::Success(value) = invoke_result {
+                            return Ok(ScVal::Symbol(ScSymbol(value.0.to_vec().try_into().unwrap())));
+                        }
+                    }
+                }
+                
+                return Ok(ScVal::Void);
+            } else {
+                return Err(format!("Transaction failed: {:?}", tx_result.result).into());
+            }
+        } else {
+            return Err("No transaction result available".into());
+        }
+    }
+}
+
+fn extract_return_value(meta: &stellar_xdr::curr::TransactionMeta) -> Option<ScVal> {
+    match meta {
+        stellar_xdr::curr::TransactionMeta::V3(v3) => {
+            v3.soroban_meta.as_ref().map(|sm| sm.return_value.clone())
+        }
+        _ => None,
     }
 }

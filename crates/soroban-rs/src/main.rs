@@ -1,4 +1,4 @@
-use soroban_rs::{Provider, Signer, Contract, ScVal};
+use soroban_rs::{Contract, Provider, ScAddress, ScVal, Signer};
 use dotenv::dotenv;
 use std::env;
 
@@ -22,5 +22,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let contract_id = contract.deploy(&provider, &mut signer, constructor_args).await?;
 
     println!("Contract deployed successfully with ID: {:?}", contract_id);
+
+    let alice = ScVal::Address(ScAddress::Account(signer.account_id()));
+
+    let bob = ScVal::Address(ScAddress::Account(signer.account_id()));
+
+    let invoke_res = contract.invoke(&contract_id, "send", vec![alice, bob], &provider, &mut signer).await?;
+
+    println!("Contract invoked successfully with result {:?}", invoke_res);
     Ok(())
 }
