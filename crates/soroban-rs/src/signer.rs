@@ -27,12 +27,12 @@ impl Signer {
         })
     }
     
-    pub fn account_id(&self) -> &AccountId {
-        &self.account_id
+    pub fn account_id(&self) -> AccountId {
+        self.account_id.clone()
     }
     
-    pub fn public_key(&self) -> &PublicKey {
-        &self.public_key
+    pub fn public_key(&self) -> PublicKey {
+        self.public_key.clone()
     }
     
     pub fn sign_transaction(&mut self, tx: &Transaction, network_id: &Hash) -> Result<TransactionEnvelope, Box<dyn std::error::Error>> {
