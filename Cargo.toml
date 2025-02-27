@@ -10,6 +10,10 @@ default-members = ["crates/soroban-test-helpers"]
 [workspace.package]
 edition = "2024"
 rust-version = "1.85.0" #MSRV
+repository = "https://github.com/OpenZeppelin/soroban-helpers"
+description = "A collection of helpers for writing tests for Soroban contracts"
+license = "AGPL-3.0"
+keywords = ["soroban", "stellar", "contracts", "testing"]
 
 [workspace.dependencies]
 syn = { version = "2.0", features = ["full"] }
