@@ -157,7 +157,7 @@ impl Contract {
         function_name: &str,
         args: Vec<ScVal>,
         provider: &Provider,
-        signer: &mut Signer,
+        signer: &Signer,
     ) -> Result<ScVal, Box<dyn std::error::Error>> {
         let account_manager = AccountManager::new(provider, signer);
         let sequence = account_manager.get_sequence().await?;
