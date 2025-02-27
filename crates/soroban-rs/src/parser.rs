@@ -1,5 +1,7 @@
 use stellar_xdr::curr::{OperationResult, ScVal, TransactionMeta, TransactionResultResult};
 
+use crate::error::SorobanHelperError;
+
 pub fn extract_return_value(meta: &TransactionMeta) -> Option<ScVal> {
     match meta {
         TransactionMeta::V3(v3) => v3.soroban_meta.as_ref().map(|sm| sm.return_value.clone()),
@@ -23,7 +25,7 @@ pub fn extract_operation_result(op_result: &OperationResult) -> Option<ScVal> {
 
 pub fn parse_transaction_result(
     result: &stellar_rpc_client::GetTransactionResponse,
-) -> Result<ScVal, Box<dyn std::error::Error>> {
+) -> Result<ScVal, SorobanHelperError> {
     if let Some(tx_result) = &result.result {
         if let TransactionResultResult::TxSuccess(op_results) = &tx_result.result {
             // First try to get result from transaction metadata
@@ -42,9 +44,13 @@ pub fn parse_transaction_result(
 
             return Ok(ScVal::Void);
         } else {
-            return Err(format!("Transaction failed: {:?}", tx_result.result).into());
+            return Err(SorobanHelperError::TransactionFailed(
+                format!("Transaction failed: {:?}", tx_result.result)
+            ));
         }
     } else {
-        return Err("No transaction result available".into());
+        return Err(SorobanHelperError::TransactionFailed(
+            "No transaction result available".to_string()
+        ));
     }
 }

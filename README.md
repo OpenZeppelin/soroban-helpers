@@ -19,16 +19,12 @@ use soroban_rs::{Provider, Signer, Contract, ScVal};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Connect to Soroban testnet
     let provider = Provider::new(
         "https://soroban-testnet.stellar.org",
         "Test SDF Network ; September 2015"
     )?;
-    
-    // Initialize signer with secret key
+
     let mut signer = Signer::new("YOUR_SECRET_KEY")?;
-    
-    // Load contract WASM
     let contract = Contract::new("path/to/your/contract.wasm")?;
     
     // Deploy contract with constructor argument
@@ -36,6 +32,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let contract_id = contract.deploy(&provider, &mut signer, constructor_args).await?;
 
     println!("Contract deployed successfully with ID: {:?}", contract_id);
+
+
+    let alice = ScVal::Address(ScAddress::Account(signer.account_id()));
+    let bob = ScVal::Address(ScAddress::Account(signer.account_id()));
+
+    let invoke_res = contract
+        .invoke(&contract_id, "send", vec![alice, bob], &provider, &signer)
+        .await?;
     Ok(())
 }
 ```

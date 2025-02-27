@@ -1,6 +1,7 @@
 use sha2::{Digest, Sha256};
-use stellar_rpc_client::{Client, Error, GetTransactionResponse};
+use stellar_rpc_client::{Client, Error as RpcError, GetTransactionResponse};
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
+use crate::error::SorobanHelperError;
 
 pub struct Provider {
     rpc_client: Client,
@@ -9,8 +10,9 @@ pub struct Provider {
 }
 
 impl Provider {
-    pub fn new(rpc_url: &str, network_passphrase: &str) -> Result<Self, Error> {
-        let rpc_client = Client::new(rpc_url)?;
+    pub fn new(rpc_url: &str, network_passphrase: &str) -> Result<Self, SorobanHelperError> {
+        let rpc_client = Client::new(rpc_url)
+            .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Failed to create RPC client: {}", e)))?;
         let network_id = Hash(Sha256::digest(network_passphrase.as_bytes()).into());
 
         Ok(Self {
@@ -28,23 +30,35 @@ impl Provider {
         &self.network_id
     }
 
-    pub async fn get_account(&self, account_id: &str) -> Result<AccountEntry, Error> {
-        self.rpc_client.get_account(account_id).await
+    pub async fn get_account(&self, account_id: &str) -> Result<AccountEntry, SorobanHelperError> {
+        self.rpc_client.get_account(account_id)
+            .await
+            .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Failed to get account {}: {}", account_id, e)))
     }
 
     pub async fn simulate_transaction(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<stellar_rpc_client::SimulateTransactionResponse, Error> {
+    ) -> Result<stellar_rpc_client::SimulateTransactionResponse, SorobanHelperError> {
         self.rpc_client
             .simulate_transaction_envelope(tx_envelope)
             .await
+            .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Failed to simulate transaction: {}", e)))
     }
 
     pub async fn send_transaction(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<GetTransactionResponse, Error> {
+    ) -> Result<GetTransactionResponse, SorobanHelperError> {
         self.rpc_client.send_transaction_polling(tx_envelope).await
+            .map_err(|e| {
+                // Check if this is a "contract code already exists" error
+                let error_string = e.to_string();
+                if error_string.contains("ContractCodeAlreadyExists") {
+                    return SorobanHelperError::ContractCodeAlreadyExists;
+                }
+                // Otherwise, it's a general transaction failure
+                SorobanHelperError::NetworkRequestFailed(format!("Failed to send transaction: {}", e))
+            })
     }
 }

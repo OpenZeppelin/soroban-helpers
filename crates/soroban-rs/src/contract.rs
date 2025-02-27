@@ -1,5 +1,5 @@
 use crate::{
-    Provider, Signer, account::AccountManager, crypto, parser, transaction::TransactionBuilder,
+    account::AccountManager, crypto, error::SorobanHelperError, parser, transaction::TransactionBuilder, Provider, Signer
 };
 use std::fs;
 use stellar_xdr::curr::{
@@ -17,7 +17,7 @@ pub struct Contract {
 }
 
 impl Contract {
-    pub fn new(wasm_path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(wasm_path: &str) -> Result<Self, SorobanHelperError> {
         let wasm_bytes = fs::read(wasm_path)?;
         let wasm_hash = crypto::sha256_hash(&wasm_bytes);
 
@@ -32,7 +32,7 @@ impl Contract {
         provider: &Provider,
         signer: &Signer,
         constructor_args: Option<Vec<ScVal>>,
-    ) -> Result<stellar_strkey::Contract, Box<dyn std::error::Error>> {
+    ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
         let account_manager = AccountManager::new(provider, signer);
         let sequence = account_manager.get_sequence().await?;
         let account_id = account_manager.account_id().clone();
@@ -54,7 +54,8 @@ impl Contract {
         let create_operation = if has_constructor && constructor_args.is_some() {
             // Use V2 with constructor args
             let args: VecM<ScVal, { u32::MAX }> =
-                constructor_args.unwrap_or_default().try_into()?;
+                constructor_args.unwrap_or_default().try_into()
+                    .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode constructor args: {}", e)))?;
 
             let create_args = CreateContractArgsV2 {
                 contract_id_preimage: contract_id_preimage.clone(),
@@ -75,7 +76,8 @@ impl Contract {
             Operation {
                 source_account: None,
                 body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into()?,
+                    auth: vec![auth_entry].try_into()
+                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode auth entries: {}", e)))?,
                     host_function: HostFunction::CreateContractV2(create_args),
                 }),
             }
@@ -96,7 +98,8 @@ impl Contract {
             Operation {
                 source_account: None,
                 body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into()?,
+                    auth: vec![auth_entry].try_into()
+                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode auth entries: {}", e)))?,
                     host_function: HostFunction::CreateContract(create_args),
                 }),
             }
@@ -118,7 +121,7 @@ impl Contract {
         provider: &Provider,
         signer: &Signer,
         sequence: i64,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), SorobanHelperError> {
         let account_manager = AccountManager::new(provider, signer);
         let account_id = account_manager.account_id().clone();
 
@@ -126,7 +129,8 @@ impl Contract {
             source_account: None,
             body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
                 host_function: HostFunction::UploadContractWasm(
-                    self.wasm_bytes.clone().try_into()?,
+                    self.wasm_bytes.clone().try_into()
+                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode WASM bytes: {}", e)))?,
                 ),
                 auth: VecM::default(),
             }),
@@ -142,7 +146,7 @@ impl Contract {
             Ok(_) => Ok(()),
             Err(e) => {
                 // If it failed because the code already exists, that's fine
-                if e.to_string().contains("ContractCodeAlreadyExists") {
+                if let SorobanHelperError::ContractCodeAlreadyExists = e {
                     Ok(())
                 } else {
                     Err(e)
@@ -158,15 +162,17 @@ impl Contract {
         args: Vec<ScVal>,
         provider: &Provider,
         signer: &Signer,
-    ) -> Result<ScVal, Box<dyn std::error::Error>> {
+    ) -> Result<ScVal, SorobanHelperError> {
         let account_manager = AccountManager::new(provider, signer);
         let sequence = account_manager.get_sequence().await?;
         let account_id = account_manager.account_id().clone();
 
         let invoke_contract_args = InvokeContractArgs {
             contract_address: ScAddress::Contract(Hash(contract_id.0)),
-            function_name: ScSymbol(function_name.try_into().unwrap()),
-            args: args.try_into()?,
+            function_name: ScSymbol(function_name.try_into()
+                .map_err(|e| SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e)))?),
+            args: args.try_into()
+                .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode arguments: {}", e)))?,
         };
 
         let invoke_operation = Operation {
