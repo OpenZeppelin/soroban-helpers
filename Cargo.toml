@@ -1,16 +1,15 @@
 [workspace]
+resolver = "3"
 members = [
   "crates/soroban-test-helpers",
   "crates/soroban-test-helpers-usage",
   "crates/soroban-rs"
 ]
-
 default-members = ["crates/soroban-test-helpers"]
 
-# Explicitly set the resolver to version 2, which is the default for packages
-# with edition >= 2021.
-# https://doc.rust-lang.org/edition-guide/rust-2021/default-cargo-resolver.html
-resolver = "2"
+[workspace.package]
+edition = "2024"
+rust-version = "1.85.0" #MSRV
 
 [workspace.dependencies]
 syn = { version = "2.0", features = ["full"] }
