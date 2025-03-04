@@ -1,7 +1,6 @@
-
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, FnArg};
+use syn::{FnArg, parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -14,41 +13,48 @@ pub fn test(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let fn_args = &sig.inputs;
 
     let arg_binding_and_ty = match fn_args
-      .into_iter()
-      .map(|arg| {
-        let FnArg::Typed(arg) = arg else {
-          return Err(syn::Error::new_spanned(arg, "unexpected receiver argument in test signature"));
-        };
-        let arg_binding = &arg.pat;
-        let arg_ty = &arg.ty;
-        Ok((arg_binding, arg_ty))
-      })
-      .collect::<Result<Vec<_>, _>>()
+        .into_iter()
+        .map(|arg| {
+            let FnArg::Typed(arg) = arg else {
+                return Err(syn::Error::new_spanned(
+                    arg,
+                    "unexpected receiver argument in test signature",
+                ));
+            };
+            let arg_binding = &arg.pat;
+            let arg_ty = &arg.ty;
+            Ok((arg_binding, arg_ty))
+        })
+        .collect::<Result<Vec<_>, _>>()
     {
-      Ok(res) => res,
-      Err(err) => return err.to_compile_error().into(),
+        Ok(res) => res,
+        Err(err) => return err.to_compile_error().into(),
     };
 
     let arg_defs = arg_binding_and_ty.iter().map(|(arg_binding, arg_ty)| {
-      quote! {
-        #arg_binding: #arg_ty
-      }
+        quote! {
+          #arg_binding: #arg_ty
+        }
     });
 
     // extracts the first Env argument and intializes with ::default()
-    let first_ty = arg_binding_and_ty.first()
+    let first_ty = arg_binding_and_ty
+        .first()
         .map(|(_binding, ty)| ty)
         .expect("at least one argument required");
     let env_init = quote! { let env = <#first_ty>::default(); };
 
     // extracts the following arguments (Addresses) and generates them passing the env as paramenter.
-    let arg_inits = arg_binding_and_ty.iter().enumerate().map(|(i, (_arg_binding, arg_ty))| {
-        if i == 0 { 
-            quote! { env.clone() }
-        } else {
-            quote! { <#arg_ty>::generate(&env) }
-        }
-    });
+    let arg_inits = arg_binding_and_ty
+        .iter()
+        .enumerate()
+        .map(|(i, (_arg_binding, arg_ty))| {
+            if i == 0 {
+                quote! { env.clone() }
+            } else {
+                quote! { <#arg_ty>::generate(&env) }
+            }
+        });
 
     quote! {
         #( #attrs )*

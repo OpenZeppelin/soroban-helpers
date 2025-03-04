@@ -1,8 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{testutils::Address as AddressTrait, Address, vec, Env};
-
+use soroban_sdk::{Address, Env, testutils::Address as AddressTrait, vec};
 
 // Default test implementation.
 #[test]
@@ -13,31 +12,17 @@ fn test() {
 
     let contract_id = env.register_contract(None, Token);
     let client = TokenClient::new(&env, &contract_id);
-  
+
     let words = client.send(&alice, &bob);
-    assert_eq!(
-        words,
-        vec![
-            &env,
-            alice.to_string(),
-            bob.to_string(),
-        ]
-    );
+    assert_eq!(words, vec![&env, alice.to_string(), bob.to_string(),]);
 }
 
 // Test implementation using injected arguments.
 #[soroban_test_helpers::test]
 fn test_injected_args(e: Env, alice: Address, bob: Address) {
-  let contract_id = e.register_contract(None, Token);
-  let client = TokenClient::new(&e, &contract_id);
+    let contract_id = e.register_contract(None, Token);
+    let client = TokenClient::new(&e, &contract_id);
 
-  let words = client.send(&alice, &bob);
-  assert_eq!(
-      words,
-      vec![
-          &e,
-          alice.to_string(),
-          bob.to_string(),
-      ]
-  );
+    let words = client.send(&alice, &bob);
+    assert_eq!(words, vec![&e, alice.to_string(), bob.to_string(),]);
 }
