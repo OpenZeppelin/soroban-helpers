@@ -5,6 +5,7 @@ mod parser;
 mod provider;
 mod signer;
 mod transaction;
+mod error;
 
 pub use account::AccountManager;
 pub use contract::Contract;
