@@ -1,0 +1,22 @@
+name: Lint GitHub Actions
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    paths:
+    - '.github/**'
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Download ActionLint
+        id: actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
+      - name: Check Workflow Files
+        run: SHELLCHECK_OPTS="-S error" ${{ steps.actionlint.outputs.executable }} -color
+        shell: bash
