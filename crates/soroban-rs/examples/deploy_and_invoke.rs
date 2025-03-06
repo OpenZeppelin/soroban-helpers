@@ -1,10 +1,10 @@
-use dotenv::dotenv;
+use dotenv::from_path;
 use soroban_rs::{Contract, Provider, ScAddress, ScVal, Signer};
-use std::env;
+use std::{env, path::Path};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().ok();
+    from_path(Path::new("examples/.env")).ok();
 
     let private_key =
         env::var("SOROBAN_PRIVATE_KEY").expect("SOROBAN_PRIVATE_KEY must be set in .env file");

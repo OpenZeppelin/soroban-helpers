@@ -1,5 +1,5 @@
 use sha2::{Digest, Sha256};
-use stellar_rpc_client::{Client, Error as RpcError, GetTransactionResponse};
+use stellar_rpc_client::{Client, GetTransactionResponse};
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
 use crate::error::SorobanHelperError;
 

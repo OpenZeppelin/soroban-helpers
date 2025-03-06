@@ -3,6 +3,10 @@ name = "soroban-rs"
 version = "0.1.0"
 edition = "2024"
 
+[[example]]
+name = "deploy_and_invoke"
+path = "examples/deploy_and_invoke.rs"
+
 [dependencies]
 tokio.workspace = true
 stellar-rpc-client.workspace = true
@@ -12,4 +16,7 @@ ed25519-dalek.workspace = true
 sha2.workspace = true
 rand.workspace = true
 hex.workspace = true
+
+[dev-dependencies]
+# example dependency
 dotenv.workspace = true
