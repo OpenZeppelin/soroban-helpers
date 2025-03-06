@@ -11,14 +11,12 @@ pub fn extract_return_value(meta: &TransactionMeta) -> Option<ScVal> {
 
 pub fn extract_operation_result(op_result: &OperationResult) -> Option<ScVal> {
     if let OperationResult::OpInner(stellar_xdr::curr::OperationResultTr::InvokeHostFunction(
-        invoke_result,
+        stellar_xdr::curr::InvokeHostFunctionResult::Success(value),
     )) = op_result
     {
-        if let stellar_xdr::curr::InvokeHostFunctionResult::Success(value) = invoke_result {
-            return Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
-                value.0.to_vec().try_into().unwrap_or_default(),
-            )));
-        }
+        return Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
+            value.0.to_vec().try_into().unwrap_or_default(),
+        )));
     }
     None
 }
@@ -42,16 +40,16 @@ pub fn parse_transaction_result(
                 }
             }
 
-            return Ok(ScVal::Void);
+            Ok(ScVal::Void)
         } else {
-            return Err(SorobanHelperError::TransactionFailed(format!(
+            Err(SorobanHelperError::TransactionFailed(format!(
                 "Transaction failed: {:?}",
                 tx_result.result
-            )));
+            )))
         }
     } else {
-        return Err(SorobanHelperError::TransactionFailed(
+        Err(SorobanHelperError::TransactionFailed(
             "No transaction result available".to_string(),
-        ));
+        ))
     }
 }

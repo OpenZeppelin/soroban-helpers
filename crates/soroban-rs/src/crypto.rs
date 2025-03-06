@@ -1,5 +1,4 @@
 use crate::error::SorobanHelperError;
-use rand;
 use sha2::{Digest, Sha256};
 use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, HashIdPreimage,

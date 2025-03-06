@@ -120,7 +120,7 @@ impl Contract {
             }
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence + 2);
+        let mut builder = TransactionBuilder::new(account_id, sequence + 2);
         builder.add_operation(create_operation);
 
         let deploy_tx = builder.simulate_and_build(provider, signer).await?;
@@ -155,7 +155,7 @@ impl Contract {
             }),
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence);
+        let mut builder = TransactionBuilder::new(account_id, sequence);
         builder.add_operation(upload_operation);
 
         let upload_tx = builder.simulate_and_build(provider, signer).await?;
@@ -204,7 +204,7 @@ impl Contract {
             }),
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence + 1);
+        let mut builder = TransactionBuilder::new(account_id, sequence + 1);
         builder.add_operation(invoke_operation);
 
         let invoke_tx = builder.simulate_and_build(provider, signer).await?;

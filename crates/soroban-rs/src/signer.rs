@@ -35,7 +35,7 @@ impl Signer {
     }
 
     pub fn public_key(&self) -> PublicKey {
-        self.public_key.clone()
+        self.public_key
     }
 
     pub fn sign_transaction(
