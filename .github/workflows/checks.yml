@@ -78,7 +78,7 @@ jobs:
       - uses: taiki-e/install-action@a209ff0ce0349f9e7cadc4ba8f6a415c8d3b0813 # v2.49.11
         with:
           tool: cargo-udeps
-      - run: cargo udeps --workspace --lib --examples --tests --all-features --locked
+      - run: cargo +nightly udeps --workspace --lib --examples --tests --all-features --locked
 
   checks-success:
     name: Checks Success
