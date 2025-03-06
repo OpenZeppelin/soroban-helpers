@@ -44,13 +44,14 @@ pub fn parse_transaction_result(
 
             return Ok(ScVal::Void);
         } else {
-            return Err(SorobanHelperError::TransactionFailed(
-                format!("Transaction failed: {:?}", tx_result.result)
-            ));
+            return Err(SorobanHelperError::TransactionFailed(format!(
+                "Transaction failed: {:?}",
+                tx_result.result
+            )));
         }
     } else {
         return Err(SorobanHelperError::TransactionFailed(
-            "No transaction result available".to_string()
+            "No transaction result available".to_string(),
         ));
     }
 }
