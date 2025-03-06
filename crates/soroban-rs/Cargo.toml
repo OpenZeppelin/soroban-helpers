@@ -1,7 +1,7 @@
 [package]
 name = "soroban-rs"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
 
 [[example]]
 name = "deploy_and_invoke"
