@@ -1,5 +1,5 @@
 use dotenv::from_path;
-use soroban_rs::{Contract, Provider, Signer,  xdr::{ScAddress, ScVal}};
+use soroban_rs::{xdr::{ScAddress, ScVal}, Contract, Provider, ProviderConfigs, Signer};
 use std::{env, path::Path};
 
 #[tokio::main]
@@ -9,10 +9,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let private_key =
         env::var("SOROBAN_PRIVATE_KEY").expect("SOROBAN_PRIVATE_KEY must be set in .env file");
 
-    let provider = Provider::new(
-        "https://soroban-testnet.stellar.org",
-        "Test SDF Network ; September 2015",
-    )?;
+    let configs = ProviderConfigs {
+        rpc_url: "https://soroban-testnet.stellar.org".to_string(),
+        network_passphrase: "Test SDF Network ; September 2015".to_string(),
+    };
+    let provider = Provider::new(configs)?;
 
     let signer = Signer::new(&private_key)?;
     let contract = Contract::new(

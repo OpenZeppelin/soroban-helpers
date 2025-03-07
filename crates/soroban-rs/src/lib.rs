@@ -9,7 +9,7 @@ mod error;
 
 pub use account::AccountManager;
 pub use contract::Contract;
-pub use provider::Provider;
+pub use provider::{Provider, ProviderConfigs};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
