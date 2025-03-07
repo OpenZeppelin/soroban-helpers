@@ -13,4 +13,4 @@ pub use provider::Provider;
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
-pub use stellar_xdr::curr::{AccountId, ScAddress, ScVal};
+pub use stellar_xdr::curr as xdr;
