@@ -18,7 +18,7 @@ impl Provider {
         let rpc_client = Client::new(&configs.rpc_url).map_err(|e| {
             SorobanHelperError::NetworkRequestFailed(format!("Failed to create RPC client: {}", e))
         })?;
-        let network_id = Hash(Sha256::digest(&configs.network_passphrase.as_bytes()).into());
+        let network_id = Hash(Sha256::digest(configs.network_passphrase.as_bytes()).into());
 
         Ok(Self {
             rpc_client,
