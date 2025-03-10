@@ -1,5 +1,8 @@
 use dotenv::from_path;
-use soroban_rs::{xdr::{ScAddress, ScVal}, Contract, Provider, ProviderConfigs, Signer};
+use soroban_rs::{
+    Contract, Provider, ProviderConfigs, Signer,
+    xdr::{ScAddress, ScVal},
+};
 use std::{env, path::Path};
 
 #[tokio::main]

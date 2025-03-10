@@ -10,7 +10,7 @@ fn test() {
     let alice = Address::generate(&env);
     let bob = Address::generate(&env);
 
-    let contract_id = env.register_contract(None, Token);
+    let contract_id = env.register(Token, (19_u32,));
     let client = TokenClient::new(&env, &contract_id);
 
     let words = client.send(&alice, &bob);
@@ -20,7 +20,7 @@ fn test() {
 // Test implementation using injected arguments.
 #[soroban_test_helpers::test]
 fn test_injected_args(e: Env, alice: Address, bob: Address) {
-    let contract_id = e.register_contract(None, Token);
+    let contract_id = e.register(Token, (19_u32,));
     let client = TokenClient::new(&e, &contract_id);
 
     let words = client.send(&alice, &bob);

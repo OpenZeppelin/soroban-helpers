@@ -1,8 +1,8 @@
+use crate::error::SorobanHelperError;
 use crate::{Provider, Signer};
 use stellar_xdr::curr::{
     Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
 };
-use crate::error::SorobanHelperError;
 
 pub const DEFAULT_TRANSACTION_FEES: u32 = 100;
 
@@ -43,8 +43,9 @@ impl TransactionBuilder {
     }
 
     pub fn build(self) -> Result<Transaction, SorobanHelperError> {
-        let operations = self.operations.try_into()
-            .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to convert operations: {}", e)))?;
+        let operations = self.operations.try_into().map_err(|e| {
+            SorobanHelperError::XdrEncodingFailed(format!("Failed to convert operations: {}", e))
+        })?;
 
         Ok(Transaction {
             fee: self.fee,
@@ -67,8 +68,9 @@ impl TransactionBuilder {
         let simulation = provider.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
-            u32::try_from(DEFAULT_TRANSACTION_FEES as u64 + simulation.min_resource_fee)
-                .map_err(|_| SorobanHelperError::InvalidArgument("Transaction fee too high".to_string()))?
+            u32::try_from(DEFAULT_TRANSACTION_FEES as u64 + simulation.min_resource_fee).map_err(
+                |_| SorobanHelperError::InvalidArgument("Transaction fee too high".to_string()),
+            )?,
         );
 
         let mut tx = Transaction {
@@ -81,8 +83,9 @@ impl TransactionBuilder {
             ext: tx.ext,
         };
 
-        if let Ok(tx_data) = simulation.transaction_data().map_err(|e| 
-            SorobanHelperError::TransactionFailed(format!("Failed to get transaction data: {}", e))) {
+        if let Ok(tx_data) = simulation.transaction_data().map_err(|e| {
+            SorobanHelperError::TransactionFailed(format!("Failed to get transaction data: {}", e))
+        }) {
             tx.ext = TransactionExt::V1(tx_data);
         }
 

@@ -1,3 +1,4 @@
+use crate::error::SorobanHelperError;
 use ed25519_dalek::{SigningKey, ed25519::signature::SignerMut};
 use sha2::{Digest, Sha256};
 use stellar_strkey::ed25519::{PrivateKey, PublicKey};
@@ -6,7 +7,6 @@ use stellar_xdr::curr::{
     SignatureHint, Transaction, TransactionEnvelope, TransactionSignaturePayload,
     TransactionSignaturePayloadTaggedTransaction, TransactionV1Envelope, VecM, WriteXdr,
 };
-use crate::error::SorobanHelperError;
 
 pub struct Signer {
     signing_key: SigningKey,
@@ -16,8 +16,9 @@ pub struct Signer {
 
 impl Signer {
     pub fn new(private_key_string: &str) -> Result<Self, SorobanHelperError> {
-        let private_key = PrivateKey::from_string(private_key_string)
-            .map_err(|e| SorobanHelperError::InvalidArgument(format!("Invalid private key: {}", e)))?;
+        let private_key = PrivateKey::from_string(private_key_string).map_err(|e| {
+            SorobanHelperError::InvalidArgument(format!("Invalid private key: {}", e))
+        })?;
         let signing_key = SigningKey::from_bytes(&private_key.0);
         let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
         let account_id = AccountId(XDRPublicKey::PublicKeyTypeEd25519(public_key.0.into()));
@@ -34,7 +35,7 @@ impl Signer {
     }
 
     pub fn public_key(&self) -> PublicKey {
-        self.public_key.clone()
+        self.public_key
     }
 
     pub fn sign_transaction(
@@ -48,13 +49,18 @@ impl Signer {
         };
 
         let tx_hash: [u8; 32] = Sha256::digest(
-            signature_payload.to_xdr(Limits::none())
-                .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?
-        ).into();
+            signature_payload
+                .to_xdr(Limits::none())
+                .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?,
+        )
+        .into();
 
         let hint = SignatureHint(
-            self.signing_key.verifying_key().to_bytes()[28..].try_into()
-                .map_err(|_| SorobanHelperError::SigningFailed("Failed to create signature hint".to_string()))?
+            self.signing_key.verifying_key().to_bytes()[28..]
+                .try_into()
+                .map_err(|_| {
+                    SorobanHelperError::SigningFailed("Failed to create signature hint".to_string())
+                })?,
         );
 
         let signature = Signature(
@@ -64,12 +70,21 @@ impl Signer {
                 .to_bytes()
                 .to_vec()
                 .try_into()
-                .map_err(|_| SorobanHelperError::SigningFailed("Failed to convert signature to XDR".to_string()))?
+                .map_err(|_| {
+                    SorobanHelperError::SigningFailed(
+                        "Failed to convert signature to XDR".to_string(),
+                    )
+                })?,
         );
 
         let signatures: VecM<DecoratedSignature, 20> = vec![DecoratedSignature { hint, signature }]
             .try_into()
-            .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to create signatures vector: {}", e)))?;
+            .map_err(|e| {
+                SorobanHelperError::XdrEncodingFailed(format!(
+                    "Failed to create signatures vector: {}",
+                    e
+                ))
+            })?;
 
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx.clone(),
