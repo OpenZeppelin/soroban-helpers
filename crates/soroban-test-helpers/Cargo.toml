@@ -2,6 +2,13 @@
 name = "soroban-test-helpers"
 version = "0.1.0"
 edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/soroban-test-helpers"
+readme = "README.md"
+keywords.workspace = true
+categories = ["development-tools::testing", "blockchain"]
 
 [lib]
 proc-macro = true
