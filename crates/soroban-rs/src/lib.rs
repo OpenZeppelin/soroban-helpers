@@ -7,7 +7,7 @@ mod signer;
 mod transaction;
 mod error;
 
-pub use account::AccountManager;
+pub use account::{Account, SingleAccount, MultisigAccount};
 pub use contract::Contract;
 pub use provider::{Provider, ProviderConfigs};
 pub use signer::Signer;

@@ -1,5 +1,5 @@
 use crate::{
-    account::AccountManager, crypto, error::SorobanHelperError, parser, transaction::TransactionBuilder, Provider, Signer
+    crypto, error::SorobanHelperError, parser, transaction::TransactionBuilder, Account, Provider
 };
 use std::fs;
 use stellar_xdr::curr::{
@@ -30,14 +30,13 @@ impl Contract {
     pub async fn deploy(
         &self,
         provider: &Provider,
-        signer: &Signer,
+        account: &Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let sequence = account_manager.get_sequence().await?;
-        let account_id = account_manager.account_id().clone();
+        let sequence = account.get_sequence(provider).await?;
+        let account_id = account.account_id();
 
-        self.upload_wasm(provider, signer, sequence + 1).await?;
+        self.upload_wasm(provider, account, sequence.0 + 1).await?;
 
         let salt = crypto::generate_salt();
 
@@ -105,13 +104,13 @@ impl Contract {
             }
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence + 2);
+        let mut builder = TransactionBuilder::new(account_id.into(), sequence.0 + 2);
         builder.add_operation(create_operation);
 
-        let deploy_tx = builder.simulate_and_build(provider, signer).await?;
+        let deploy_tx = builder.simulate_and_build(provider, account).await?;
 
-        let tx_envelope = account_manager.sign_transaction(&deploy_tx)?;
-        account_manager.send_transaction(&tx_envelope).await?;
+        let tx_envelope = account.sign_transaction(&deploy_tx, provider.network_id())?;
+        provider.send_transaction(&tx_envelope).await?;
 
         Ok(contract_id)
     }
@@ -119,12 +118,9 @@ impl Contract {
     async fn upload_wasm(
         &self,
         provider: &Provider,
-        signer: &Signer,
-        sequence: i64,
+        account: &Account,
+        sequence_num: i64,
     ) -> Result<(), SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let account_id = account_manager.account_id().clone();
-
         let upload_operation = Operation {
             source_account: None,
             body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
@@ -136,13 +132,13 @@ impl Contract {
             }),
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence);
+        let mut builder = TransactionBuilder::new(account.account_id().into(), sequence_num);
         builder.add_operation(upload_operation);
 
-        let upload_tx = builder.simulate_and_build(provider, signer).await?;
-        let tx_envelope = account_manager.sign_transaction(&upload_tx)?;
+        let upload_tx = builder.simulate_and_build(provider, account).await?;
+        let tx_envelope = account.sign_transaction(&upload_tx, provider.network_id())?;
 
-        match account_manager.send_transaction(&tx_envelope).await {
+        match provider.send_transaction(&tx_envelope).await {
             Ok(_) => Ok(()),
             Err(e) => {
                 // If it failed because the code already exists, that's fine
@@ -161,11 +157,10 @@ impl Contract {
         function_name: &str,
         args: Vec<ScVal>,
         provider: &Provider,
-        signer: &Signer,
+        account: &Account,
     ) -> Result<ScVal, SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let sequence = account_manager.get_sequence().await?;
-        let account_id = account_manager.account_id().clone();
+        let sequence = account.get_sequence(provider).await?;
+        let account_id = account.account_id();
 
         let invoke_contract_args = InvokeContractArgs {
             contract_address: ScAddress::Contract(Hash(contract_id.0)),
@@ -183,12 +178,12 @@ impl Contract {
             }),
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence + 1);
+        let mut builder = TransactionBuilder::new(account_id.into(), sequence.0 + 1);
         builder.add_operation(invoke_operation);
 
-        let invoke_tx = builder.simulate_and_build(provider, signer).await?;
-        let tx_envelope = account_manager.sign_transaction(&invoke_tx)?;
-        let result = account_manager.send_transaction(&tx_envelope).await?;
+        let invoke_tx = builder.simulate_and_build(provider, account).await?;
+        let tx_envelope = account.sign_transaction(&invoke_tx, provider.network_id())?;
+        let result = provider.send_transaction(&tx_envelope).await?;
 
         parser::parse_transaction_result(&result)
     }
