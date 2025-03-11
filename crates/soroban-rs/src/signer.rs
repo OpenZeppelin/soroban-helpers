@@ -1,3 +1,4 @@
+use crate::error::SorobanHelperError;
 use ed25519_dalek::{SigningKey, ed25519::signature::SignerMut};
 use sha2::{Digest, Sha256};
 use stellar_strkey::ed25519::PublicKey;
@@ -6,7 +7,6 @@ use stellar_xdr::curr::{
     SignatureHint, Transaction, TransactionSignaturePayload,
     TransactionSignaturePayloadTaggedTransaction, WriteXdr,
 };
-use crate::error::SorobanHelperError;
 
 pub struct Signer {
     signing_key: SigningKey,
@@ -27,7 +27,7 @@ impl Signer {
     }
 
     pub fn public_key(&self) -> PublicKey {
-        self.public_key.clone()
+        self.public_key
     }
 
     pub fn account_id(&self) -> AccountId {
@@ -45,13 +45,18 @@ impl Signer {
         };
 
         let tx_hash: [u8; 32] = Sha256::digest(
-            signature_payload.to_xdr(Limits::none())
-                .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?
-        ).into();
+            signature_payload
+                .to_xdr(Limits::none())
+                .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?,
+        )
+        .into();
 
         let hint = SignatureHint(
-            self.signing_key.verifying_key().to_bytes()[28..].try_into()
-                .map_err(|_| SorobanHelperError::SigningFailed("Failed to create signature hint".to_string()))?
+            self.signing_key.verifying_key().to_bytes()[28..]
+                .try_into()
+                .map_err(|_| {
+                    SorobanHelperError::SigningFailed("Failed to create signature hint".to_string())
+                })?,
         );
 
         let signature = Signature(
@@ -61,7 +66,11 @@ impl Signer {
                 .to_bytes()
                 .to_vec()
                 .try_into()
-                .map_err(|_| SorobanHelperError::SigningFailed("Failed to convert signature to XDR".to_string()))?
+                .map_err(|_| {
+                    SorobanHelperError::SigningFailed(
+                        "Failed to convert signature to XDR".to_string(),
+                    )
+                })?,
         );
 
        Ok(DecoratedSignature { hint, signature })

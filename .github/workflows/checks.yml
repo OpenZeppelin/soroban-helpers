@@ -1,0 +1,98 @@
+name: CI 
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  lint:
+    name: Lint (Clippy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: 'Install from rust-toolchain.toml'
+        run: rustup show
+      - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2.7.7
+        with:
+          cache-on-failure: true
+      - name: 'Run clippy'
+        run: cargo clippy --workspace --lib --examples --tests --all-features --locked
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: 'Install from rust-toolchain.toml'
+        run: rustup show
+      - uses: taiki-e/install-action@f87f9990b09867202953bff9aa0c80e23ee16bb7 # v2.49.18
+        with:
+          tool: cargo-hack
+      - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2.7.7
+        with:
+          cache-on-failure: true
+      - run: cargo hack check --workspace
+  msrv-check:
+    name: Minimum Supported Rust Version (MSRV) Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - package: soroban-rs
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: 'Override toolchain with MSRV'
+        run: rustup override set 1.85.0
+      - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2.7.7
+        with:
+          cache-on-failure: true
+      - run: cargo build -p "${{ matrix.package }}"
+  formatting:
+    name: Code Formatting Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: 'Install from rust-toolchain.toml'
+        run: rustup show
+      - name: Run rustfmt
+        run: cargo fmt --all --check
+  unused-dependencies:
+    name: Unused Dependencies Check (cargo-udeps)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: 'Install from rust-toolchain.toml'
+        run: rustup override set nightly
+      - uses: Swatinem/rust-cache@f0deed1e0edfc6a9be95417288c0e1099b1eeec3 # v2.7.7
+        with:
+          cache-on-failure: true
+      - uses: taiki-e/install-action@f87f9990b09867202953bff9aa0c80e23ee16bb7 # v2.49.18
+        with:
+          tool: cargo-udeps
+      - run: cargo +nightly udeps --workspace --lib --examples --tests --all-features --locked
+
+  checks-success:
+    name: Checks Success
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - lint
+      - dependency-check
+      - msrv-check
+      - formatting
+      - unused-dependencies
+    timeout-minutes: 30
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+        with:
+          jobs: ${{ toJSON(needs) }}

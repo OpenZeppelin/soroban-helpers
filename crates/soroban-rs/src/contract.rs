@@ -52,9 +52,15 @@ impl Contract {
 
         let create_operation = if has_constructor && constructor_args.is_some() {
             // Use V2 with constructor args
-            let args: VecM<ScVal, { u32::MAX }> =
-                constructor_args.unwrap_or_default().try_into()
-                    .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode constructor args: {}", e)))?;
+            let args: VecM<ScVal, { u32::MAX }> = constructor_args
+                .unwrap_or_default()
+                .try_into()
+                .map_err(|e| {
+                SorobanHelperError::XdrEncodingFailed(format!(
+                    "Failed to encode constructor args: {}",
+                    e
+                ))
+            })?;
 
             let create_args = CreateContractArgsV2 {
                 contract_id_preimage: contract_id_preimage.clone(),
@@ -75,8 +81,12 @@ impl Contract {
             Operation {
                 source_account: None,
                 body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into()
-                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode auth entries: {}", e)))?,
+                    auth: vec![auth_entry].try_into().map_err(|e| {
+                        SorobanHelperError::XdrEncodingFailed(format!(
+                            "Failed to encode auth entries: {}",
+                            e
+                        ))
+                    })?,
                     host_function: HostFunction::CreateContractV2(create_args),
                 }),
             }
@@ -97,8 +107,12 @@ impl Contract {
             Operation {
                 source_account: None,
                 body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into()
-                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode auth entries: {}", e)))?,
+                    auth: vec![auth_entry].try_into().map_err(|e| {
+                        SorobanHelperError::XdrEncodingFailed(format!(
+                            "Failed to encode auth entries: {}",
+                            e
+                        ))
+                    })?,
                     host_function: HostFunction::CreateContract(create_args),
                 }),
             }
@@ -125,8 +139,12 @@ impl Contract {
             source_account: None,
             body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
                 host_function: HostFunction::UploadContractWasm(
-                    self.wasm_bytes.clone().try_into()
-                        .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode WASM bytes: {}", e)))?,
+                    self.wasm_bytes.clone().try_into().map_err(|e| {
+                        SorobanHelperError::XdrEncodingFailed(format!(
+                            "Failed to encode WASM bytes: {}",
+                            e
+                        ))
+                    })?,
                 ),
                 auth: VecM::default(),
             }),
@@ -164,10 +182,12 @@ impl Contract {
 
         let invoke_contract_args = InvokeContractArgs {
             contract_address: ScAddress::Contract(Hash(contract_id.0)),
-            function_name: ScSymbol(function_name.try_into()
-                .map_err(|e| SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e)))?),
-            args: args.try_into()
-                .map_err(|e| SorobanHelperError::XdrEncodingFailed(format!("Failed to encode arguments: {}", e)))?,
+            function_name: ScSymbol(function_name.try_into().map_err(|e| {
+                SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e))
+            })?),
+            args: args.try_into().map_err(|e| {
+                SorobanHelperError::XdrEncodingFailed(format!("Failed to encode arguments: {}", e))
+            })?,
         };
 
         let invoke_operation = Operation {
@@ -178,7 +198,10 @@ impl Contract {
             }),
         };
 
-        let mut builder = TransactionBuilder::new(account_id.into(), sequence.0 + 1);
+        let mut builder = TransactionBuilder::new(
+            account_id.into(),
+            sequence.0 + 1
+        );
         builder.add_operation(invoke_operation);
 
         let invoke_tx = builder.simulate_and_build(provider, account).await?;
