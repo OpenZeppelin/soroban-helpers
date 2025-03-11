@@ -14,6 +14,16 @@ pub struct Signer {
     account_id: AccountId,
 }
 
+impl Clone for Signer {
+    fn clone(&self) -> Self {
+        Self {
+            signing_key: self.signing_key.clone(),
+            public_key: self.public_key.clone(),
+            account_id: self.account_id.clone(),
+        }
+    }
+}
+
 impl Signer {
     pub fn new(signing_key: SigningKey) -> Self {
         let public_key = PublicKey(*signing_key.verifying_key().as_bytes());

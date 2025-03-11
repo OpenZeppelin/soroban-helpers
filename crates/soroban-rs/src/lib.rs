@@ -6,11 +6,14 @@ mod parser;
 mod provider;
 mod signer;
 mod transaction;
+mod operation;
 
-pub use account::{Account, SingleAccount, MultisigAccount};
+pub use account::{Account, SingleAccount, MultisigAccount, AccountConfig};
 pub use contract::Contract;
 pub use provider::{Provider, ProviderConfigs};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
+pub use parser::{Parser, ParserType, ParseResult};
+
 
 pub use stellar_xdr::curr as xdr;

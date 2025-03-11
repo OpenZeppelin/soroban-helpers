@@ -1,21 +1,34 @@
 use crate::{error::SorobanHelperError, Account, Provider};
 use stellar_xdr::curr::{
-    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt
+    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt, AccountId
 };
 
 pub const DEFAULT_TRANSACTION_FEES: u32 = 100;
 
 pub struct TransactionBuilder {
     pub fee: u32,
-    pub source_account: stellar_xdr::curr::AccountId,
+    pub source_account: AccountId,
     pub sequence: i64,
     pub operations: Vec<Operation>,
     pub memo: Memo,
     pub preconditions: Preconditions,
 }
 
+impl Clone for TransactionBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            fee: self.fee,
+            source_account: self.source_account.clone(),
+            sequence: self.sequence,
+            operations: self.operations.clone(),
+            memo: self.memo.clone(),
+            preconditions: self.preconditions.clone(),
+        }
+    }
+}
+
 impl TransactionBuilder {
-    pub fn new(source_account: stellar_xdr::curr::AccountId, sequence: i64) -> Self {
+    pub fn new(source_account: AccountId, sequence: i64) -> Self {
         Self {
             fee: DEFAULT_TRANSACTION_FEES,
             source_account,
@@ -26,17 +39,17 @@ impl TransactionBuilder {
         }
     }
 
-    pub fn add_operation(&mut self, operation: Operation) -> &mut Self {
+    pub fn add_operation(mut self, operation: Operation) -> Self {
         self.operations.push(operation);
         self
     }
 
-    pub fn set_memo(&mut self, memo: Memo) -> &mut Self {
+    pub fn set_memo(mut self, memo: Memo) -> Self {
         self.memo = memo;
         self
     }
 
-    pub fn set_preconditions(&mut self, preconditions: Preconditions) -> &mut Self {
+    pub fn set_preconditions(mut self, preconditions: Preconditions) -> Self {
         self.preconditions = preconditions;
         self
     }
@@ -67,7 +80,7 @@ impl TransactionBuilder {
         let simulation = provider.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
-            u32::try_from(DEFAULT_TRANSACTION_FEES as u64 + simulation.min_resource_fee).map_err(
+            u32::try_from((tx.operations.len() as u64 * DEFAULT_TRANSACTION_FEES as u64) + simulation.min_resource_fee).map_err(
                 |_| SorobanHelperError::InvalidArgument("Transaction fee too high".to_string()),
             )?,
         );
