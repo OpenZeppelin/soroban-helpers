@@ -11,7 +11,7 @@
 //!
 //! ## Example
 //!
-//! ```rust
+//! ```rust,no_run
 //! use soroban_test_helpers::test;
 //! use soroban_sdk::{Env, Address};
 //!
@@ -45,7 +45,7 @@ use syn::{FnArg, parse_macro_input};
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// #[test]
 /// fn transfer_test(env: Env, sender: Address, receiver: Address) {
 ///     // Test logic here
