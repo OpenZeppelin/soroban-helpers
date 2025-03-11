@@ -5,10 +5,10 @@ edition.workspace = true
 description.workspace = true
 license.workspace = true
 repository.workspace = true
-documentation = "https://docs.rs/soroban-test-helpers"
+documentation = "https://github.com/OpenZeppelin/soroban-helpers"
 readme = "README.md"
 keywords.workspace = true
-categories = ["development-tools::testing", "blockchain"]
+categories = ["development-tools", "testing", "blockchain"]
 
 [lib]
 proc-macro = true
