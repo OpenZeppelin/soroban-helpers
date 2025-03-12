@@ -1,7 +1,7 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, Contract, Provider, ProviderConfigs, Signer, SingleAccount,
+    Account, Contract, Provider, ProviderConfigs, Signer,
     xdr::{ScAddress, ScVal},
 };
 use std::{env, path::Path};
@@ -23,10 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let provider = Provider::new(configs)?;
 
     let signer = Signer::new(signing_key);
-    let account = Account::KeyPair(SingleAccount {
-        account_id: signer.account_id(),
-        signers: vec![signer],
-    });
+    let mut account = Account::single(signer);
+    account.set_authorized_calls(3);
+
     let contract = Contract::new(
         "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm",
     )?;
@@ -34,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Deploy contract with constructor argument (u32 value of 42)
     let constructor_args = Some(vec![ScVal::U32(42)]);
     let contract_id = contract
-        .deploy(&provider, &account, constructor_args)
+        .deploy(&provider, &mut account, constructor_args)
         .await?;
 
     println!("Contract deployed successfully with ID: {:?}", contract_id);
@@ -42,10 +41,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
 
+    // This should fail with Unauthorized error since we only authorized 1 call
     let invoke_res = contract
-        .invoke(&contract_id, "send", vec![alice, bob], &provider, &account)
-        .await?;
+        .invoke(
+            &contract_id,
+            "send",
+            vec![alice, bob],
+            &provider,
+            &mut account,
+        )
+        .await;
 
-    println!("Contract invoked successfully with result {:?}", invoke_res);
+    match invoke_res {
+        Ok(res) => println!("Contract invoked successfully with result {:?}", res),
+        Err(e) => println!("Contract invocation failed as expected: {}", e),
+    }
     Ok(())
 }

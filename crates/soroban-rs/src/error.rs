@@ -9,6 +9,7 @@ pub enum SorobanHelperError {
     XdrEncodingFailed(String),
     InvalidArgument(String),
     TransactionBuildFailed(String),
+    Unauthorized(String),
 }
 
 impl fmt::Display for SorobanHelperError {
@@ -21,6 +22,7 @@ impl fmt::Display for SorobanHelperError {
             Self::XdrEncodingFailed(msg) => write!(f, "XDR encoding failed: {}", msg),
             Self::InvalidArgument(msg) => write!(f, "Invalid argument: {}", msg),
             Self::TransactionBuildFailed(msg) => write!(f, "Transaction build failed: {}", msg),
+            Self::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
         }
     }
 }

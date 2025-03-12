@@ -28,7 +28,7 @@ impl Contract {
     pub async fn deploy(
         &self,
         provider: &Provider,
-        account: &Account,
+        account: &mut Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
         let sequence = account.get_sequence(provider).await?;
@@ -69,7 +69,7 @@ impl Contract {
     async fn upload_wasm(
         &self,
         provider: &Provider,
-        account: &Account,
+        account: &mut Account,
         sequence_num: i64,
     ) -> Result<(), SorobanHelperError> {
         let upload_operation = Operations::upload_wasm(self.wasm_bytes.clone())?;
@@ -99,7 +99,7 @@ impl Contract {
         function_name: &str,
         args: Vec<ScVal>,
         provider: &Provider,
-        account: &Account,
+        account: &mut Account,
     ) -> Result<ScVal, SorobanHelperError> {
         let sequence = account.get_sequence(provider).await?;
         let account_id = account.account_id();

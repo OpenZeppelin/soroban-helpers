@@ -73,10 +73,10 @@ impl TransactionBuilder {
     pub async fn simulate_and_build(
         self,
         provider: &Provider,
-        account: &Account,
+        account: &mut Account,
     ) -> Result<Transaction, SorobanHelperError> {
         let tx = self.build()?;
-        let tx_envelope = account.sign_transaction(&tx, provider.network_id())?;
+        let tx_envelope = account.sign_transaction_unsafe(&tx, provider.network_id())?;
         let simulation = provider.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
