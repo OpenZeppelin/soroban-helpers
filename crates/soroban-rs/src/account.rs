@@ -1,43 +1,238 @@
-use crate::{Provider, Signer, error::SorobanHelperError};
+use crate::{Provider, Signer, TransactionBuilder, error::SorobanHelperError};
+use stellar_strkey::ed25519::PublicKey;
+use stellar_xdr::curr::{
+    AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SequenceNumber,
+    SetOptionsOp, Signer as XdrSigner, SignerKey, Transaction, TransactionEnvelope,
+    TransactionV1Envelope, VecM,
+};
 
-pub struct AccountManager<'a> {
-    provider: &'a Provider,
-    signer: &'a Signer,
+pub enum Account {
+    KeyPair(SingleAccount),
+    Multisig(MultisigAccount),
 }
 
-impl<'a> AccountManager<'a> {
-    pub fn new(provider: &'a Provider, signer: &'a Signer) -> Self {
-        Self { provider, signer }
+pub struct SingleAccount {
+    pub account_id: AccountId,
+    pub signers: Vec<Signer>,
+}
+
+pub struct MultisigAccount {
+    pub account_id: AccountId,
+    pub signers: Vec<Signer>,
+}
+
+pub struct AccountConfig {
+    pub master_weight: Option<u32>,
+    pub low_threshold: Option<u32>,
+    pub med_threshold: Option<u32>,
+    pub high_threshold: Option<u32>,
+    pub signers: Vec<(PublicKey, u32)>,
+}
+
+impl Default for AccountConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AccountConfig {
+    pub fn new() -> Self {
+        Self {
+            master_weight: None,
+            low_threshold: None,
+            med_threshold: None,
+            high_threshold: None,
+            signers: Vec::new(),
+        }
     }
 
-    pub async fn get_sequence(&self) -> Result<i64, SorobanHelperError> {
-        let account_id = self.signer.account_id().clone();
-        let account_details = self.provider.get_account(&account_id.to_string()).await?;
-        Ok(account_details.seq_num.into())
+    pub fn with_master_weight(mut self, weight: u32) -> Self {
+        self.master_weight = Some(weight);
+        self
     }
 
-    pub fn account_id(&self) -> stellar_xdr::curr::AccountId {
-        self.signer.account_id()
+    pub fn with_thresholds(mut self, low: u32, med: u32, high: u32) -> Self {
+        self.low_threshold = Some(low);
+        self.med_threshold = Some(med);
+        self.high_threshold = Some(high);
+        self
+    }
+
+    pub fn add_signer(mut self, key: PublicKey, weight: u32) -> Self {
+        self.signers.push((key, weight));
+        self
+    }
+}
+
+impl Account {
+    pub fn single(signer: Signer) -> Self {
+        Self::KeyPair(SingleAccount {
+            account_id: signer.account_id(),
+            signers: vec![signer],
+        })
+    }
+
+    pub fn multisig(account_id: AccountId, signers: Vec<Signer>) -> Self {
+        Self::Multisig(MultisigAccount {
+            account_id,
+            signers,
+        })
+    }
+
+    pub async fn load(&self, provider: &Provider) -> Result<AccountEntry, SorobanHelperError> {
+        match self {
+            Self::KeyPair(account) => provider.get_account(&account.account_id.to_string()).await,
+            Self::Multisig(account) => provider.get_account(&account.account_id.to_string()).await,
+        }
+    }
+
+    pub fn account_id(&self) -> AccountId {
+        match self {
+            Self::KeyPair(account) => account.account_id.clone(),
+            Self::Multisig(account) => account.account_id.clone(),
+        }
+    }
+
+    pub async fn get_sequence(
+        &self,
+        provider: &Provider,
+    ) -> Result<SequenceNumber, SorobanHelperError> {
+        let entry = self.load(provider).await?;
+        Ok(entry.seq_num)
     }
 
     pub fn sign_transaction(
         &self,
-        tx: &stellar_xdr::curr::Transaction,
-    ) -> Result<stellar_xdr::curr::TransactionEnvelope, SorobanHelperError> {
-        self.signer.sign_transaction(tx, self.provider.network_id())
+        tx: &Transaction,
+        network_id: &Hash,
+    ) -> Result<TransactionEnvelope, SorobanHelperError> {
+        let signers = match self {
+            Self::KeyPair(account) => &account.signers,
+            Self::Multisig(account) => &account.signers,
+        };
+        let signatures: VecM<DecoratedSignature, 20> = signers
+            .iter()
+            .map(|signer| signer.sign_transaction(tx, network_id))
+            .collect::<Result<Vec<DecoratedSignature>, SorobanHelperError>>()
+            .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?
+            .try_into()
+            .map_err(|_| {
+                SorobanHelperError::XdrEncodingFailed(
+                    "Failed to convert signatures to XDR".to_string(),
+                )
+            })?;
+        Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
+            tx: tx.clone(),
+            signatures,
+        }))
     }
 
-    pub async fn send_transaction(
+    pub fn sign_transaction_envelope(
         &self,
-        tx_envelope: &stellar_xdr::curr::TransactionEnvelope,
-    ) -> Result<stellar_rpc_client::GetTransactionResponse, SorobanHelperError> {
-        self.provider.send_transaction(tx_envelope).await
+        tx: &TransactionEnvelope,
+        network_id: &Hash,
+    ) -> Result<TransactionEnvelope, SorobanHelperError> {
+        let signers = match self {
+            Self::KeyPair(account) => &account.signers,
+            Self::Multisig(account) => &account.signers,
+        };
+
+        let tx = match tx {
+            TransactionEnvelope::Tx(tx) => tx,
+            _ => {
+                return Err(SorobanHelperError::XdrEncodingFailed(
+                    "Invalid transaction envelope".to_string(),
+                ));
+            }
+        };
+        let prev_signatures = tx.signatures.clone();
+        let new_signatures: VecM<DecoratedSignature, 20> = signers
+            .iter()
+            .map(|signer| signer.sign_transaction(&tx.tx, network_id))
+            .collect::<Result<Vec<DecoratedSignature>, SorobanHelperError>>()
+            .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?
+            .try_into()
+            .map_err(|_| {
+                SorobanHelperError::XdrEncodingFailed(
+                    "Failed to convert signatures to XDR".to_string(),
+                )
+            })?;
+
+        // Convert VecM to Vec, combine with previous signatures, and convert back to VecM
+        let mut all_signatures: Vec<DecoratedSignature> = prev_signatures.to_vec();
+        all_signatures.extend(new_signatures.to_vec());
+
+        let signatures: VecM<DecoratedSignature, 20> = all_signatures.try_into().map_err(|_| {
+            SorobanHelperError::XdrEncodingFailed("Too many signatures for XDR vector".to_string())
+        })?;
+
+        Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
+            tx: tx.tx.clone(),
+            signatures,
+        }))
     }
 
-    pub async fn simulate_transaction(
+    pub async fn configure(
         &self,
-        tx_envelope: &stellar_xdr::curr::TransactionEnvelope,
-    ) -> Result<stellar_rpc_client::SimulateTransactionResponse, SorobanHelperError> {
-        self.provider.simulate_transaction(tx_envelope).await
+        provider: &Provider,
+        config: AccountConfig,
+    ) -> Result<TransactionEnvelope, SorobanHelperError> {
+        let account_entry = self.load(provider).await?;
+        let sequence_num = account_entry.seq_num.0;
+
+        let mut tx = TransactionBuilder::new(self.account_id(), sequence_num + 1);
+
+        // Add set options operation for each configuration item
+        if !config.signers.is_empty() {
+            for (public_key, weight) in config.signers {
+                let signer_key = SignerKey::Ed25519(public_key.0.into());
+                tx = tx.add_operation(Operation {
+                    source_account: None,
+                    body: OperationBody::SetOptions(SetOptionsOp {
+                        inflation_dest: None,
+                        clear_flags: None,
+                        set_flags: None,
+                        master_weight: None,
+                        low_threshold: None,
+                        med_threshold: None,
+                        high_threshold: None,
+                        home_domain: None,
+                        signer: Some(XdrSigner {
+                            key: signer_key,
+                            weight,
+                        }),
+                    }),
+                });
+            }
+        }
+
+        // Add thresholds if specified
+        if config.master_weight.is_some()
+            || config.low_threshold.is_some()
+            || config.med_threshold.is_some()
+            || config.high_threshold.is_some()
+        {
+            tx = tx.add_operation(Operation {
+                source_account: None,
+                body: OperationBody::SetOptions(SetOptionsOp {
+                    inflation_dest: None,
+                    clear_flags: None,
+                    set_flags: None,
+                    master_weight: config.master_weight,
+                    low_threshold: config.low_threshold,
+                    med_threshold: config.med_threshold,
+                    high_threshold: config.high_threshold,
+                    home_domain: None,
+                    signer: None,
+                }),
+            });
+        }
+
+        let tx = tx
+            .simulate_and_build(provider, self)
+            .await
+            .map_err(|e| SorobanHelperError::TransactionBuildFailed(e.to_string()))?;
+
+        self.sign_transaction(&tx, provider.network_id())
     }
 }

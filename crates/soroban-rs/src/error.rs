@@ -8,6 +8,7 @@ pub enum SorobanHelperError {
     SigningFailed(String),
     XdrEncodingFailed(String),
     InvalidArgument(String),
+    TransactionBuildFailed(String),
 }
 
 impl fmt::Display for SorobanHelperError {
@@ -19,6 +20,7 @@ impl fmt::Display for SorobanHelperError {
             Self::SigningFailed(msg) => write!(f, "Signing operation failed: {}", msg),
             Self::XdrEncodingFailed(msg) => write!(f, "XDR encoding failed: {}", msg),
             Self::InvalidArgument(msg) => write!(f, "Invalid argument: {}", msg),
+            Self::TransactionBuildFailed(msg) => write!(f, "Transaction build failed: {}", msg),
         }
     }
 }

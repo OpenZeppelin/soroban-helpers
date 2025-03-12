@@ -7,6 +7,10 @@ edition.workspace = true
 name = "deploy_and_invoke"
 path = "examples/deploy_and_invoke.rs"
 
+[[example]]
+name = "deploy_multisig"
+path = "examples/create_multisig.rs"
+
 [dependencies]
 tokio.workspace = true
 stellar-rpc-client.workspace = true

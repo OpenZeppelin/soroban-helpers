@@ -1,13 +1,10 @@
 use crate::{
-    Provider, Signer, account::AccountManager, crypto, error::SorobanHelperError, parser,
+    Account, Provider, crypto, error::SorobanHelperError, operation::Operations, parser,
     transaction::TransactionBuilder,
 };
 use std::fs;
 use stellar_xdr::curr::{
-    ContractExecutable, ContractIdPreimage, ContractIdPreimageFromAddress, CreateContractArgs,
-    CreateContractArgsV2, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
-    OperationBody, ScAddress, ScSymbol, ScVal, SorobanAuthorizationEntry,
-    SorobanAuthorizedFunction, SorobanAuthorizedInvocation, SorobanCredentials, VecM,
+    ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
 };
 
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
@@ -31,17 +28,15 @@ impl Contract {
     pub async fn deploy(
         &self,
         provider: &Provider,
-        signer: &Signer,
+        account: &Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let sequence = account_manager.get_sequence().await?;
-        let account_id = account_manager.account_id().clone();
+        let sequence = account.get_sequence(provider).await?;
+        let account_id = account.account_id();
 
-        self.upload_wasm(provider, signer, sequence + 1).await?;
+        self.upload_wasm(provider, account, sequence.0 + 1).await?;
 
         let salt = crypto::generate_salt();
-
         let contract_id = crypto::calculate_contract_id(&account_id, &salt, provider.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
@@ -51,82 +46,22 @@ impl Contract {
 
         let has_constructor =
             String::from_utf8_lossy(&self.wasm_bytes).contains(CONSTRUCTOR_FUNCTION_NAME);
+        let create_operation = Operations::create_contract(
+            contract_id_preimage,
+            self.wasm_hash.clone(),
+            if has_constructor {
+                constructor_args
+            } else {
+                None
+            },
+        )?;
 
-        let create_operation = if has_constructor && constructor_args.is_some() {
-            // Use V2 with constructor args
-            let args: VecM<ScVal, { u32::MAX }> = constructor_args
-                .unwrap_or_default()
-                .try_into()
-                .map_err(|e| {
-                SorobanHelperError::XdrEncodingFailed(format!(
-                    "Failed to encode constructor args: {}",
-                    e
-                ))
-            })?;
+        let builder =
+            TransactionBuilder::new(account_id, sequence.0 + 2).add_operation(create_operation);
 
-            let create_args = CreateContractArgsV2 {
-                contract_id_preimage: contract_id_preimage.clone(),
-                executable: ContractExecutable::Wasm(self.wasm_hash.clone()),
-                constructor_args: args,
-            };
-
-            let auth_entry = SorobanAuthorizationEntry {
-                credentials: SorobanCredentials::SourceAccount,
-                root_invocation: SorobanAuthorizedInvocation {
-                    function: SorobanAuthorizedFunction::CreateContractV2HostFn(
-                        create_args.clone(),
-                    ),
-                    sub_invocations: VecM::default(),
-                },
-            };
-
-            Operation {
-                source_account: None,
-                body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into().map_err(|e| {
-                        SorobanHelperError::XdrEncodingFailed(format!(
-                            "Failed to encode auth entries: {}",
-                            e
-                        ))
-                    })?,
-                    host_function: HostFunction::CreateContractV2(create_args),
-                }),
-            }
-        } else {
-            let create_args = CreateContractArgs {
-                contract_id_preimage: contract_id_preimage.clone(),
-                executable: ContractExecutable::Wasm(self.wasm_hash.clone()),
-            };
-
-            let auth_entry = SorobanAuthorizationEntry {
-                credentials: SorobanCredentials::SourceAccount,
-                root_invocation: SorobanAuthorizedInvocation {
-                    function: SorobanAuthorizedFunction::CreateContractHostFn(create_args.clone()),
-                    sub_invocations: VecM::default(),
-                },
-            };
-
-            Operation {
-                source_account: None,
-                body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                    auth: vec![auth_entry].try_into().map_err(|e| {
-                        SorobanHelperError::XdrEncodingFailed(format!(
-                            "Failed to encode auth entries: {}",
-                            e
-                        ))
-                    })?,
-                    host_function: HostFunction::CreateContract(create_args),
-                }),
-            }
-        };
-
-        let mut builder = TransactionBuilder::new(account_id, sequence + 2);
-        builder.add_operation(create_operation);
-
-        let deploy_tx = builder.simulate_and_build(provider, signer).await?;
-
-        let tx_envelope = account_manager.sign_transaction(&deploy_tx)?;
-        account_manager.send_transaction(&tx_envelope).await?;
+        let deploy_tx = builder.simulate_and_build(provider, account).await?;
+        let tx_envelope = account.sign_transaction(&deploy_tx, provider.network_id())?;
+        provider.send_transaction(&tx_envelope).await?;
 
         Ok(contract_id)
     }
@@ -134,34 +69,18 @@ impl Contract {
     async fn upload_wasm(
         &self,
         provider: &Provider,
-        signer: &Signer,
-        sequence: i64,
+        account: &Account,
+        sequence_num: i64,
     ) -> Result<(), SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let account_id = account_manager.account_id().clone();
+        let upload_operation = Operations::upload_wasm(self.wasm_bytes.clone())?;
 
-        let upload_operation = Operation {
-            source_account: None,
-            body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                host_function: HostFunction::UploadContractWasm(
-                    self.wasm_bytes.clone().try_into().map_err(|e| {
-                        SorobanHelperError::XdrEncodingFailed(format!(
-                            "Failed to encode WASM bytes: {}",
-                            e
-                        ))
-                    })?,
-                ),
-                auth: VecM::default(),
-            }),
-        };
+        let builder = TransactionBuilder::new(account.account_id(), sequence_num)
+            .add_operation(upload_operation);
 
-        let mut builder = TransactionBuilder::new(account_id, sequence);
-        builder.add_operation(upload_operation);
+        let upload_tx = builder.simulate_and_build(provider, account).await?;
+        let tx_envelope = account.sign_transaction(&upload_tx, provider.network_id())?;
 
-        let upload_tx = builder.simulate_and_build(provider, signer).await?;
-        let tx_envelope = account_manager.sign_transaction(&upload_tx)?;
-
-        match account_manager.send_transaction(&tx_envelope).await {
+        match provider.send_transaction(&tx_envelope).await {
             Ok(_) => Ok(()),
             Err(e) => {
                 // If it failed because the code already exists, that's fine
@@ -180,36 +99,19 @@ impl Contract {
         function_name: &str,
         args: Vec<ScVal>,
         provider: &Provider,
-        signer: &Signer,
+        account: &Account,
     ) -> Result<ScVal, SorobanHelperError> {
-        let account_manager = AccountManager::new(provider, signer);
-        let sequence = account_manager.get_sequence().await?;
-        let account_id = account_manager.account_id().clone();
+        let sequence = account.get_sequence(provider).await?;
+        let account_id = account.account_id();
 
-        let invoke_contract_args = InvokeContractArgs {
-            contract_address: ScAddress::Contract(Hash(contract_id.0)),
-            function_name: ScSymbol(function_name.try_into().map_err(|e| {
-                SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e))
-            })?),
-            args: args.try_into().map_err(|e| {
-                SorobanHelperError::XdrEncodingFailed(format!("Failed to encode arguments: {}", e))
-            })?,
-        };
+        let invoke_operation = Operations::invoke_contract(contract_id, function_name, args)?;
 
-        let invoke_operation = Operation {
-            source_account: None,
-            body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-                host_function: HostFunction::InvokeContract(invoke_contract_args),
-                auth: VecM::default(),
-            }),
-        };
+        let builder =
+            TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
-        let mut builder = TransactionBuilder::new(account_id, sequence + 1);
-        builder.add_operation(invoke_operation);
-
-        let invoke_tx = builder.simulate_and_build(provider, signer).await?;
-        let tx_envelope = account_manager.sign_transaction(&invoke_tx)?;
-        let result = account_manager.send_transaction(&tx_envelope).await?;
+        let invoke_tx = builder.simulate_and_build(provider, account).await?;
+        let tx_envelope = account.sign_transaction(&invoke_tx, provider.network_id())?;
+        let result = provider.send_transaction(&tx_envelope).await?;
 
         parser::parse_transaction_result(&result)
     }
