@@ -29,6 +29,12 @@ pub struct AccountConfig {
     pub signers: Vec<(PublicKey, u32)>,
 }
 
+impl Default for AccountConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AccountConfig {
     pub fn new() -> Self {
         Self {
@@ -59,7 +65,7 @@ impl AccountConfig {
 }
 
 impl Account {
-    pub fn account(signer: Signer) -> Self {
+    pub fn single(signer: Signer) -> Self {
         Self::KeyPair(SingleAccount {
             account_id: signer.account_id(),
             signers: vec![signer],
