@@ -1,11 +1,11 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, Contract, Env, EnvConfigs, Signer,
+    Account, Contract, ClientContractConfigs, Env, EnvConfigs, Signer,
     xdr::{ScAddress, ScVal},
 };
 use std::{env, path::Path};
-use stellar_strkey::ed25519::PrivateKey;
+use stellar_strkey::{ed25519::PrivateKey, Contract as ContractId};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,36 +20,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signing_key = SigningKey::from_bytes(&private_key.0);
 
     // Creates a new environment
-    let configs = EnvConfigs {
+    let env = Env::new(EnvConfigs {
         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
         network_passphrase: "Test SDF Network ; September 2015".to_string(),
-    };
-    let env = Env::new(configs)?;
+    })?;
 
     // Initializes a new account
     let mut account = Account::single(Signer::new(signing_key));
 
     // Sets the authorized calls for the account
-    // deployment consumes 2 calls (1 for upload wasm, 1 for create)
-    account.set_authorized_calls(3);
+    account.set_authorized_calls(1);
 
-    // Path to the contract wasm file
+    // Get the contract ID from env (this would be obtained from the deploy step)
+    let contract_id = ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
+
+    // Initialize contract with existing contract ID
+    let client_configs = ClientContractConfigs {
+        contract_id,
+        env: env.clone(),
+        account: account.clone(),
+    };
+
+    // Path to the contract wasm file (needed for function schemas)
     let contract_path = "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
-    let contract = Contract::new(contract_path, None)?;
-
-    // Deploys the contract
-    let deployed = contract.deploy(&env, &mut account, Some(vec![ScVal::U32(42)])).await?;
-
-    println!("Contract deployed successfully with ID: {:?}", deployed.contract_id());
+    let contract = Contract::new(contract_path, Some(client_configs))?;
 
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let invoke_res = deployed.invoke("send", vec![alice, bob]).await;
+    let invoke_res = contract.invoke("send", vec![alice, bob]).await;
 
     match invoke_res {
         Ok(res) => println!("Contract invoked successfully with result {:?}", res),
-        Err(e) => println!("Contract invocation failed as expected: {}", e),
+        Err(e) => println!("Contract invocation failed: {}", e),
     }
     Ok(())
 }

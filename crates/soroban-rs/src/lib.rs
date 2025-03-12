@@ -9,7 +9,7 @@ mod signer;
 mod transaction;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
-pub use contract::Contract;
+pub use contract::{Contract, ClientContractConfigs};
 pub use env::{Env, EnvConfigs};
 pub use parser::{ParseResult, Parser, ParserType};
 pub use signer::Signer;

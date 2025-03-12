@@ -6,31 +6,60 @@ use std::fs;
 use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
 };
+use stellar_strkey::Contract as ContractId;
 
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
+
+pub struct ClientContractConfigs {
+    pub contract_id: ContractId,
+    pub env: Env,
+    pub account: Account,
+}
+
+impl Clone for ClientContractConfigs {
+    fn clone(&self) -> Self {
+        Self {
+            contract_id: self.contract_id.clone(),
+            env: self.env.clone(),
+            account: self.account.clone(),
+        }
+    }
+}
 
 pub struct Contract {
     wasm_bytes: Vec<u8>,
     wasm_hash: Hash,
+    client_configs: Option<ClientContractConfigs>,
+}
+
+impl Clone for Contract {
+    fn clone(&self) -> Self {
+        Self {
+            wasm_bytes: self.wasm_bytes.clone(),
+            wasm_hash: self.wasm_hash.clone(),
+            client_configs: self.client_configs.clone(),
+        }
+    }
 }
 
 impl Contract {
-    pub fn new(wasm_path: &str) -> Result<Self, SorobanHelperError> {
+    pub fn new(wasm_path: &str, client_configs: Option<ClientContractConfigs>) -> Result<Self, SorobanHelperError> {
         let wasm_bytes = fs::read(wasm_path)?;
         let wasm_hash = crypto::sha256_hash(&wasm_bytes);
 
         Ok(Self {
             wasm_bytes,
             wasm_hash,
+            client_configs,
         })
     }
 
     pub async fn deploy(
-        &self,
+        mut self,
         env: &Env,
         account: &mut Account,
         constructor_args: Option<Vec<ScVal>>,
-    ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
+    ) -> Result<Self, SorobanHelperError> {
         let sequence = account.get_sequence(env).await?;
         let account_id = account.account_id();
 
@@ -63,7 +92,21 @@ impl Contract {
         let tx_envelope = account.sign_transaction(&deploy_tx, env.network_id())?;
         env.send_transaction(&tx_envelope).await?;
 
-        Ok(contract_id)
+        self.set_client_configs(ClientContractConfigs {
+            contract_id,
+            env: env.clone(),
+            account: account.clone(),
+        });
+
+        Ok(self)
+    }
+
+    fn set_client_configs(&mut self, client_configs: ClientContractConfigs) {
+        self.client_configs = Some(client_configs);
+    }
+
+    pub fn contract_id(&self) -> Option<ContractId> {
+        self.client_configs.as_ref().map(|c| c.contract_id)
     }
 
     async fn upload_wasm(
@@ -95,21 +138,27 @@ impl Contract {
 
     pub async fn invoke(
         &self,
-        contract_id: &stellar_strkey::Contract,
         function_name: &str,
         args: Vec<ScVal>,
-        env: &Env,
-        account: &mut Account,
     ) -> Result<ScVal, SorobanHelperError> {
-        let sequence = account.get_sequence(env).await?;
+        if self.client_configs.is_none() {
+            return Err(SorobanHelperError::ContractDeployedConfigsNotSet);
+        }
+
+        let client_configs = self.client_configs.as_ref().unwrap();
+        let contract_id = client_configs.contract_id;
+        let env = client_configs.env.clone();
+        let mut account = client_configs.account.clone();
+
+        let sequence = account.get_sequence(&env).await?;
         let account_id = account.account_id();
 
-        let invoke_operation = Operations::invoke_contract(contract_id, function_name, args)?;
+        let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
 
         let builder =
             TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
-        let invoke_tx = builder.simulate_and_build(env, account).await?;
+        let invoke_tx = builder.simulate_and_build(&env, &mut account).await?;
         let tx_envelope = account.sign_transaction(&invoke_tx, env.network_id())?;
         let result = env.send_transaction(&tx_envelope).await?;
 

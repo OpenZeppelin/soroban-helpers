@@ -13,6 +13,16 @@ pub struct Env {
     network_id: Hash,
 }
 
+impl Clone for Env {
+    fn clone(&self) -> Self {
+        Self {
+            rpc_client: self.rpc_client.clone(),
+            network_passphrase: self.network_passphrase.clone(),
+            network_id: self.network_id.clone(),
+        }
+    }
+}
+
 impl Env {
     pub fn new(configs: EnvConfigs) -> Result<Self, SorobanHelperError> {
         let rpc_client = Client::new(&configs.rpc_url).map_err(|e| {

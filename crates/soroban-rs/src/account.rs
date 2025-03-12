@@ -11,10 +11,39 @@ pub enum Account {
     Multisig(MultisigAccount),
 }
 
+impl Clone for Account {
+    fn clone(&self) -> Self {
+        match self {
+            Self::KeyPair(account) => Self::KeyPair(account.clone()),
+            Self::Multisig(account) => Self::Multisig(account.clone()),
+        }
+    }
+}
+
 pub struct SingleAccount {
     pub account_id: AccountId,
     pub signers: Vec<Signer>,
     pub authorized_calls: i16,
+}
+
+impl Clone for SingleAccount {
+    fn clone(&self) -> Self {
+        Self {
+            account_id: self.account_id.clone(),
+            signers: self.signers.clone(),
+            authorized_calls: self.authorized_calls,
+        }
+    }
+}
+
+impl Clone for MultisigAccount {
+    fn clone(&self) -> Self {
+        Self {
+            account_id: self.account_id.clone(),
+            signers: self.signers.clone(),
+            authorized_calls: self.authorized_calls,
+        }
+    }
 }
 
 pub struct MultisigAccount {
