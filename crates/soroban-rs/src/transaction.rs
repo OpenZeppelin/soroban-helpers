@@ -1,6 +1,6 @@
-use crate::{error::SorobanHelperError, Account, Provider};
+use crate::{Account, Provider, error::SorobanHelperError};
 use stellar_xdr::curr::{
-    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt, AccountId
+    AccountId, Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
 };
 
 pub const DEFAULT_TRANSACTION_FEES: u32 = 100;
@@ -80,9 +80,13 @@ impl TransactionBuilder {
         let simulation = provider.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
-            u32::try_from((tx.operations.len() as u64 * DEFAULT_TRANSACTION_FEES as u64) + simulation.min_resource_fee).map_err(
-                |_| SorobanHelperError::InvalidArgument("Transaction fee too high".to_string()),
-            )?,
+            u32::try_from(
+                (tx.operations.len() as u64 * DEFAULT_TRANSACTION_FEES as u64)
+                    + simulation.min_resource_fee,
+            )
+            .map_err(|_| {
+                SorobanHelperError::InvalidArgument("Transaction fee too high".to_string())
+            })?,
         );
 
         let mut tx = Transaction {

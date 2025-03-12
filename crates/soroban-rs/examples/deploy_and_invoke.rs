@@ -1,8 +1,11 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{xdr::{ScAddress, ScVal}, Account, Contract, Provider, ProviderConfigs, Signer, SingleAccount};
-use stellar_strkey::ed25519::PrivateKey;
+use soroban_rs::{
+    Account, Contract, Provider, ProviderConfigs, Signer, SingleAccount,
+    xdr::{ScAddress, ScVal},
+};
 use std::{env, path::Path};
+use stellar_strkey::ed25519::PrivateKey;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,9 +13,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let private_key_str =
         env::var("SOROBAN_PRIVATE_KEY_1").expect("SOROBAN_PRIVATE_KEY must be set in .env file");
-    let private_key = PrivateKey::from_string(&private_key_str)
-            .expect("Invalid private key");
-    let signing_key = SigningKey::from_bytes(&private_key.0); 
+    let private_key = PrivateKey::from_string(&private_key_str).expect("Invalid private key");
+    let signing_key = SigningKey::from_bytes(&private_key.0);
 
     let configs = ProviderConfigs {
         rpc_url: "https://soroban-testnet.stellar.org".to_string(),

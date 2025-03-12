@@ -1,9 +1,8 @@
-
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{Account, AccountConfig, Parser, ParserType, Provider, ProviderConfigs, Signer};
-use stellar_strkey::ed25519::PrivateKey;
 use std::{env, path::Path};
+use stellar_strkey::ed25519::PrivateKey;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,14 +10,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Load private keys from environment
     let private_key_1 = PrivateKey::from_string(
-        &env::var("SOROBAN_PRIVATE_KEY_1").expect("SOROBAN_PRIVATE_KEY_1 must be set in .env file")
-    ).expect("Invalid private key");
+        &env::var("SOROBAN_PRIVATE_KEY_1").expect("SOROBAN_PRIVATE_KEY_1 must be set in .env file"),
+    )
+    .expect("Invalid private key");
     let private_key_2 = PrivateKey::from_string(
-        &env::var("SOROBAN_PRIVATE_KEY_2").expect("SOROBAN_PRIVATE_KEY_2 must be set in .env file")
-    ).expect("Invalid private key");
+        &env::var("SOROBAN_PRIVATE_KEY_2").expect("SOROBAN_PRIVATE_KEY_2 must be set in .env file"),
+    )
+    .expect("Invalid private key");
     let private_key_3 = PrivateKey::from_string(
-        &env::var("SOROBAN_PRIVATE_KEY_3").expect("SOROBAN_PRIVATE_KEY_3 must be set in .env file")
-    ).expect("Invalid private key");
+        &env::var("SOROBAN_PRIVATE_KEY_3").expect("SOROBAN_PRIVATE_KEY_3 must be set in .env file"),
+    )
+    .expect("Invalid private key");
 
     // Create signers
     let signer_1 = Signer::new(SigningKey::from_bytes(&private_key_1.0));

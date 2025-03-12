@@ -83,6 +83,6 @@ impl Signer {
                 })?,
         );
 
-       Ok(DecoratedSignature { hint, signature })
+        Ok(DecoratedSignature { hint, signature })
     }
 }

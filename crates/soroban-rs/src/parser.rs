@@ -1,6 +1,9 @@
-use stellar_rpc_client::GetTransactionResponse;
-use stellar_xdr::curr::{AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScVal, TransactionMeta, TransactionResultResult};
 use crate::error::SorobanHelperError;
+use stellar_rpc_client::GetTransactionResponse;
+use stellar_xdr::curr::{
+    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScVal, TransactionMeta,
+    TransactionResultResult,
+};
 
 #[derive(Debug)]
 pub enum ParserType {
@@ -29,38 +32,42 @@ impl Parser {
         Self { parser_type }
     }
 
-    pub fn parse(&self, response: &GetTransactionResponse) -> Result<ParseResult, SorobanHelperError> {
+    pub fn parse(
+        &self,
+        response: &GetTransactionResponse,
+    ) -> Result<ParseResult, SorobanHelperError> {
         match self.parser_type {
             ParserType::AccountSetOptions => {
-                let success = response.result
+                let success = response
+                    .result
                     .as_ref()
                     .map(|r| matches!(&r.result, TransactionResultResult::TxSuccess(_)))
                     .unwrap_or(false);
 
-                let result = response.result_meta
-                    .as_ref()
-                    .and_then(|meta| match meta {
-                        TransactionMeta::V3(v3) => v3.operations.last()
-                            .and_then(|op| op.changes.0.iter().rev()
-                                .find_map(|change| match change {
-                                    LedgerEntryChange::Updated(entry) => {
-                                        if let LedgerEntryData::Account(account) = &entry.data {
-                                            Some(account.clone())
-                                        } else {
-                                            None
-                                        }
-                                    },
-                                    _ => None,
-                                })),
-                        _ => None,
-                    });
+                let result = response.result_meta.as_ref().and_then(|meta| match meta {
+                    TransactionMeta::V3(v3) => v3.operations.last().and_then(|op| {
+                        op.changes.0.iter().rev().find_map(|change| match change {
+                            LedgerEntryChange::Updated(entry) => {
+                                if let LedgerEntryData::Account(account) = &entry.data {
+                                    Some(account.clone())
+                                } else {
+                                    None
+                                }
+                            }
+                            _ => None,
+                        })
+                    }),
+                    _ => None,
+                });
 
-                Ok(ParseResult::AccountSetOptions(AccountSetOptionsResult { success, result }))
+                Ok(ParseResult::AccountSetOptions(AccountSetOptionsResult {
+                    success,
+                    result,
+                }))
             }
         }
     }
 }
-
 
 pub fn extract_return_value(meta: &TransactionMeta) -> Option<ScVal> {
     match meta {
