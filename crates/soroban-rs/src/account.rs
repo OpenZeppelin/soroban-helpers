@@ -1,4 +1,4 @@
-use crate::{Provider, Signer, TransactionBuilder, error::SorobanHelperError};
+use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
     AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SequenceNumber,
@@ -83,10 +83,10 @@ impl Account {
         })
     }
 
-    pub async fn load(&self, provider: &Provider) -> Result<AccountEntry, SorobanHelperError> {
+    pub async fn load(&self, env: &Env) -> Result<AccountEntry, SorobanHelperError> {
         match self {
-            Self::KeyPair(account) => provider.get_account(&account.account_id.to_string()).await,
-            Self::Multisig(account) => provider.get_account(&account.account_id.to_string()).await,
+            Self::KeyPair(account) => env.get_account(&account.account_id.to_string()).await,
+            Self::Multisig(account) => env.get_account(&account.account_id.to_string()).await,
         }
     }
 
@@ -104,11 +104,8 @@ impl Account {
         }
     }
 
-    pub async fn get_sequence(
-        &self,
-        provider: &Provider,
-    ) -> Result<SequenceNumber, SorobanHelperError> {
-        let entry = self.load(provider).await?;
+    pub async fn get_sequence(&self, env: &Env) -> Result<SequenceNumber, SorobanHelperError> {
+        let entry = self.load(env).await?;
         Ok(entry.seq_num)
     }
 
@@ -231,10 +228,10 @@ impl Account {
 
     pub async fn configure(
         &mut self,
-        provider: &Provider,
+        env: &Env,
         config: AccountConfig,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        let account_entry = self.load(provider).await?;
+        let account_entry = self.load(env).await?;
         let sequence_num = account_entry.seq_num.0;
 
         let mut tx = TransactionBuilder::new(self.account_id(), sequence_num + 1);
@@ -286,10 +283,10 @@ impl Account {
         }
 
         let tx = tx
-            .simulate_and_build(provider, self)
+            .simulate_and_build(env, self)
             .await
             .map_err(|e| SorobanHelperError::TransactionBuildFailed(e.to_string()))?;
 
-        self.sign_transaction(&tx, provider.network_id())
+        self.sign_transaction(&tx, env.network_id())
     }
 }

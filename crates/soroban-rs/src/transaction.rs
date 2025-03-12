@@ -1,4 +1,4 @@
-use crate::{Account, Provider, error::SorobanHelperError};
+use crate::{Account, Env, error::SorobanHelperError};
 use stellar_xdr::curr::{
     AccountId, Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
 };
@@ -72,12 +72,12 @@ impl TransactionBuilder {
 
     pub async fn simulate_and_build(
         self,
-        provider: &Provider,
+        env: &Env,
         account: &mut Account,
     ) -> Result<Transaction, SorobanHelperError> {
         let tx = self.build()?;
-        let tx_envelope = account.sign_transaction_unsafe(&tx, provider.network_id())?;
-        let simulation = provider.simulate_transaction(&tx_envelope).await?;
+        let tx_envelope = account.sign_transaction_unsafe(&tx, env.network_id())?;
+        let simulation = env.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
             u32::try_from(

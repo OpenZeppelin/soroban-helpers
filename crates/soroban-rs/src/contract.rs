@@ -1,5 +1,5 @@
 use crate::{
-    Account, Provider, crypto, error::SorobanHelperError, operation::Operations, parser,
+    Account, Env, crypto, error::SorobanHelperError, operation::Operations, parser,
     transaction::TransactionBuilder,
 };
 use std::fs;
@@ -27,17 +27,17 @@ impl Contract {
 
     pub async fn deploy(
         &self,
-        provider: &Provider,
+        env: &Env,
         account: &mut Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
-        let sequence = account.get_sequence(provider).await?;
+        let sequence = account.get_sequence(env).await?;
         let account_id = account.account_id();
 
-        self.upload_wasm(provider, account, sequence.0 + 1).await?;
+        self.upload_wasm(env, account, sequence.0 + 1).await?;
 
         let salt = crypto::generate_salt();
-        let contract_id = crypto::calculate_contract_id(&account_id, &salt, provider.network_id())?;
+        let contract_id = crypto::calculate_contract_id(&account_id, &salt, env.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account_id.clone()),
@@ -59,16 +59,16 @@ impl Contract {
         let builder =
             TransactionBuilder::new(account_id, sequence.0 + 2).add_operation(create_operation);
 
-        let deploy_tx = builder.simulate_and_build(provider, account).await?;
-        let tx_envelope = account.sign_transaction(&deploy_tx, provider.network_id())?;
-        provider.send_transaction(&tx_envelope).await?;
+        let deploy_tx = builder.simulate_and_build(env, account).await?;
+        let tx_envelope = account.sign_transaction(&deploy_tx, env.network_id())?;
+        env.send_transaction(&tx_envelope).await?;
 
         Ok(contract_id)
     }
 
     async fn upload_wasm(
         &self,
-        provider: &Provider,
+        env: &Env,
         account: &mut Account,
         sequence_num: i64,
     ) -> Result<(), SorobanHelperError> {
@@ -77,10 +77,10 @@ impl Contract {
         let builder = TransactionBuilder::new(account.account_id(), sequence_num)
             .add_operation(upload_operation);
 
-        let upload_tx = builder.simulate_and_build(provider, account).await?;
-        let tx_envelope = account.sign_transaction(&upload_tx, provider.network_id())?;
+        let upload_tx = builder.simulate_and_build(env, account).await?;
+        let tx_envelope = account.sign_transaction(&upload_tx, env.network_id())?;
 
-        match provider.send_transaction(&tx_envelope).await {
+        match env.send_transaction(&tx_envelope).await {
             Ok(_) => Ok(()),
             Err(e) => {
                 // If it failed because the code already exists, that's fine
@@ -98,10 +98,10 @@ impl Contract {
         contract_id: &stellar_strkey::Contract,
         function_name: &str,
         args: Vec<ScVal>,
-        provider: &Provider,
+        env: &Env,
         account: &mut Account,
     ) -> Result<ScVal, SorobanHelperError> {
-        let sequence = account.get_sequence(provider).await?;
+        let sequence = account.get_sequence(env).await?;
         let account_id = account.account_id();
 
         let invoke_operation = Operations::invoke_contract(contract_id, function_name, args)?;
@@ -109,9 +109,9 @@ impl Contract {
         let builder =
             TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
-        let invoke_tx = builder.simulate_and_build(provider, account).await?;
-        let tx_envelope = account.sign_transaction(&invoke_tx, provider.network_id())?;
-        let result = provider.send_transaction(&tx_envelope).await?;
+        let invoke_tx = builder.simulate_and_build(env, account).await?;
+        let tx_envelope = account.sign_transaction(&invoke_tx, env.network_id())?;
+        let result = env.send_transaction(&tx_envelope).await?;
 
         parser::parse_transaction_result(&result)
     }
