@@ -56,8 +56,8 @@ impl Contract {
             },
         )?;
 
-        let builder = TransactionBuilder::new(account_id, sequence.0 + 2)
-            .add_operation(create_operation);
+        let builder =
+            TransactionBuilder::new(account_id, sequence.0 + 2).add_operation(create_operation);
 
         let deploy_tx = builder.simulate_and_build(provider, account).await?;
         let tx_envelope = account.sign_transaction(&deploy_tx, provider.network_id())?;
@@ -106,8 +106,8 @@ impl Contract {
 
         let invoke_operation = Operations::invoke_contract(contract_id, function_name, args)?;
 
-        let builder = TransactionBuilder::new(account_id, sequence.0 + 1)
-            .add_operation(invoke_operation);
+        let builder =
+            TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
         let invoke_tx = builder.simulate_and_build(provider, account).await?;
         let tx_envelope = account.sign_transaction(&invoke_tx, provider.network_id())?;
