@@ -14,11 +14,13 @@ pub enum Account {
 pub struct SingleAccount {
     pub account_id: AccountId,
     pub signers: Vec<Signer>,
+    pub authorized_calls: i16,
 }
 
 pub struct MultisigAccount {
     pub account_id: AccountId,
     pub signers: Vec<Signer>,
+    pub authorized_calls: i16,
 }
 
 pub struct AccountConfig {
@@ -69,6 +71,7 @@ impl Account {
         Self::KeyPair(SingleAccount {
             account_id: signer.account_id(),
             signers: vec![signer],
+            authorized_calls: i16::MAX,
         })
     }
 
@@ -76,6 +79,7 @@ impl Account {
         Self::Multisig(MultisigAccount {
             account_id,
             signers,
+            authorized_calls: i16::MAX,
         })
     }
 
@@ -93,6 +97,13 @@ impl Account {
         }
     }
 
+    pub fn set_authorized_calls(&mut self, authorized_calls: i16) {
+        match self {
+            Self::KeyPair(account) => account.authorized_calls = authorized_calls,
+            Self::Multisig(account) => account.authorized_calls = authorized_calls,
+        }
+    }
+
     pub async fn get_sequence(
         &self,
         provider: &Provider,
@@ -101,8 +112,8 @@ impl Account {
         Ok(entry.seq_num)
     }
 
-    pub fn sign_transaction(
-        &self,
+    pub fn sign_transaction_unsafe(
+        &mut self,
         tx: &Transaction,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
@@ -110,6 +121,7 @@ impl Account {
             Self::KeyPair(account) => &account.signers,
             Self::Multisig(account) => &account.signers,
         };
+
         let signatures: VecM<DecoratedSignature, 20> = signers
             .iter()
             .map(|signer| signer.sign_transaction(tx, network_id))
@@ -121,6 +133,43 @@ impl Account {
                     "Failed to convert signatures to XDR".to_string(),
                 )
             })?;
+
+        Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
+            tx: tx.clone(),
+            signatures,
+        }))
+    }
+
+    pub fn sign_transaction(
+        &mut self,
+        tx: &Transaction,
+        network_id: &Hash,
+    ) -> Result<TransactionEnvelope, SorobanHelperError> {
+        let (signers, authorized_calls) = match self {
+            Self::KeyPair(account) => (&account.signers, account.authorized_calls),
+            Self::Multisig(account) => (&account.signers, account.authorized_calls),
+        };
+
+        if authorized_calls < 1 {
+            return Err(SorobanHelperError::Unauthorized(
+                "Account has reached the max number of authorized calls".to_string(),
+            ));
+        }
+
+        let signatures: VecM<DecoratedSignature, 20> = signers
+            .iter()
+            .map(|signer| signer.sign_transaction(tx, network_id))
+            .collect::<Result<Vec<DecoratedSignature>, SorobanHelperError>>()
+            .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?
+            .try_into()
+            .map_err(|_| {
+                SorobanHelperError::XdrEncodingFailed(
+                    "Failed to convert signatures to XDR".to_string(),
+                )
+            })?;
+
+        self.set_authorized_calls(authorized_calls - 1);
+
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx.clone(),
             signatures,
@@ -128,14 +177,20 @@ impl Account {
     }
 
     pub fn sign_transaction_envelope(
-        &self,
+        &mut self,
         tx: &TransactionEnvelope,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        let signers = match self {
-            Self::KeyPair(account) => &account.signers,
-            Self::Multisig(account) => &account.signers,
+        let (signers, authorized_calls) = match self {
+            Self::KeyPair(account) => (&account.signers, account.authorized_calls),
+            Self::Multisig(account) => (&account.signers, account.authorized_calls),
         };
+
+        if authorized_calls < 1 {
+            return Err(SorobanHelperError::Unauthorized(
+                "Account has reached the max number of authorized calls".to_string(),
+            ));
+        }
 
         let tx = match tx {
             TransactionEnvelope::Tx(tx) => tx,
@@ -166,6 +221,8 @@ impl Account {
             SorobanHelperError::XdrEncodingFailed("Too many signatures for XDR vector".to_string())
         })?;
 
+        self.set_authorized_calls(authorized_calls - 1);
+
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx.tx.clone(),
             signatures,
@@ -173,7 +230,7 @@ impl Account {
     }
 
     pub async fn configure(
-        &self,
+        &mut self,
         provider: &Provider,
         config: AccountConfig,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
