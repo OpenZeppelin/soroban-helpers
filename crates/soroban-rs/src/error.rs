@@ -10,6 +10,7 @@ pub enum SorobanHelperError {
     InvalidArgument(String),
     TransactionBuildFailed(String),
     Unauthorized(String),
+    ContractDeployedConfigsNotSet,
 }
 
 impl fmt::Display for SorobanHelperError {
@@ -23,6 +24,7 @@ impl fmt::Display for SorobanHelperError {
             Self::InvalidArgument(msg) => write!(f, "Invalid argument: {}", msg),
             Self::TransactionBuildFailed(msg) => write!(f, "Transaction build failed: {}", msg),
             Self::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
+            Self::ContractDeployedConfigsNotSet => write!(f, "Contract deployed configs not set"),
         }
     }
 }

@@ -1,6 +1,6 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, AccountConfig, Parser, ParserType, Provider, ProviderConfigs, Signer};
+use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Parser, ParserType, Signer};
 use std::{env, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut target_account = Account::single(signer_3.clone());
 
     // Setup provider
-    let provider = Provider::new(ProviderConfigs {
+    let env = Env::new(EnvConfigs {
         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
         network_passphrase: "Test SDF Network ; September 2015".to_string(),
     })?;
@@ -44,10 +44,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_signer(signer_2.public_key(), 1);
 
     // Apply configuration
-    let tx_envelope = target_account.configure(&provider, config).await?;
+    let tx_envelope = target_account.configure(&env, config).await?;
 
     // Send transaction
-    let response = provider
+    let response = env
         .send_transaction(&tx_envelope)
         .await
         .expect("Failed to send transaction");
