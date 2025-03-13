@@ -34,13 +34,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     account.set_authorized_calls(3);
 
     // Path to the contract wasm file
-    let contract_path = "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
+    let contract_path =
+        "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
     let contract = Contract::new(contract_path, None)?;
 
     // Deploys the contract
-    let deployed = contract.deploy(&env, &mut account, Some(vec![ScVal::U32(42)])).await?;
+    let deployed = contract
+        .deploy(&env, &mut account, Some(vec![ScVal::U32(42)]))
+        .await?;
 
-    println!("Contract deployed successfully with ID: {:?}", deployed.contract_id());
+    println!(
+        "Contract deployed successfully with ID: {:?}",
+        deployed.contract_id()
+    );
 
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));

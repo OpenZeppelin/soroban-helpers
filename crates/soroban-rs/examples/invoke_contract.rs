@@ -1,11 +1,11 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, Contract, ClientContractConfigs, Env, EnvConfigs, Signer,
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, Signer,
     xdr::{ScAddress, ScVal},
 };
 use std::{env, path::Path};
-use stellar_strkey::{ed25519::PrivateKey, Contract as ContractId};
+use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,7 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     account.set_authorized_calls(1);
 
     // Get the contract ID from env (this would be obtained from the deploy step)
-    let contract_id = ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
+    let contract_id =
+        ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
 
     // Initialize contract with existing contract ID
     let client_configs = ClientContractConfigs {
@@ -42,7 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Path to the contract wasm file (needed for function schemas)
-    let contract_path = "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
+    let contract_path =
+        "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
     let contract = Contract::new(contract_path, Some(client_configs))?;
 
     // Calls send function in contract from Alice and Bob

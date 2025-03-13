@@ -3,10 +3,10 @@ use crate::{
     transaction::TransactionBuilder,
 };
 use std::fs;
+use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
 };
-use stellar_strkey::Contract as ContractId;
 
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
 
@@ -19,7 +19,7 @@ pub struct ClientContractConfigs {
 impl Clone for ClientContractConfigs {
     fn clone(&self) -> Self {
         Self {
-            contract_id: self.contract_id.clone(),
+            contract_id: self.contract_id,
             env: self.env.clone(),
             account: self.account.clone(),
         }
@@ -43,7 +43,10 @@ impl Clone for Contract {
 }
 
 impl Contract {
-    pub fn new(wasm_path: &str, client_configs: Option<ClientContractConfigs>) -> Result<Self, SorobanHelperError> {
+    pub fn new(
+        wasm_path: &str,
+        client_configs: Option<ClientContractConfigs>,
+    ) -> Result<Self, SorobanHelperError> {
         let wasm_bytes = fs::read(wasm_path)?;
         let wasm_hash = crypto::sha256_hash(&wasm_bytes);
 
