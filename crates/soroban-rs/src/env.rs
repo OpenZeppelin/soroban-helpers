@@ -9,18 +9,10 @@ pub struct EnvConfigs {
     pub network_passphrase: String,
 }
 
+#[derive(Clone)]
 pub struct Env {
     rpc_client: Client,
     configs: EnvConfigs,
-}
-
-impl Clone for Env {
-    fn clone(&self) -> Self {
-        Self {
-            rpc_client: self.rpc_client.clone(),
-            configs: self.configs.clone(),
-        }
-    }
 }
 
 impl Env {

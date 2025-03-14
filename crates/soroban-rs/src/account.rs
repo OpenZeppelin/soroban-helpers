@@ -1,10 +1,62 @@
 use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SequenceNumber,
+    AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody,
     SetOptionsOp, Signer as XdrSigner, SignerKey, Transaction, TransactionEnvelope,
     TransactionV1Envelope, VecM,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AccountSequence(i64);
+
+impl AccountSequence {
+    pub fn new(val: i64) -> Self {
+        AccountSequence(val)
+    }
+
+    /// Returns a new SequenceNumber incremented by one.
+    pub fn next(&self) -> Self {
+        AccountSequence(self.0 + 1)
+    }
+
+    /// Consumes self and returns the next SequenceNumber.
+    pub fn increment(self) -> Self {
+        self.next()
+    }
+
+    /// Returns the raw i64 value.
+    pub fn value(self) -> i64 {
+        self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct AuthorizedCalls(u16);
+
+impl AuthorizedCalls {
+    pub fn new(calls: u16) -> Self {
+        AuthorizedCalls(calls)
+    }
+
+    pub fn can_call(&self) -> bool {
+        self.0 > 0
+    }
+
+    pub fn try_decrement(&mut self) -> Result<(), SorobanHelperError> {
+        if self.can_call() {
+            self.0 -= 1;
+            Ok(())
+        } else {
+            Err(SorobanHelperError::Unauthorized(
+                "Account has reached the max number of authorized calls".to_string(),
+            ))
+        }
+    }
+
+    pub fn value(&self) -> u16 {
+        self.0
+    }
+}
 
 /// Account configuration options.
 pub struct AccountConfig {
@@ -70,34 +122,6 @@ pub enum Account {
     Multisig(MultisigAccount),
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct AuthorizedCalls(u16);
-
-impl AuthorizedCalls {
-    pub fn new(calls: u16) -> Self {
-        AuthorizedCalls(calls)
-    }
-
-    pub fn can_call(&self) -> bool {
-        self.0 > 0
-    }
-
-    pub fn try_decrement(&mut self) -> Result<(), SorobanHelperError> {
-        if self.can_call() {
-            self.0 -= 1;
-            Ok(())
-        } else {
-            Err(SorobanHelperError::Unauthorized(
-                "Account has reached the max number of authorized calls".to_string(),
-            ))
-        }
-    }
-
-    pub fn value(&self) -> u16 {
-        self.0
-    }
-}
-
 impl Account {
     pub fn single(signer: Signer) -> Self {
         Self::KeyPair(SingleAccount {
@@ -124,6 +148,17 @@ impl Account {
             Self::KeyPair(account) => account.account_id.clone(),
             Self::Multisig(account) => account.account_id.clone(),
         }
+    }
+
+    pub async fn get_sequence(&self, env: &Env) -> Result<AccountSequence, SorobanHelperError> {
+        let entry = self.load(env).await?;
+        Ok(AccountSequence::new(entry.seq_num.0))
+    }
+    
+    /// Retrieves the next available sequence number.
+    pub async fn next_sequence(&self, env: &Env) -> Result<AccountSequence, SorobanHelperError> {
+        let current = self.get_sequence(env).await?;
+        Ok(current.next())
     }
 
     fn signers(&self) -> &[Signer] {
@@ -239,22 +274,13 @@ impl Account {
         }))
     }
 
-    /// Retrieves the current sequence number from the network.
-    pub async fn get_sequence(&self, env: &Env) -> Result<SequenceNumber, SorobanHelperError> {
-        let entry = self.load(env).await?;
-        Ok(entry.seq_num)
-    }
-
     /// Configures the account by building and signing a transaction that sets options.
     pub async fn configure(
-        &mut self,
+        mut self,
         env: &Env,
         config: AccountConfig,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        let account_entry = self.load(env).await?;
-        let sequence_num = account_entry.seq_num.0;
-
-        let mut tx = TransactionBuilder::new(self.account_id(), sequence_num + 1);
+        let mut tx = TransactionBuilder::new(&self, &env);
 
         // Add set options operation for each signer configuration.
         for (public_key, weight) in config.signers {
@@ -298,7 +324,7 @@ impl Account {
         }
 
         let tx = tx
-            .simulate_and_build(env, self)
+            .simulate_and_build(env, &self)
             .await
             .map_err(|e| SorobanHelperError::TransactionBuildFailed(e.to_string()))?;
 

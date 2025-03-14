@@ -1,42 +1,35 @@
 use crate::{Account, Env, error::SorobanHelperError};
 use stellar_xdr::curr::{
-    AccountId, Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
+    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
 };
 
 pub const DEFAULT_TRANSACTION_FEES: u32 = 100;
 
+#[derive(Clone)]
 pub struct TransactionBuilder {
     pub fee: u32,
-    pub source_account: AccountId,
-    pub sequence: i64,
+    pub source_account: Account,
     pub operations: Vec<Operation>,
     pub memo: Memo,
     pub preconditions: Preconditions,
-}
-
-impl Clone for TransactionBuilder {
-    fn clone(&self) -> Self {
-        Self {
-            fee: self.fee,
-            source_account: self.source_account.clone(),
-            sequence: self.sequence,
-            operations: self.operations.clone(),
-            memo: self.memo.clone(),
-            preconditions: self.preconditions.clone(),
-        }
-    }
+    pub env: Env,
 }
 
 impl TransactionBuilder {
-    pub fn new(source_account: AccountId, sequence: i64) -> Self {
+    pub fn new(source_account: &Account, env: &Env) -> Self {
         Self {
             fee: DEFAULT_TRANSACTION_FEES,
-            source_account,
-            sequence,
+            source_account: source_account.clone(),
             operations: Vec::new(),
             memo: Memo::None,
             preconditions: Preconditions::None,
+            env: env.clone(),
         }
+    }
+
+    pub fn set_env(mut self, env: Env) -> Self {
+        self.env = env;
+        self
     }
 
     pub fn add_operation(mut self, operation: Operation) -> Self {
@@ -54,15 +47,19 @@ impl TransactionBuilder {
         self
     }
 
-    pub fn build(self) -> Result<Transaction, SorobanHelperError> {
+    pub async fn build(self) -> Result<Transaction, SorobanHelperError> {
         let operations = self.operations.try_into().map_err(|e| {
             SorobanHelperError::XdrEncodingFailed(format!("Failed to convert operations: {}", e))
         })?;
 
+        let seq_num = self.source_account.get_sequence(&self.env).await.map_err(|e| {
+            SorobanHelperError::XdrEncodingFailed(format!("Failed to get sequence number: {}", e))
+        })?;
+
         Ok(Transaction {
             fee: self.fee,
-            seq_num: SequenceNumber(self.sequence),
-            source_account: self.source_account.into(),
+            seq_num: SequenceNumber::from(seq_num.increment().value()),
+            source_account: self.source_account.account_id().into(),
             cond: self.preconditions,
             memo: self.memo,
             operations,
@@ -75,7 +72,7 @@ impl TransactionBuilder {
         env: &Env,
         account: &Account,
     ) -> Result<Transaction, SorobanHelperError> {
-        let tx = self.build()?;
+        let tx = self.build().await?;
         let tx_envelope = account.sign_transaction_unsafe(&tx, &env.network_id())?;
         let simulation = env.simulate_transaction(&tx_envelope).await?;
 

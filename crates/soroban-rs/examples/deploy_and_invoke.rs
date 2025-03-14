@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match invoke_res {
         Ok(res) => println!("Contract invoked successfully with result {:?}", res),
-        Err(e) => println!("Contract invocation failed as expected: {}", e),
+        Err(e) => println!("Contract invocation failed: {}", e),
     }
     Ok(())
 }
