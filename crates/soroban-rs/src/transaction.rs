@@ -76,7 +76,7 @@ impl TransactionBuilder {
         account: &Account,
     ) -> Result<Transaction, SorobanHelperError> {
         let tx = self.build()?;
-        let tx_envelope = account.sign_transaction_unsafe(&tx, env.network_id())?;
+        let tx_envelope = account.sign_transaction_unsafe(&tx, &env.network_id())?;
         let simulation = env.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(

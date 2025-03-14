@@ -316,6 +316,6 @@ impl Account {
             .await
             .map_err(|e| SorobanHelperError::TransactionBuildFailed(e.to_string()))?;
 
-        self.sign_transaction(&tx, env.network_id())
+        self.sign_transaction(&tx, &env.network_id())
     }
 }

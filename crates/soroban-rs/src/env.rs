@@ -3,22 +3,22 @@ use sha2::{Digest, Sha256};
 use stellar_rpc_client::{Client, GetTransactionResponse};
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
 
+#[derive(Clone)]
 pub struct EnvConfigs {
     pub rpc_url: String,
     pub network_passphrase: String,
 }
+
 pub struct Env {
     rpc_client: Client,
-    network_passphrase: String,
-    network_id: Hash,
+    configs: EnvConfigs,
 }
 
 impl Clone for Env {
     fn clone(&self) -> Self {
         Self {
             rpc_client: self.rpc_client.clone(),
-            network_passphrase: self.network_passphrase.clone(),
-            network_id: self.network_id.clone(),
+            configs: self.configs.clone(),
         }
     }
 }
@@ -28,21 +28,20 @@ impl Env {
         let rpc_client = Client::new(&configs.rpc_url).map_err(|e| {
             SorobanHelperError::NetworkRequestFailed(format!("Failed to create RPC client: {}", e))
         })?;
-        let network_id = Hash(Sha256::digest(configs.network_passphrase.as_bytes()).into());
 
         Ok(Self {
             rpc_client,
-            network_passphrase: configs.network_passphrase,
-            network_id,
+            configs,
         })
     }
 
     pub fn network_passphrase(&self) -> &str {
-        &self.network_passphrase
+        &self.configs.network_passphrase
     }
 
-    pub fn network_id(&self) -> &Hash {
-        &self.network_id
+    pub fn network_id(&self) -> Hash {
+        let network_pass_bytes = self.configs.network_passphrase.as_bytes();
+        Hash(Sha256::digest(network_pass_bytes).into())
     }
 
     pub async fn get_account(&self, account_id: &str) -> Result<AccountEntry, SorobanHelperError> {

@@ -69,7 +69,7 @@ impl Contract {
         self.upload_wasm(env, account, sequence.0 + 1).await?;
 
         let salt = crypto::generate_salt();
-        let contract_id = crypto::calculate_contract_id(&account_id, &salt, env.network_id())?;
+        let contract_id = crypto::calculate_contract_id(&account_id, &salt, &env.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account_id.clone()),
@@ -92,7 +92,7 @@ impl Contract {
             TransactionBuilder::new(account_id, sequence.0 + 2).add_operation(create_operation);
 
         let deploy_tx = builder.simulate_and_build(env, account).await?;
-        let tx_envelope = account.sign_transaction(&deploy_tx, env.network_id())?;
+        let tx_envelope = account.sign_transaction(&deploy_tx, &env.network_id())?;
         env.send_transaction(&tx_envelope).await?;
 
         self.set_client_configs(ClientContractConfigs {
@@ -124,7 +124,7 @@ impl Contract {
             .add_operation(upload_operation);
 
         let upload_tx = builder.simulate_and_build(env, account).await?;
-        let tx_envelope = account.sign_transaction(&upload_tx, env.network_id())?;
+        let tx_envelope = account.sign_transaction(&upload_tx, &env.network_id())?;
 
         match env.send_transaction(&tx_envelope).await {
             Ok(_) => Ok(()),
@@ -165,7 +165,7 @@ impl Contract {
             .await?;
         let tx_envelope = client_configs
             .account
-            .sign_transaction(&invoke_tx, env.network_id())?;
+            .sign_transaction(&invoke_tx, &env.network_id())?;
         let result = env.send_transaction(&tx_envelope).await?;
 
         parser::parse_transaction_result(&result)
