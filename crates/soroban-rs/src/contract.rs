@@ -1,11 +1,11 @@
 use crate::{
-    crypto, error::SorobanHelperError, operation::Operations, transaction::TransactionBuilder, Account, Parser, ParserType, Provider
+    Account, Parser, ParserType, Provider, crypto, error::SorobanHelperError,
+    operation::Operations, parser::ParseResult, transaction::TransactionBuilder,
 };
 use std::fs;
 use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
 };
-use crate::parser::ParseResult;
 
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
 
@@ -118,7 +118,9 @@ impl Contract {
 
         match result {
             ParseResult::InvokeFunction(Some(sc_val)) => Ok(sc_val),
-            _ => Err(SorobanHelperError::TransactionFailed("Failed to parse InvokeFunction result".to_string())),
+            _ => Err(SorobanHelperError::TransactionFailed(
+                "Failed to parse InvokeFunction result".to_string(),
+            )),
         }
     }
 }
