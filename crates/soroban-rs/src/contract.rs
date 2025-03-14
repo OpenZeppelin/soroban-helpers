@@ -144,7 +144,10 @@ impl Contract {
         function_name: &str,
         args: Vec<ScVal>,
     ) -> Result<ScVal, SorobanHelperError> {
-        let client_configs = self.client_configs.as_mut().ok_or(SorobanHelperError::ContractDeployedConfigsNotSet)?;
+        let client_configs = self
+            .client_configs
+            .as_mut()
+            .ok_or(SorobanHelperError::ContractDeployedConfigsNotSet)?;
 
         let contract_id = client_configs.contract_id;
         let env = client_configs.env.clone();
@@ -157,8 +160,12 @@ impl Contract {
         let builder =
             TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
-        let invoke_tx = builder.simulate_and_build(&env, &client_configs.account).await?;
-        let tx_envelope = client_configs.account.sign_transaction(&invoke_tx, env.network_id())?;
+        let invoke_tx = builder
+            .simulate_and_build(&env, &client_configs.account)
+            .await?;
+        let tx_envelope = client_configs
+            .account
+            .sign_transaction(&invoke_tx, env.network_id())?;
         let result = env.send_transaction(&tx_envelope).await?;
 
         parser::parse_transaction_result(&result)
