@@ -3,18 +3,28 @@ use sha2::{Digest, Sha256};
 use stellar_rpc_client::{Client, GetTransactionResponse};
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
 
-pub struct ProviderConfigs {
+pub struct EnvConfigs {
     pub rpc_url: String,
     pub network_passphrase: String,
 }
-pub struct Provider {
+pub struct Env {
     rpc_client: Client,
     network_passphrase: String,
     network_id: Hash,
 }
 
-impl Provider {
-    pub fn new(configs: ProviderConfigs) -> Result<Self, SorobanHelperError> {
+impl Clone for Env {
+    fn clone(&self) -> Self {
+        Self {
+            rpc_client: self.rpc_client.clone(),
+            network_passphrase: self.network_passphrase.clone(),
+            network_id: self.network_id.clone(),
+        }
+    }
+}
+
+impl Env {
+    pub fn new(configs: EnvConfigs) -> Result<Self, SorobanHelperError> {
         let rpc_client = Client::new(&configs.rpc_url).map_err(|e| {
             SorobanHelperError::NetworkRequestFailed(format!("Failed to create RPC client: {}", e))
         })?;
