@@ -73,7 +73,7 @@ impl TransactionBuilder {
     pub async fn simulate_and_build(
         self,
         env: &Env,
-        account: &mut Account,
+        account: &Account,
     ) -> Result<Transaction, SorobanHelperError> {
         let tx = self.build()?;
         let tx_envelope = account.sign_transaction_unsafe(&tx, env.network_id())?;

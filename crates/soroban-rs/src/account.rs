@@ -139,7 +139,7 @@ impl Account {
     }
 
     pub fn sign_transaction_unsafe(
-        &mut self,
+        &self,
         tx: &Transaction,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
