@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let contract = Contract::new(contract_path, None)?;
 
     // Deploys the contract
-    let deployed = contract
+    let mut deployed = contract
         .deploy(&env, &mut account, Some(vec![ScVal::U32(42)]))
         .await?;
 
