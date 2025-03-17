@@ -1,3 +1,4 @@
+#[cfg(test)]
 pub mod mocks {
     use std::str::FromStr;
     use crate::error::SorobanHelperError;
@@ -11,9 +12,23 @@ pub mod mocks {
         TransactionEnvelope, VecM,
     };
 
-    pub fn mock_signer() -> Signer {
+    pub fn mock_signer1() -> Signer {
         let pk =
             PrivateKey::from_string("SD3C2X7WPTUYX4YHL2G34PX75JZ35QJDFKM6SXDLYHWIPOWPIQUXFVLE")
+                .unwrap();
+        Signer::new(SigningKey::from_bytes(&pk.0))
+    }
+
+    pub fn mock_signer2() -> Signer {
+        let pk =
+            PrivateKey::from_string("SDFLNQOG3PV4CYJ4BNUXFXJBBOCQ57MK2NYUK4XUVVJTT2JSA3YDJA3A")
+                .unwrap();
+        Signer::new(SigningKey::from_bytes(&pk.0))
+    }
+
+    pub fn mock_signer3()  -> Signer {
+        let pk =
+            PrivateKey::from_string("SASAXDSRHPRZ55OLOD4EWXIWODQEZPYGIBFYX3XBUZGFFVY7QKLYRF5K")
                 .unwrap();
         Signer::new(SigningKey::from_bytes(&pk.0))
     }
@@ -35,7 +50,6 @@ pub mod mocks {
 
     pub struct MockRpcClient {}
     impl MockRpcClient {
-        #[allow(dead_code)]
         pub fn new() -> Self {
             Self {}
         }

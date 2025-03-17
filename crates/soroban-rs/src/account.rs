@@ -335,7 +335,7 @@ impl Account {
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
-    use crate::mock::mocks::{MockRpcClient, mock_signer};
+    use crate::mock::mocks::{MockRpcClient, mock_signer1, mock_signer2, mock_signer3};
     use crate::{Account, Env, EnvConfigs};
 
     #[tokio::test]
@@ -351,12 +351,39 @@ mod test {
         };
 
         // Test single account operations
-        let account = Account::single(mock_signer());
+        let account = Account::single(mock_signer1());
         
         // Test account loading
         let entry = account.load(&env).await;
         
-        let expected_account_id = mock_signer().account_id().0.to_string();
+        let expected_account_id = mock_signer1().account_id().0.to_string();
+        let res_account_id = entry.unwrap().account_id.0.to_string();
+
+        assert_eq!(expected_account_id, res_account_id);
+    }
+
+    #[tokio::test]
+    async fn multisig() {
+        let env_configs = EnvConfigs {
+            rpc_url: "https://test.com".to_string(),
+            network_passphrase: "Test Network".to_string(),
+        };
+
+        let env = Env {
+            configs: env_configs,
+            rpc_client: Arc::new(MockRpcClient::new()),
+        };
+
+        // Test single account operations
+        let account = Account::multisig(
+            mock_signer3().account_id(),
+            vec![mock_signer1(), mock_signer2(), mock_signer3()]
+        );
+        
+        // Test account loading
+        let entry = account.load(&env).await;
+        
+        let expected_account_id = mock_signer3().account_id().0.to_string();
         let res_account_id = entry.unwrap().account_id.0.to_string();
 
         assert_eq!(expected_account_id, res_account_id);
