@@ -8,9 +8,13 @@ pub mod mocks {
     use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
     use stellar_strkey::ed25519::PrivateKey;
     use stellar_xdr::curr::{
-        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds,
-        TransactionEnvelope, VecM,
+        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds, TransactionEnvelope, VecM
     };
+    use std::default::Default;
+
+    pub fn all_signers() -> Vec<Signer> {
+        vec![mock_signer1(), mock_signer2(), mock_signer3()]
+    }
 
     pub fn mock_signer1() -> Signer {
         let pk =
@@ -48,6 +52,15 @@ pub mod mocks {
         }
     }
 
+    pub fn mock_transaction_response() -> GetTransactionResponse {
+        GetTransactionResponse {
+            envelope: None,
+            result: None,
+            result_meta: None,
+            status: "".to_string(),
+        }
+    }
+
     pub struct MockRpcClient {}
     impl MockRpcClient {
         pub fn new() -> Self {
@@ -65,18 +78,14 @@ pub mod mocks {
             &self,
             _tx_envelope: &TransactionEnvelope,
         ) -> Result<SimulateTransactionResponse, SorobanHelperError> {
-            Err(SorobanHelperError::InvalidArgument(
-                "not implemented".to_string(),
-            ))
+            Ok(SimulateTransactionResponse::default())
         }
 
         async fn send_transaction_polling(
             &self,
             _tx_envelope: &TransactionEnvelope,
         ) -> Result<GetTransactionResponse, SorobanHelperError> {
-            Err(SorobanHelperError::InvalidArgument(
-                "not implemented".to_string(),
-            ))
+            Ok(mock_transaction_response())
         }
     }
 }
