@@ -1,7 +1,8 @@
-use crate::error::SorobanHelperError;
+use crate::{error::SorobanHelperError, rpc::{ExternalRpcClient, RpcClient}};
 use sha2::{Digest, Sha256};
-use stellar_rpc_client::{Client, GetTransactionResponse};
+use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct EnvConfigs {
@@ -11,18 +12,15 @@ pub struct EnvConfigs {
 
 #[derive(Clone)]
 pub struct Env {
-    rpc_client: Client,
-    configs: EnvConfigs,
+    pub(crate) rpc_client: Arc<dyn RpcClient + Send + Sync>,
+    pub(crate) configs: EnvConfigs,
 }
 
 impl Env {
     pub fn new(configs: EnvConfigs) -> Result<Self, SorobanHelperError> {
-        let rpc_client = Client::new(&configs.rpc_url).map_err(|e| {
-            SorobanHelperError::NetworkRequestFailed(format!("Failed to create RPC client: {}", e))
-        })?;
-
+        let client = ExternalRpcClient::new(&configs.rpc_url)?;
         Ok(Self {
-            rpc_client,
+            rpc_client: Arc::new(client),
             configs,
         })
     }
@@ -48,7 +46,7 @@ impl Env {
     pub async fn simulate_transaction(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<stellar_rpc_client::SimulateTransactionResponse, SorobanHelperError> {
+    ) -> Result<SimulateTransactionResponse, SorobanHelperError> {
         self.rpc_client
             .simulate_transaction_envelope(tx_envelope)
             .await
