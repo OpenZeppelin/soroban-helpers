@@ -34,9 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     account.set_authorized_calls(3);
 
     // Path to the contract wasm file
-    let contract_path =
-        "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm";
-    let contract = Contract::new(contract_path, None)?;
+    let contract = Contract::new("./fixtures/soroban_test_helpers_usage.wasm", None)?;
 
     // Deploys the contract
     let mut deployed = contract

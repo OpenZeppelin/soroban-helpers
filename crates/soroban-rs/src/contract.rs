@@ -154,3 +154,21 @@ impl Contract {
         parser::parse_transaction_result(&result)
     }
 }
+
+#[cfg(test)]
+mod test {
+    #[tokio::test]
+    async fn test_contract_deploy() {
+        // TODO.
+    }
+
+    #[tokio::test]
+    async fn test_contract_invoke() {
+        // TODO.
+    }
+
+    #[tokio::test]
+    async fn test_upload_wasm() {
+        // TODO.
+    }
+}
