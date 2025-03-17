@@ -52,9 +52,16 @@ impl TransactionBuilder {
             SorobanHelperError::XdrEncodingFailed(format!("Failed to convert operations: {}", e))
         })?;
 
-        let seq_num = self.source_account.get_sequence(&self.env).await.map_err(|e| {
-            SorobanHelperError::XdrEncodingFailed(format!("Failed to get sequence number: {}", e))
-        })?;
+        let seq_num = self
+            .source_account
+            .get_sequence(&self.env)
+            .await
+            .map_err(|e| {
+                SorobanHelperError::XdrEncodingFailed(format!(
+                    "Failed to get sequence number: {}",
+                    e
+                ))
+            })?;
 
         Ok(Transaction {
             fee: self.fee,

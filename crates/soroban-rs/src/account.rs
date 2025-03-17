@@ -486,10 +486,13 @@ mod test {
 
         if let TransactionEnvelope::Tx(tx_env) = tx.unwrap() {
             if let OperationBody::SetOptions(op) = &tx_env.tx.operations[0].body {
-                assert_eq!(op.signer, Some(XdrSigner {
-                    key: SignerKey::Ed25519(mock_signer3().public_key().0.into()),
-                    weight: 5
-                }));
+                assert_eq!(
+                    op.signer,
+                    Some(XdrSigner {
+                        key: SignerKey::Ed25519(mock_signer3().public_key().0.into()),
+                        weight: 5
+                    })
+                );
             }
 
             if let OperationBody::SetOptions(op) = &tx_env.tx.operations[1].body {

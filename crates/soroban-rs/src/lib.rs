@@ -3,12 +3,12 @@ mod contract;
 mod crypto;
 mod env;
 mod error;
+mod mock;
 mod operation;
 mod parser;
+mod rpc;
 mod signer;
 mod transaction;
-mod rpc;
-mod mock;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};

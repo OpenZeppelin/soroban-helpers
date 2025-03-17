@@ -1,16 +1,17 @@
 #[cfg(test)]
 pub mod mocks {
-    use std::str::FromStr;
     use crate::error::SorobanHelperError;
     use crate::{Signer, rpc::RpcClient};
     use async_trait::async_trait;
     use ed25519_dalek::SigningKey;
+    use std::default::Default;
+    use std::str::FromStr;
     use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
     use stellar_strkey::ed25519::PrivateKey;
     use stellar_xdr::curr::{
-        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds, TransactionEnvelope, VecM
+        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds,
+        TransactionEnvelope, VecM,
     };
-    use std::default::Default;
 
     pub fn all_signers() -> Vec<Signer> {
         vec![mock_signer1(), mock_signer2(), mock_signer3()]
@@ -30,7 +31,7 @@ pub mod mocks {
         Signer::new(SigningKey::from_bytes(&pk.0))
     }
 
-    pub fn mock_signer3()  -> Signer {
+    pub fn mock_signer3() -> Signer {
         let pk =
             PrivateKey::from_string("SASAXDSRHPRZ55OLOD4EWXIWODQEZPYGIBFYX3XBUZGFFVY7QKLYRF5K")
                 .unwrap();

@@ -54,11 +54,11 @@ impl Contract {
         account: &mut Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<Self, SorobanHelperError> {
-
         self.upload_wasm(account, env).await?;
 
         let salt = crypto::generate_salt();
-        let contract_id = crypto::calculate_contract_id(&account.account_id(), &salt, &env.network_id())?;
+        let contract_id =
+            crypto::calculate_contract_id(&account.account_id(), &salt, &env.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account.account_id()),
@@ -77,8 +77,7 @@ impl Contract {
             },
         )?;
 
-        let builder =
-            TransactionBuilder::new(account, env).add_operation(create_operation);
+        let builder = TransactionBuilder::new(account, env).add_operation(create_operation);
 
         let deploy_tx = builder.simulate_and_build(env, account).await?;
         let tx_envelope = account.sign_transaction(&deploy_tx, &env.network_id())?;
@@ -108,8 +107,7 @@ impl Contract {
     ) -> Result<(), SorobanHelperError> {
         let upload_operation = Operations::upload_wasm(self.wasm_bytes.clone())?;
 
-        let builder = TransactionBuilder::new(account, env)
-            .add_operation(upload_operation);
+        let builder = TransactionBuilder::new(account, env).add_operation(upload_operation);
 
         let upload_tx = builder.simulate_and_build(env, account).await?;
         let tx_envelope = account.sign_transaction(&upload_tx, &env.network_id())?;
