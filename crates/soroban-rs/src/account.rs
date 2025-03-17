@@ -279,7 +279,7 @@ impl Account {
         env: &Env,
         config: AccountConfig,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        let mut tx = TransactionBuilder::new(&self, &env);
+        let mut tx = TransactionBuilder::new(&self, env);
 
         // Add set options operation for each signer configuration.
         for (public_key, weight) in config.signers {
