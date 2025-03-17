@@ -8,7 +8,7 @@ repository.workspace = true
 documentation = "https://github.com/OpenZeppelin/soroban-helpers"
 readme = "README.md"
 keywords.workspace = true
-categories = ["development-tools", "testing", "blockchain"]
+categories = ["development-tools::testing", "wasm"]
 
 [lib]
 proc-macro = true

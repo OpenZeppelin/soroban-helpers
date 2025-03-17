@@ -4,7 +4,7 @@ A collection of utilities and macros to simplify testing [Soroban](https://sorob
 
 [![Crates.io](https://img.shields.io/crates/v/soroban-test-helpers)](https://crates.io/crates/soroban-test-helpers)
 [![Docs.rs](https://docs.rs/soroban-test-helpers/badge.svg)](https://docs.rs/soroban-test-helpers)
-[![License](https://img.shields.io/crates/l/soroban-test-helpers)](https://github.com/stellar/soroban-helpers/blob/main/LICENSE)
+[![License](https://img.shields.io/crates/l/soroban-test-helpers)](https://github.com/OpenZeppelin/soroban-helpers/blob/main/LICENSE)
 
 ## Features
 
