@@ -54,9 +54,7 @@ impl Parser {
                     .result_meta
                     .as_ref()
                     .and_then(|meta| self.extract_return_value(meta))
-                    .map(|value| {
-                        ParseResult::InvokeFunction(Some(value))
-                    });
+                    .map(|value| ParseResult::InvokeFunction(Some(value)));
                 if let Some(result) = result_from_meta {
                     return Ok(result);
                 }
@@ -64,9 +62,7 @@ impl Parser {
                 let result_from_op_results = op_results
                     .first()
                     .and_then(|op| self.extract_operation_result(op))
-                    .map(|value| {
-                        ParseResult::InvokeFunction(Some(value))
-                    });
+                    .map(|value| ParseResult::InvokeFunction(Some(value)));
                 if let Some(result) = result_from_op_results {
                     return Ok(result);
                 }
@@ -78,11 +74,12 @@ impl Parser {
         }
     }
 
-    fn check_tx_success<'a>(&self, tx_result: &'a Option<stellar_xdr::curr::TransactionResult>) -> Result<&'a [OperationResult], SorobanHelperError> {
+    fn check_tx_success<'a>(
+        &self,
+        tx_result: &'a Option<stellar_xdr::curr::TransactionResult>,
+    ) -> Result<&'a [OperationResult], SorobanHelperError> {
         let tx_result = tx_result.as_ref().ok_or_else(|| {
-            SorobanHelperError::TransactionFailed(
-                "No transaction result available".to_string(),
-            )
+            SorobanHelperError::TransactionFailed("No transaction result available".to_string())
         })?;
 
         match &tx_result.result {

@@ -143,7 +143,7 @@ impl Contract {
         &self,
         function_name: &str,
         args: Vec<ScVal>,
-    ) -> Result<ScVal, SorobanHelperError> {
+    ) -> Result<stellar_rpc_client::GetTransactionResponse, SorobanHelperError> {
         if self.client_configs.is_none() {
             return Err(SorobanHelperError::ContractDeployedConfigsNotSet);
         }
@@ -163,16 +163,6 @@ impl Contract {
 
         let invoke_tx = builder.simulate_and_build(&env, &mut account).await?;
         let tx_envelope = account.sign_transaction(&invoke_tx, env.network_id())?;
-        let result = env.send_transaction(&tx_envelope).await?;
-
-        let parser = Parser::new(ParserType::AccountSetOptions);
-        let result = parser.parse(&result)?;
-
-        match result {
-            ParseResult::InvokeFunction(Some(sc_val)) => Ok(sc_val),
-            _ => Err(SorobanHelperError::TransactionFailed(
-                "Failed to parse InvokeFunction result".to_string(),
-            )),
-        }
+        env.send_transaction(&tx_envelope).await
     }
 }
