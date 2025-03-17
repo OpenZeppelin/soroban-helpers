@@ -1,6 +1,6 @@
 use crate::{
-    Account, Env, Parser, ParserType, crypto, error::SorobanHelperError, operation::Operations,
-    parser::ParseResult, transaction::TransactionBuilder,
+    Account, Env, crypto, error::SorobanHelperError, operation::Operations,
+    transaction::TransactionBuilder,
 };
 use std::fs;
 use stellar_strkey::Contract as ContractId;
@@ -140,29 +140,32 @@ impl Contract {
     }
 
     pub async fn invoke(
-        &self,
+        &mut self,
         function_name: &str,
         args: Vec<ScVal>,
     ) -> Result<stellar_rpc_client::GetTransactionResponse, SorobanHelperError> {
-        if self.client_configs.is_none() {
-            return Err(SorobanHelperError::ContractDeployedConfigsNotSet);
-        }
+        let client_configs = self
+            .client_configs
+            .as_mut()
+            .ok_or(SorobanHelperError::ContractDeployedConfigsNotSet)?;
 
-        let client_configs = self.client_configs.as_ref().unwrap();
         let contract_id = client_configs.contract_id;
         let env = client_configs.env.clone();
-        let mut account = client_configs.account.clone();
 
-        let sequence = account.get_sequence(&env).await?;
-        let account_id = account.account_id();
+        let sequence = client_configs.account.get_sequence(&env).await?;
+        let account_id = client_configs.account.account_id();
 
         let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
 
         let builder =
             TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
 
-        let invoke_tx = builder.simulate_and_build(&env, &mut account).await?;
-        let tx_envelope = account.sign_transaction(&invoke_tx, env.network_id())?;
+        let invoke_tx = builder
+            .simulate_and_build(&env, &client_configs.account)
+            .await?;
+        let tx_envelope = client_configs
+            .account
+            .sign_transaction(&invoke_tx, env.network_id())?;
         env.send_transaction(&tx_envelope).await
     }
 }
