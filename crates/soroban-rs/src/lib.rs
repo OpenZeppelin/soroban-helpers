@@ -8,6 +8,7 @@ mod parser;
 mod signer;
 mod transaction;
 mod rpc;
+mod mock;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
