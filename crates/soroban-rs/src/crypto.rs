@@ -65,30 +65,30 @@ mod tests {
         // Generate a large number of salts
         let num_salts = 10000;
         let bytes_per_salt = 32;
-        
+
         // Count occurrences of each byte value (0-255)
         let mut observed = [0; 256];
-        
+
         for _ in 0..num_salts {
             let salt = generate_salt();
             for &byte in salt.as_slice() {
                 observed[byte as usize] += 1;
             }
         }
-        
+
         // Calculate expected count for uniform distribution
         let expected = (num_salts * bytes_per_salt) as f64 / 256.0;
-        
+
         // Calculate chi-squared statistic
         // χ^2 = sum[(observed - expected)^2 / expected]
-        let chi_squared: f64 = observed.iter()
+        let chi_squared: f64 = observed
+            .iter()
             .map(|&count| {
                 let diff = count as f64 - expected;
                 (diff * diff) / expected
             })
             .sum();
-        
-        
+
         // Two sided Critical value for chi-squared with df=255 and α=0.001 for each tail
         // Degrees of freedom is (number of categories - 1) = 255
         // Alpha of 0.001 is the 0.1% significance level
@@ -103,7 +103,9 @@ mod tests {
         assert!(
             chi_squared > lower_critical_value && chi_squared < upper_critical_value,
             "Chi-squared test failed: Chi-squared value ({}) outside acceptable range ({} to {})",
-            chi_squared, lower_critical_value, upper_critical_value
+            chi_squared,
+            lower_critical_value,
+            upper_critical_value
         );
     }
 
