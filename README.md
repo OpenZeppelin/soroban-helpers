@@ -71,7 +71,7 @@ An example crate demonstrating how to use the `soroban-test-helpers` library for
 
 We welcome contributions from the community! Here's how you can get involved:
 
-1. Fork the repository
+1. [Fork the repository](https://github.com/OpenZeppelin/soroban-helpers/fork)
 2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
