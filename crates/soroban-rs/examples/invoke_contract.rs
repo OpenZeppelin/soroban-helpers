@@ -1,7 +1,8 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, ClientContractConfigs, Contract, Env, EnvConfigs, Signer,
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
+    Signer,
     xdr::{ScAddress, ScVal},
 };
 use std::{env, path::Path};
@@ -48,12 +49,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let invoke_res = contract.invoke("send", vec![alice, bob]).await;
 
-    match invoke_res {
-        Ok(res) => println!("Contract invoked successfully with result {:?}", res),
-        Err(e) => println!("Contract invocation failed: {}", e),
+    let invoke_res = contract.invoke("send", vec![alice, bob]).await?;
+
+    let parser = Parser::new(ParserType::InvokeFunction);
+    let result = parser.parse(&invoke_res)?;
+
+    match result {
+        ParseResult::InvokeFunction(Some(sc_val)) => {
+            println!("Invocation result: {:?}", sc_val);
+            Ok(())
+        }
+        _ => Err("Failed to parse InvokeFunction result".into()),
     }
-
-    Ok(())
 }

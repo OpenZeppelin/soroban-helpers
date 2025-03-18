@@ -8,19 +8,17 @@ use stellar_xdr::curr::{
 #[derive(Debug)]
 pub enum ParserType {
     AccountSetOptions,
+    InvokeFunction,
+    Deploy,
     // Add more parser types as needed
 }
 
 #[derive(Debug)]
 pub enum ParseResult {
-    AccountSetOptions(AccountSetOptionsResult),
+    AccountSetOptions(Option<AccountEntry>),
+    InvokeFunction(Option<ScVal>),
+    Deploy(Option<ScVal>),
     // Add more result types as needed
-}
-
-#[derive(Debug)]
-pub struct AccountSetOptionsResult {
-    pub success: bool,
-    pub result: Option<AccountEntry>,
 }
 
 pub struct Parser {
@@ -38,85 +36,94 @@ impl Parser {
     ) -> Result<ParseResult, SorobanHelperError> {
         match self.parser_type {
             ParserType::AccountSetOptions => {
-                let success = response
-                    .result
+                self.check_tx_success(&response.result)?;
+
+                // Extract account entry from transaction metadata
+                let result = response
+                    .result_meta
                     .as_ref()
-                    .map(|r| matches!(&r.result, TransactionResultResult::TxSuccess(_)))
-                    .unwrap_or(false);
+                    .and_then(|meta| self.extract_account_entry(meta));
 
-                let result = response.result_meta.as_ref().and_then(|meta| match meta {
-                    TransactionMeta::V3(v3) => v3.operations.last().and_then(|op| {
-                        op.changes.0.iter().rev().find_map(|change| match change {
-                            LedgerEntryChange::Updated(entry) => {
-                                if let LedgerEntryData::Account(account) = &entry.data {
-                                    Some(account.clone())
-                                } else {
-                                    None
-                                }
-                            }
-                            _ => None,
-                        })
-                    }),
-                    _ => None,
-                });
-
-                Ok(ParseResult::AccountSetOptions(AccountSetOptionsResult {
-                    success,
-                    result,
-                }))
+                Ok(ParseResult::AccountSetOptions(result))
             }
+            ParserType::InvokeFunction => {
+                let op_results = self.check_tx_success(&response.result)?;
+
+                // Try to extract return value from transaction metadata first
+                let result_from_meta = response
+                    .result_meta
+                    .as_ref()
+                    .and_then(|meta| self.extract_return_value(meta))
+                    .map(|value| ParseResult::InvokeFunction(Some(value)));
+                if let Some(result) = result_from_meta {
+                    return Ok(result);
+                }
+
+                let result_from_op_results = op_results
+                    .first()
+                    .and_then(|op| self.extract_operation_result(op))
+                    .map(|value| ParseResult::InvokeFunction(Some(value)));
+                if let Some(result) = result_from_op_results {
+                    return Ok(result);
+                }
+
+                // If we couldn't extract a valid result but transaction succeeded
+                Ok(ParseResult::InvokeFunction(None))
+            }
+            ParserType::Deploy => todo!(),
         }
     }
-}
 
-pub fn extract_return_value(meta: &TransactionMeta) -> Option<ScVal> {
-    match meta {
-        TransactionMeta::V3(v3) => v3.soroban_meta.as_ref().map(|sm| sm.return_value.clone()),
-        _ => None,
-    }
-}
+    fn check_tx_success<'a>(
+        &self,
+        tx_result: &'a Option<stellar_xdr::curr::TransactionResult>,
+    ) -> Result<&'a [OperationResult], SorobanHelperError> {
+        let tx_result = tx_result.as_ref().ok_or_else(|| {
+            SorobanHelperError::TransactionFailed("No transaction result available".to_string())
+        })?;
 
-pub fn extract_operation_result(op_result: &OperationResult) -> Option<ScVal> {
-    if let OperationResult::OpInner(stellar_xdr::curr::OperationResultTr::InvokeHostFunction(
-        stellar_xdr::curr::InvokeHostFunctionResult::Success(value),
-    )) = op_result
-    {
-        return Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
-            value.0.to_vec().try_into().unwrap_or_default(),
-        )));
-    }
-    None
-}
-
-pub fn parse_transaction_result(
-    result: &stellar_rpc_client::GetTransactionResponse,
-) -> Result<ScVal, SorobanHelperError> {
-    if let Some(tx_result) = &result.result {
-        if let TransactionResultResult::TxSuccess(op_results) = &tx_result.result {
-            // First try to get result from transaction metadata
-            if let Some(result_meta) = &result.result_meta {
-                if let Some(return_value) = extract_return_value(result_meta) {
-                    return Ok(return_value);
-                }
-            }
-
-            // Then try to get from operation results
-            if let Some(op_result) = op_results.first() {
-                if let Some(value) = extract_operation_result(op_result) {
-                    return Ok(value);
-                }
-            }
-
-            Ok(ScVal::Void)
-        } else {
-            Err(SorobanHelperError::TransactionFailed(format!(
+        match &tx_result.result {
+            TransactionResultResult::TxSuccess(results) => Ok(results.as_slice()),
+            _ => Err(SorobanHelperError::TransactionFailed(format!(
                 "Transaction failed: {:?}",
                 tx_result.result
-            )))
+            ))),
         }
-    } else {
-        Err(SorobanHelperError::TransactionFailed(
-            "No transaction result available".to_string(),
-        ))
+    }
+
+    fn extract_account_entry(&self, meta: &TransactionMeta) -> Option<AccountEntry> {
+        match meta {
+            TransactionMeta::V3(v3) => v3.operations.last().and_then(|op| {
+                op.changes.0.iter().rev().find_map(|change| match change {
+                    LedgerEntryChange::Updated(entry) => {
+                        if let LedgerEntryData::Account(account) = &entry.data {
+                            Some(account.clone())
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                })
+            }),
+            _ => None,
+        }
+    }
+
+    fn extract_return_value(&self, meta: &TransactionMeta) -> Option<ScVal> {
+        match meta {
+            TransactionMeta::V3(v3) => v3.soroban_meta.as_ref().map(|sm| sm.return_value.clone()),
+            _ => None,
+        }
+    }
+
+    fn extract_operation_result(&self, op_result: &OperationResult) -> Option<ScVal> {
+        match op_result {
+            OperationResult::OpInner(stellar_xdr::curr::OperationResultTr::InvokeHostFunction(
+                stellar_xdr::curr::InvokeHostFunctionResult::Success(value),
+            )) => Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
+                value.0.to_vec().try_into().unwrap_or_default(),
+            ))),
+            _ => None,
+        }
     }
 }

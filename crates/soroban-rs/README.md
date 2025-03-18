@@ -77,7 +77,7 @@ The library uses a custom error type `SorobanHelperError` to handle various erro
 
 We welcome contributions from the community! Here's how you can get involved:
 
-1. Fork the repository
+1. [Fork the repository](https://github.com/OpenZeppelin/soroban-helpers/fork)
 2. Create your feature branch
 3. Commit your changes
 4. Push to the branch

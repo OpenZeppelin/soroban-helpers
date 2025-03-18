@@ -1,5 +1,5 @@
 use crate::{
-    Account, Env, crypto, error::SorobanHelperError, operation::Operations, parser,
+    Account, Env, crypto, error::SorobanHelperError, operation::Operations,
     transaction::TransactionBuilder,
 };
 use std::fs;
@@ -129,7 +129,7 @@ impl Contract {
         &mut self,
         function_name: &str,
         args: Vec<ScVal>,
-    ) -> Result<ScVal, SorobanHelperError> {
+    ) -> Result<stellar_rpc_client::GetTransactionResponse, SorobanHelperError> {
         let client_configs = self
             .client_configs
             .as_mut()
@@ -149,9 +149,8 @@ impl Contract {
         let tx_envelope = client_configs
             .account
             .sign_transaction(&invoke_tx, &env.network_id())?;
-        let result = env.send_transaction(&tx_envelope).await?;
 
-        parser::parse_transaction_result(&result)
+        env.send_transaction(&tx_envelope).await
     }
 }
 
