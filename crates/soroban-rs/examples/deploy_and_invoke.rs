@@ -1,14 +1,14 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, Contract, Env, EnvConfigs, Signer,
+    Account, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType, Signer,
     xdr::{ScAddress, ScVal},
 };
-use std::{env, path::Path};
+use std::{env, error::Error, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     from_path(Path::new("examples/.env")).ok();
 
     // Loads the private key from the .env file
@@ -51,11 +51,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let invoke_res = deployed.invoke("send", vec![alice, bob]).await;
+    let invoke_res = deployed.invoke("send", vec![alice, bob]).await?;
 
-    match invoke_res {
-        Ok(res) => println!("Contract invoked successfully with result {:?}", res),
-        Err(e) => println!("Contract invocation failed as expected: {}", e),
+    let parser = Parser::new(ParserType::InvokeFunction);
+    let result = parser.parse(&invoke_res)?;
+
+    match result {
+        ParseResult::InvokeFunction(Some(sc_val)) => {
+            println!("Invocation result: {:?}", sc_val);
+            Ok(())
+        }
+        _ => Err("Failed to parse InvokeFunction result".into()),
     }
-    Ok(())
 }
