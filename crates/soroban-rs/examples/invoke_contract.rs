@@ -44,7 +44,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Path to the contract wasm file (needed for function schemas)
-    let mut contract = Contract::new("./fixtures/soroban_test_helpers_usage.wasm", Some(client_configs))?;
+    let mut contract = Contract::new(
+        "./fixtures/soroban_test_helpers_usage.wasm",
+        Some(client_configs),
+    )?;
 
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));

@@ -51,7 +51,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
     let invoke_res = deployed.invoke("send", vec![alice, bob]).await?;
 
-
     let parser = Parser::new(ParserType::InvokeFunction);
     let result = parser.parse(&invoke_res)?;
 
