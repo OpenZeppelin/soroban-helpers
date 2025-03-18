@@ -8,20 +8,11 @@ use stellar_xdr::curr::{
     TransactionSignaturePayloadTaggedTransaction, WriteXdr,
 };
 
+#[derive(Clone)]
 pub struct Signer {
     signing_key: SigningKey,
     public_key: PublicKey,
     account_id: AccountId,
-}
-
-impl Clone for Signer {
-    fn clone(&self) -> Self {
-        Self {
-            signing_key: self.signing_key.clone(),
-            public_key: self.public_key,
-            account_id: self.account_id.clone(),
-        }
-    }
 }
 
 impl Signer {

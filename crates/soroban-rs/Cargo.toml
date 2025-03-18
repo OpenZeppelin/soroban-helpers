@@ -8,7 +8,7 @@ name = "deploy_and_invoke"
 path = "examples/deploy_and_invoke.rs"
 
 [[example]]
-name = "deploy_multisig"
+name = "create_multisig"
 path = "examples/create_multisig.rs"
 
 [[example]]
@@ -24,6 +24,7 @@ ed25519-dalek.workspace = true
 sha2.workspace = true
 rand.workspace = true
 hex.workspace = true
+async-trait.workspace = true
 
 [dev-dependencies]
 # example dependency

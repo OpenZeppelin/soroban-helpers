@@ -3,8 +3,10 @@ mod contract;
 mod crypto;
 mod env;
 mod error;
+mod mock;
 mod operation;
 mod parser;
+mod rpc;
 mod signer;
 mod transaction;
 

@@ -10,20 +10,11 @@ use stellar_xdr::curr::{
 
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
 
+#[derive(Clone)]
 pub struct ClientContractConfigs {
     pub contract_id: ContractId,
     pub env: Env,
     pub account: Account,
-}
-
-impl Clone for ClientContractConfigs {
-    fn clone(&self) -> Self {
-        Self {
-            contract_id: self.contract_id,
-            env: self.env.clone(),
-            account: self.account.clone(),
-        }
-    }
 }
 
 pub struct Contract {
@@ -63,16 +54,14 @@ impl Contract {
         account: &mut Account,
         constructor_args: Option<Vec<ScVal>>,
     ) -> Result<Self, SorobanHelperError> {
-        let sequence = account.get_sequence(env).await?;
-        let account_id = account.account_id();
-
-        self.upload_wasm(env, account, sequence.0 + 1).await?;
+        self.upload_wasm(account, env).await?;
 
         let salt = crypto::generate_salt();
-        let contract_id = crypto::calculate_contract_id(&account_id, &salt, env.network_id())?;
+        let contract_id =
+            crypto::calculate_contract_id(&account.account_id(), &salt, &env.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
-            address: ScAddress::Account(account_id.clone()),
+            address: ScAddress::Account(account.account_id()),
             salt,
         });
 
@@ -88,11 +77,10 @@ impl Contract {
             },
         )?;
 
-        let builder =
-            TransactionBuilder::new(account_id, sequence.0 + 2).add_operation(create_operation);
+        let builder = TransactionBuilder::new(account, env).add_operation(create_operation);
 
         let deploy_tx = builder.simulate_and_build(env, account).await?;
-        let tx_envelope = account.sign_transaction(&deploy_tx, env.network_id())?;
+        let tx_envelope = account.sign_transaction(&deploy_tx, &env.network_id())?;
         env.send_transaction(&tx_envelope).await?;
 
         self.set_client_configs(ClientContractConfigs {
@@ -114,17 +102,15 @@ impl Contract {
 
     async fn upload_wasm(
         &self,
-        env: &Env,
         account: &mut Account,
-        sequence_num: i64,
+        env: &Env,
     ) -> Result<(), SorobanHelperError> {
         let upload_operation = Operations::upload_wasm(self.wasm_bytes.clone())?;
 
-        let builder = TransactionBuilder::new(account.account_id(), sequence_num)
-            .add_operation(upload_operation);
+        let builder = TransactionBuilder::new(account, env).add_operation(upload_operation);
 
         let upload_tx = builder.simulate_and_build(env, account).await?;
-        let tx_envelope = account.sign_transaction(&upload_tx, env.network_id())?;
+        let tx_envelope = account.sign_transaction(&upload_tx, &env.network_id())?;
 
         match env.send_transaction(&tx_envelope).await {
             Ok(_) => Ok(()),
@@ -152,20 +138,36 @@ impl Contract {
         let contract_id = client_configs.contract_id;
         let env = client_configs.env.clone();
 
-        let sequence = client_configs.account.get_sequence(&env).await?;
-        let account_id = client_configs.account.account_id();
-
         let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
 
         let builder =
-            TransactionBuilder::new(account_id, sequence.0 + 1).add_operation(invoke_operation);
+            TransactionBuilder::new(&client_configs.account, &env).add_operation(invoke_operation);
 
         let invoke_tx = builder
             .simulate_and_build(&env, &client_configs.account)
             .await?;
         let tx_envelope = client_configs
             .account
-            .sign_transaction(&invoke_tx, env.network_id())?;
+            .sign_transaction(&invoke_tx, &env.network_id())?;
+
         env.send_transaction(&tx_envelope).await
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[tokio::test]
+    async fn test_contract_deploy() {
+        // TODO.
+    }
+
+    #[tokio::test]
+    async fn test_contract_invoke() {
+        // TODO.
+    }
+
+    #[tokio::test]
+    async fn test_upload_wasm() {
+        // TODO.
     }
 }

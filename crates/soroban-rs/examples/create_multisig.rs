@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let signer_3 = Signer::new(SigningKey::from_bytes(&private_key_3.0));
 
     // Create account that will become multisig
-    let mut target_account = Account::single(signer_3.clone());
+    let target_account = Account::single(signer_3.clone());
 
     // Setup provider
     let env = Env::new(EnvConfigs {
