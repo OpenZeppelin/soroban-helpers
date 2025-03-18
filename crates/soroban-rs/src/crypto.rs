@@ -38,3 +38,91 @@ pub fn calculate_contract_id(
 
     Ok(contract_id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sha256_hash() {
+        let data = b"test data";
+        let hash = sha256_hash(data);
+        let expected_hash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
+
+        assert_eq!(
+            hash.to_string(),
+            expected_hash,
+            "Hash value should match the expected SHA256 hash"
+        );
+    }
+
+    #[test]
+    fn test_generate_salt_chi_squared() {
+        // Testing Random Number Generators
+        // Chai-square test for uniformity
+        // https://www.cs.rice.edu/~johnmc/comp528/lecture-notes/Lecture22.pdf
+
+        // Generate a large number of salts
+        let num_salts = 10000;
+        let bytes_per_salt = 32;
+        
+        // Count occurrences of each byte value (0-255)
+        let mut observed = [0; 256];
+        
+        for _ in 0..num_salts {
+            let salt = generate_salt();
+            for &byte in salt.as_slice() {
+                observed[byte as usize] += 1;
+            }
+        }
+        
+        // Calculate expected count for uniform distribution
+        let expected = (num_salts * bytes_per_salt) as f64 / 256.0;
+        
+        // Calculate chi-squared statistic
+        // χ^2 = sum[(observed - expected)^2 / expected]
+        let chi_squared: f64 = observed.iter()
+            .map(|&count| {
+                let diff = count as f64 - expected;
+                (diff * diff) / expected
+            })
+            .sum();
+        
+        
+        // Two sided Critical value for chi-squared with df=255 and α=0.001 for each tail
+        // Degrees of freedom is (number of categories - 1) = 255
+        // Alpha of 0.001 is the 0.1% significance level
+        // This is a conservative threshold that indicates the distribution
+        // is likely not uniform if exceeded
+        // Approximate values for df=255, α=0.001 (Inverse CDF of ChiSquared distribution)
+        let upper_critical_value = 330.52;
+        let lower_critical_value = 190.87;
+
+        // Assert that our chi-squared value doesn't exceed or fall below the critical values
+        // If it does, it suggests the distribution is not uniform
+        assert!(
+            chi_squared > lower_critical_value && chi_squared < upper_critical_value,
+            "Chi-squared test failed: Chi-squared value ({}) outside acceptable range ({} to {})",
+            chi_squared, lower_critical_value, upper_critical_value
+        );
+    }
+
+    #[test]
+    fn test_calculate_contract_id() {
+        let public_key = stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519([0; 32].into());
+        let account_id = stellar_xdr::curr::AccountId(public_key);
+        let salt = generate_salt();
+        let network_id = Hash([0; 32]);
+
+        match calculate_contract_id(&account_id, &salt, &network_id) {
+            Ok(contract_id) => {
+                assert_eq!(contract_id.0.len(), 32);
+                assert!(
+                    contract_id.0.iter().any(|&x| x != 0),
+                    "Contract ID should not be all zeros"
+                );
+            }
+            Err(e) => panic!("Failed to calculate contract id: {}", e),
+        }
+    }
+}
