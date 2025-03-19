@@ -1,3 +1,32 @@
+//! # Soroban Account Management
+//!
+//! This module provides types and functionality for handling Stellar accounts in Soroban,
+//! including transaction signing for both single and multi-signature (multisig) accounts.
+//!
+//! ## Features
+//!
+//! - Account sequence number tracking and management
+//! - Single and multi-signature account support
+//! - Transaction signing with authorization control
+//! - Account configuration (thresholds, weights, signers)
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use soroban_rs::{Account, Env, EnvConfigs, Signer};
+//!
+//! // Create a new environment
+//! let env = Env::new(EnvConfigs {
+//!     rpc_url: "https://soroban-testnet.stellar.org".to_string(),
+//!     network_passphrase: "Test SDF Network ; September 2015".to_string(),
+//! });
+//!
+//! // Create a signer from a secret key
+//! let signer = Signer::new(SigningKey::from_bytes(...));
+//!
+//! // Single-signature account
+//! let account = Account::single(signer);
+//! ```
 use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
@@ -5,10 +34,16 @@ use stellar_xdr::curr::{
     Signer as XdrSigner, SignerKey, Transaction, TransactionEnvelope, TransactionV1Envelope, VecM,
 };
 
+/// Represents a transaction sequence number for a Stellar account.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AccountSequence(i64);
 
 impl AccountSequence {
+    /// Creates a new sequence number with the specified value.
+    ///
+    /// # Parameters
+    ///
+    /// * `val` - The i64 sequence number value
     pub fn new(val: i64) -> Self {
         AccountSequence(val)
     }
@@ -18,29 +53,51 @@ impl AccountSequence {
         AccountSequence(self.0 + 1)
     }
 
-    /// Consumes self and returns the next SequenceNumber.
+    /// Increments the sequence number and returns the new value.
+    ///
+    /// Unlike next() which leaves the original value unchanged, this method
+    /// replaces the original sequence number.
     pub fn increment(self) -> Self {
         self.next()
     }
 
-    /// Returns the raw i64 value.
+    /// Returns the raw i64 sequence number.
     pub fn value(self) -> i64 {
         self.0
     }
 }
 
+/// Tracks and limits the number of authorized transaction calls for an account.
+///
+/// This provides a safety mechanism to limit the number of transactions that can be
+/// submitted from a particular account, helping to prevent accidental or malicious
+/// transaction spamming.
 #[derive(Debug, Clone, Copy)]
 pub struct AuthorizedCalls(u16);
 
 impl AuthorizedCalls {
+    /// Creates a new AuthorizedCalls with the specified limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `calls` - The maximum number of calls allowed
     pub fn new(calls: u16) -> Self {
         AuthorizedCalls(calls)
     }
 
+    /// Checks if the account can make additional calls.
+    ///
+    /// Returns `true` if there are remaining calls available.
     pub fn can_call(&self) -> bool {
         self.0 > 0
     }
 
+    /// Attempts to decrement the authorized calls counter.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the call counter was successfully decremented
+    /// * `Err` if no calls remain
     pub fn try_decrement(&mut self) -> Result<(), SorobanHelperError> {
         if self.can_call() {
             self.0 -= 1;
@@ -52,17 +109,36 @@ impl AuthorizedCalls {
         }
     }
 
+    /// Returns the current number of authorized calls remaining.
     pub fn value(&self) -> u16 {
         self.0
     }
 }
 
-/// Account configuration options.
+/// Configuration options for setting up or modifying a Stellar account.
+///
+/// Used to configure thresholds and signers for an account. This is particularly
+/// useful for creating or modifying multisig accounts with specific
+/// threshold requirements.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// let config = AccountConfig::new()
+///     .with_master_weight(10)
+///     .with_thresholds(1, 5, 10)
+///     .add_signer(some_public_key, 5);
+/// ```
 pub struct AccountConfig {
+    /// Weight assigned to the master key (account owner)
     pub master_weight: Option<u32>,
+    /// Threshold for low security operations
     pub low_threshold: Option<u32>,
+    /// Threshold for medium security operations
     pub med_threshold: Option<u32>,
+    /// Threshold for high security operations
     pub high_threshold: Option<u32>,
+    /// Additional signers with their respective weights
     pub signers: Vec<(PublicKey, u32)>,
 }
 
@@ -73,6 +149,7 @@ impl Default for AccountConfig {
 }
 
 impl AccountConfig {
+    /// Creates a new empty account configuration.
     pub fn new() -> Self {
         Self {
             master_weight: None,
@@ -83,11 +160,24 @@ impl AccountConfig {
         }
     }
 
+    /// Sets the master key weight for the account.
+    ///
+    /// # Parameters
+    ///
+    /// * `weight` - The weight to assign to the master key
+    ///   Set to 0 to prevent the master key from being used for signing
     pub fn with_master_weight(mut self, weight: u32) -> Self {
         self.master_weight = Some(weight);
         self
     }
 
+    /// Sets the threshold values for low, medium, and high security operations.
+    ///
+    /// # Parameters
+    ///
+    /// * `low` - Threshold for low security operations (e.g., setting options)
+    /// * `med` - Threshold for medium security operations (e.g., payments)
+    /// * `high` - Threshold for high security operations (e.g., account merge)
     pub fn with_thresholds(mut self, low: u32, med: u32, high: u32) -> Self {
         self.low_threshold = Some(low);
         self.med_threshold = Some(med);
@@ -95,33 +185,63 @@ impl AccountConfig {
         self
     }
 
+    /// Adds a new signer with the specified weight.
+    ///
+    /// # Parameters
+    ///
+    /// * `key` - The public key of the signer to add
+    /// * `weight` - The weight to assign to this signer
     pub fn add_signer(mut self, key: PublicKey, weight: u32) -> Self {
         self.signers.push((key, weight));
         self
     }
 }
 
+/// Represents a single-signature account.
 #[derive(Clone)]
 pub struct SingleAccount {
+    /// The account's identifier
     pub account_id: AccountId,
+    /// Signer associated with this account
     pub signers: Vec<Signer>,
+    /// Tracks and limits the number of authorized calls for this account
     pub authorized_calls: AuthorizedCalls,
 }
 
+/// Represents a multisig account.
 #[derive(Clone)]
 pub struct MultisigAccount {
+    /// The account's identifier
     pub account_id: AccountId,
+    /// Signers associated with this account
     pub signers: Vec<Signer>,
+    /// Tracks and limits the number of authorized calls for this account
     pub authorized_calls: AuthorizedCalls,
 }
 
+/// Represents either a single-signature or multisig account.
+///
+/// This is the main account type used for interacting with the Stellar network.
+/// It provides methods for signing transactions, configuring account settings,
+/// and managing sequence numbers.
 #[derive(Clone)]
 pub enum Account {
+    /// Single-signature account with one key pair
     KeyPair(SingleAccount),
+    /// Multi-signature account
     Multisig(MultisigAccount),
 }
 
 impl Account {
+    /// Creates a new single-signature Account instance with the provided signer.
+    ///
+    /// # Parameters
+    ///
+    /// * `signer` - The signer for this account
+    ///
+    /// # Returns
+    ///
+    /// A new `Account` instance with the KeyPair variant
     pub fn single(signer: Signer) -> Self {
         Self::KeyPair(SingleAccount {
             account_id: signer.account_id(),
@@ -130,6 +250,16 @@ impl Account {
         })
     }
 
+    /// Creates a new multisig Account instance with the provided account ID and signers.
+    ///
+    /// # Parameters
+    ///
+    /// * `account_id` - The identifier for this account
+    /// * `signers` - A vector of signers for this multi-signature account
+    ///
+    /// # Returns
+    ///
+    /// A new `Account` instance with the Multisig variant
     pub fn multisig(account_id: AccountId, signers: Vec<Signer>) -> Self {
         Self::Multisig(MultisigAccount {
             account_id,
@@ -138,10 +268,20 @@ impl Account {
         })
     }
 
+    /// Loads the account information from the network.
+    ///
+    /// # Parameters
+    ///
+    /// * `env` - The environment to use for loading the account
+    ///
+    /// # Returns
+    ///
+    /// The account entry from the Stellar network
     pub async fn load(&self, env: &Env) -> Result<AccountEntry, SorobanHelperError> {
         env.get_account(&self.account_id().to_string()).await
     }
 
+    /// Returns the account ID.
     pub fn account_id(&self) -> AccountId {
         match self {
             Self::KeyPair(account) => account.account_id.clone(),
@@ -149,17 +289,37 @@ impl Account {
         }
     }
 
+    /// Gets the current sequence number for the account.
+    ///
+    /// # Parameters
+    ///
+    /// * `env` - The environment to use for fetching the sequence number
+    ///
+    /// # Returns
+    ///
+    /// The current sequence number wrapped in `AccountSequence`
     pub async fn get_sequence(&self, env: &Env) -> Result<AccountSequence, SorobanHelperError> {
         let entry = self.load(env).await?;
         Ok(AccountSequence::new(entry.seq_num.0))
     }
 
     /// Retrieves the next available sequence number.
+    ///
+    /// This is useful when preparing a new transaction.
+    ///
+    /// # Parameters
+    ///
+    /// * `env` - The environment to use for fetching the sequence number
+    ///
+    /// # Returns
+    ///
+    /// The next sequence number (current + 1) wrapped in `AccountSequence`
     pub async fn next_sequence(&self, env: &Env) -> Result<AccountSequence, SorobanHelperError> {
         let current = self.get_sequence(env).await?;
         Ok(current.next())
     }
 
+    /// Returns a reference to the account's signers.
     fn signers(&self) -> &[Signer] {
         match self {
             Self::KeyPair(account) => &account.signers,
@@ -167,6 +327,7 @@ impl Account {
         }
     }
 
+    /// Returns the current authorized calls tracker.
     fn authorized_calls(&self) -> AuthorizedCalls {
         match self {
             Self::KeyPair(account) => account.authorized_calls,
@@ -174,6 +335,7 @@ impl Account {
         }
     }
 
+    /// Returns a mutable reference to the authorized calls tracker.
     fn authorized_calls_mut(&mut self) -> &mut AuthorizedCalls {
         match self {
             Self::KeyPair(account) => &mut account.authorized_calls,
@@ -181,11 +343,26 @@ impl Account {
         }
     }
 
+    /// Sets the number of authorized calls for the account.
+    ///
+    /// # Parameters
+    ///
+    /// * `authorized_calls` - The number of calls to authorize
     pub fn set_authorized_calls(&mut self, authorized_calls: i16) {
         *self.authorized_calls_mut() = AuthorizedCalls::new(authorized_calls as u16);
     }
 
-    /// Helper to sign a transaction using the account’s signers.
+    /// Sign a transaction using the account's signers.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx` - The transaction to sign
+    /// * `network_id` - The network ID hash
+    /// * `signers` - The signers to use
+    ///
+    /// # Returns
+    ///
+    /// A vector of decorated signatures
     fn sign_with_tx(
         tx: &Transaction,
         network_id: &Hash,
@@ -202,6 +379,17 @@ impl Account {
     }
 
     /// Signs a transaction without checking or decrementing the authorized_calls counter.
+    ///
+    /// This method bypasses authorization checks and should be used with caution.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx` - The transaction to sign
+    /// * `network_id` - The network ID hash
+    ///
+    /// # Returns
+    ///
+    /// A signed transaction envelope
     pub fn sign_transaction_unsafe(
         &self,
         tx: &Transaction,
@@ -215,6 +403,17 @@ impl Account {
     }
 
     /// Signs a transaction, ensuring the account still has authorized calls.
+    ///
+    /// Decrements the authorized call counter when successful.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx` - The transaction to sign
+    /// * `network_id` - The network ID hash
+    ///
+    /// # Returns
+    ///
+    /// A signed transaction envelope
     pub fn sign_transaction(
         &mut self,
         tx: &Transaction,
@@ -236,6 +435,15 @@ impl Account {
     }
 
     /// Signs a transaction envelope by appending new signatures.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx_envelope` - The transaction envelope to sign
+    /// * `network_id` - The network ID hash
+    ///
+    /// # Returns
+    ///
+    /// A transaction envelope with the new signatures appended
     pub fn sign_transaction_envelope(
         &mut self,
         tx_envelope: &TransactionEnvelope,
@@ -274,6 +482,17 @@ impl Account {
     }
 
     /// Configures the account by building and signing a transaction that sets options.
+    ///
+    /// This can be used to add signers, set thresholds, and modify other account settings.
+    ///
+    /// # Parameters
+    ///
+    /// * `env` - The environment to use for transaction building
+    /// * `config` - The account configuration to apply
+    ///
+    /// # Returns
+    ///
+    /// A signed transaction envelope containing the set options operations
     pub async fn configure(
         mut self,
         env: &Env,
