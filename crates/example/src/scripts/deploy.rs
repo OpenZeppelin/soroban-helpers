@@ -1,9 +1,6 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{
-    Account, Contract, Env, EnvConfigs, Signer,
-    xdr::ScVal,
-};
+use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer, xdr::ScVal};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -12,8 +9,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     dotenv().ok();
 
     // Loads the private key from the .env file
-    let private_key_str =
-        env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set in .env file");
+    let private_key_str = env::var("PRIVATE_KEY").expect("PRIVATE_KEY must be set in .env file");
     let private_key = PrivateKey::from_string(&private_key_str).expect("Invalid private key");
 
     // Converts the private key to a signing key
