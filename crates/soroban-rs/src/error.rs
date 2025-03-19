@@ -13,28 +13,28 @@ use std::{error::Error, fmt};
 pub enum SorobanHelperError {
     /// Error when a transaction fails to execute successfully.
     TransactionFailed(String),
-    
+
     /// Error when attempting to upload contract code that already exists.
     ContractCodeAlreadyExists,
-    
+
     /// Error when a network request to the Soroban RPC server fails.
     NetworkRequestFailed(String),
-    
+
     /// Error when a signing operation fails.
     SigningFailed(String),
-    
+
     /// Error when XDR encoding or decoding fails.
     XdrEncodingFailed(String),
-    
+
     /// Error when an invalid argument is provided to a function.
     InvalidArgument(String),
-    
+
     /// Error when building a transaction fails.
     TransactionBuildFailed(String),
-    
+
     /// Error when an operation requires authorization that isn't present.
     Unauthorized(String),
-    
+
     /// Error when attempting to invoke a contract without setting deployment configs.
     ContractDeployedConfigsNotSet,
 }

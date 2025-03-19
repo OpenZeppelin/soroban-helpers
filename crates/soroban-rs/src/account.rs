@@ -434,7 +434,7 @@ impl Account {
         }))
     }
 
-    /// Signs a transaction envelope.
+    /// Signs a transaction envelope by appending new signatures.
     ///
     /// # Parameters
     ///
