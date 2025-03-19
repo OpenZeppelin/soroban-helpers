@@ -32,7 +32,11 @@
 //! }
 //! ```
 use crate::{
-    crypto, error::SorobanHelperError, fs::{DefaultFileReader, FileReader}, operation::Operations, transaction::TransactionBuilder, Account, Env
+    Account, Env, crypto,
+    error::SorobanHelperError,
+    fs::{DefaultFileReader, FileReader},
+    operation::Operations,
+    transaction::TransactionBuilder,
 };
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
@@ -285,7 +289,7 @@ impl Contract {
 
 #[cfg(test)]
 mod test {
-    use crate::{ mock::fs::MockFileReader, Contract};
+    use crate::{Contract, mock::fs::MockFileReader};
 
     #[tokio::test]
     async fn test_file_reader() {
@@ -295,7 +299,6 @@ mod test {
         let contract = Contract::new_with_reader(wasm_path, client_configs, file_reader).unwrap();
         assert_eq!(contract.wasm_bytes, b"mock wasm bytes".to_vec());
     }
-
 
     #[tokio::test]
     async fn test_upload_wasm() {
@@ -311,5 +314,4 @@ mod test {
     async fn test_contract_invoke() {
         // TODO.
     }
-
 }

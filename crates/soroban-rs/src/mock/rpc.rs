@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use std::default::Default;
 use std::sync::RwLock;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
-use stellar_xdr::curr::{ AccountEntry, TransactionEnvelope };
+use stellar_xdr::curr::{AccountEntry, TransactionEnvelope};
 
 use super::{mock_account_entry, mock_transaction_response};
 
@@ -21,15 +21,11 @@ impl MockRpcClient {
         simulate_transaction_envelope_result: Option<
             Result<SimulateTransactionResponse, SorobanHelperError>,
         >,
-        send_transaction_polling_result: Option<
-            Result<GetTransactionResponse, SorobanHelperError>,
-        >,
+        send_transaction_polling_result: Option<Result<GetTransactionResponse, SorobanHelperError>>,
     ) -> Self {
         Self {
             get_account_result: RwLock::new(get_account_result),
-            simulate_transaction_envelope_result: RwLock::new(
-                simulate_transaction_envelope_result,
-            ),
+            simulate_transaction_envelope_result: RwLock::new(simulate_transaction_envelope_result),
             send_transaction_polling_result: RwLock::new(send_transaction_polling_result),
         }
     }

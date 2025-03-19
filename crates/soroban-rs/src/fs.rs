@@ -1,5 +1,5 @@
-use std::fs;
 use crate::error::SorobanHelperError;
+use std::fs;
 
 pub trait FileReader {
     fn read(&self, path: &str) -> Result<Vec<u8>, SorobanHelperError>;

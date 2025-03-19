@@ -1,18 +1,19 @@
-pub mod rpc;
 pub mod fs;
+pub mod rpc;
 
-use crate::error::SorobanHelperError;
-use crate::{crypto, Account, Env, EnvConfigs};
 use crate::Signer;
+use crate::error::SorobanHelperError;
+use crate::{Account, Env, EnvConfigs, crypto};
 use ed25519_dalek::SigningKey;
-use stellar_strkey::Contract as ContractStrKey;
 use std::default::Default;
 use std::str::FromStr;
 use std::sync::Arc;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
+use stellar_strkey::Contract as ContractStrKey;
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber, String32, Thresholds, Transaction, TransactionExt, Uint256, VecM
+    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber,
+    String32, Thresholds, Transaction, TransactionExt, Uint256, VecM,
 };
 
 #[allow(dead_code)]
@@ -30,11 +31,8 @@ pub fn mock_transaction(account_id: AccountId) -> Transaction {
 
 #[allow(dead_code)]
 pub fn mock_contract_id(account: Account, env: &Env) -> ContractStrKey {
-    crypto::calculate_contract_id(
-        &account.account_id(),
-        &Uint256([0; 32]),
-        &env.network_id()
-    ).unwrap()
+    crypto::calculate_contract_id(&account.account_id(), &Uint256([0; 32]), &env.network_id())
+        .unwrap()
 }
 
 #[allow(dead_code)]
@@ -73,25 +71,22 @@ pub fn all_signers() -> Vec<Signer> {
 
 #[allow(dead_code)]
 pub fn mock_signer1() -> Signer {
-    let pk =
-        PrivateKey::from_string("SD3C2X7WPTUYX4YHL2G34PX75JZ35QJDFKM6SXDLYHWIPOWPIQUXFVLE")
-            .unwrap();
+    let pk = PrivateKey::from_string("SD3C2X7WPTUYX4YHL2G34PX75JZ35QJDFKM6SXDLYHWIPOWPIQUXFVLE")
+        .unwrap();
     Signer::new(SigningKey::from_bytes(&pk.0))
 }
 
 #[allow(dead_code)]
 pub fn mock_signer2() -> Signer {
-    let pk =
-        PrivateKey::from_string("SDFLNQOG3PV4CYJ4BNUXFXJBBOCQ57MK2NYUK4XUVVJTT2JSA3YDJA3A")
-            .unwrap();
+    let pk = PrivateKey::from_string("SDFLNQOG3PV4CYJ4BNUXFXJBBOCQ57MK2NYUK4XUVVJTT2JSA3YDJA3A")
+        .unwrap();
     Signer::new(SigningKey::from_bytes(&pk.0))
 }
 
 #[allow(dead_code)]
 pub fn mock_signer3() -> Signer {
-    let pk =
-        PrivateKey::from_string("SASAXDSRHPRZ55OLOD4EWXIWODQEZPYGIBFYX3XBUZGFFVY7QKLYRF5K")
-            .unwrap();
+    let pk = PrivateKey::from_string("SASAXDSRHPRZ55OLOD4EWXIWODQEZPYGIBFYX3XBUZGFFVY7QKLYRF5K")
+        .unwrap();
     Signer::new(SigningKey::from_bytes(&pk.0))
 }
 
