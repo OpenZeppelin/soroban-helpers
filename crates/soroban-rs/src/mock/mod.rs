@@ -1,17 +1,41 @@
 #[cfg(test)]
 pub mod mocks {
     use crate::error::SorobanHelperError;
+    use crate::fs::FileReader;
+    use crate::{Env, EnvConfigs};
     use crate::{Signer, rpc::RpcClient};
     use async_trait::async_trait;
     use ed25519_dalek::SigningKey;
+    use std::cell::RefCell;
     use std::default::Default;
     use std::str::FromStr;
+    use std::sync::{Arc, RwLock};
     use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
     use stellar_strkey::ed25519::PrivateKey;
     use stellar_xdr::curr::{
         AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds,
         TransactionEnvelope, VecM,
     };
+
+    pub fn mock_env(
+        get_account_result: Option<Result<AccountEntry, SorobanHelperError>>,
+        simulate_transaction_envelope_result: Option<
+            Result<SimulateTransactionResponse, SorobanHelperError>,
+        >,
+        send_transaction_polling_result: Option<Result<GetTransactionResponse, SorobanHelperError>>,
+    ) -> Env {
+        Env {
+            configs: EnvConfigs {
+                rpc_url: "http://test.com".to_string(),
+                network_passphrase: "test".to_string(),
+            },
+            rpc_client: Arc::new(MockRpcClient::new(
+                get_account_result,
+                simulate_transaction_envelope_result,
+                send_transaction_polling_result,
+            )),
+        }
+    }
 
     pub fn all_signers() -> Vec<Signer> {
         vec![mock_signer1(), mock_signer2(), mock_signer3()]
@@ -62,31 +86,82 @@ pub mod mocks {
         }
     }
 
-    pub struct MockRpcClient {}
+    pub struct MockRpcClient {
+        get_account_result: RwLock<Option<Result<AccountEntry, SorobanHelperError>>>,
+        simulate_transaction_envelope_result:
+            RwLock<Option<Result<SimulateTransactionResponse, SorobanHelperError>>>,
+        send_transaction_polling_result:
+            RwLock<Option<Result<GetTransactionResponse, SorobanHelperError>>>,
+    }
     impl MockRpcClient {
-        pub fn new() -> Self {
-            Self {}
+        pub fn new(
+            get_account_result: Option<Result<AccountEntry, SorobanHelperError>>,
+            simulate_transaction_envelope_result: Option<
+                Result<SimulateTransactionResponse, SorobanHelperError>,
+            >,
+            send_transaction_polling_result: Option<
+                Result<GetTransactionResponse, SorobanHelperError>,
+            >,
+        ) -> Self {
+            Self {
+                get_account_result: RwLock::new(get_account_result),
+                simulate_transaction_envelope_result: RwLock::new(
+                    simulate_transaction_envelope_result,
+                ),
+                send_transaction_polling_result: RwLock::new(send_transaction_polling_result),
+            }
         }
     }
 
     #[async_trait]
     impl RpcClient for MockRpcClient {
         async fn get_account(&self, account_id: &str) -> Result<AccountEntry, SorobanHelperError> {
-            Ok(mock_account_entry(account_id))
+            let result = self.get_account_result.read().unwrap();
+            match result.as_ref() {
+                Some(res) => res.clone(),
+                None => Ok(mock_account_entry(account_id)),
+            }
         }
 
         async fn simulate_transaction_envelope(
             &self,
             _tx_envelope: &TransactionEnvelope,
         ) -> Result<SimulateTransactionResponse, SorobanHelperError> {
-            Ok(SimulateTransactionResponse::default())
+            let result = self.simulate_transaction_envelope_result.read().unwrap();
+            match result.as_ref() {
+                Some(res) => res.clone(),
+                None => Ok(SimulateTransactionResponse::default()),
+            }
         }
 
         async fn send_transaction_polling(
             &self,
             _tx_envelope: &TransactionEnvelope,
         ) -> Result<GetTransactionResponse, SorobanHelperError> {
-            Ok(mock_transaction_response())
+            let result = self.send_transaction_polling_result.read().unwrap();
+            match result.as_ref() {
+                Some(res) => res.clone(),
+                None => Ok(mock_transaction_response()),
+            }
+        }
+    }
+
+    pub struct MockFileReader {
+        // Use RefCell to allow modifying the value inside the mock
+        mock_data: RefCell<Result<Vec<u8>, SorobanHelperError>>,
+    }
+
+    impl MockFileReader {
+        pub fn new(mock_data: Result<Vec<u8>, SorobanHelperError>) -> Self {
+            MockFileReader {
+                mock_data: RefCell::new(mock_data),
+            }
+        }
+    }
+
+    impl FileReader for MockFileReader {
+        fn read(&self, _path: &str) -> Result<Vec<u8>, SorobanHelperError> {
+            self.mock_data.borrow().clone()
         }
     }
 }

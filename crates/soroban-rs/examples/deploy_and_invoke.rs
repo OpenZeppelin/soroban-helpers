@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     account.set_authorized_calls(3);
 
     // Path to the contract wasm file
-    let contract = Contract::new("./fixtures/soroban_test_helpers_usage.wasm", None)?;
+    let contract = Contract::new("./fixtures/soroban-helpers-example.wasm", None)?;
 
     // Deploys the contract
     let mut deployed = contract

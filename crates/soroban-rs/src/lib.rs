@@ -9,6 +9,7 @@ mod parser;
 mod rpc;
 mod signer;
 mod transaction;
+mod fs;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
