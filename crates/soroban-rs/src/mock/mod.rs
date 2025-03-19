@@ -12,8 +12,21 @@ use std::sync::Arc;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds, Uint256, VecM
+    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber, String32, Thresholds, Transaction, TransactionExt, Uint256, VecM
 };
+
+#[allow(dead_code)]
+pub fn mock_transaction(account_id: AccountId) -> Transaction {
+    Transaction {
+        fee: 100,
+        seq_num: SequenceNumber::from(1),
+        source_account: account_id.into(),
+        cond: Preconditions::None,
+        memo: Memo::None,
+        operations: VecM::default(),
+        ext: TransactionExt::V0,
+    }
+}
 
 #[allow(dead_code)]
 pub fn mock_contract_id(account: Account, env: &Env) -> ContractStrKey {

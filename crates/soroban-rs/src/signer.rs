@@ -143,3 +143,58 @@ impl Signer {
         Ok(DecoratedSignature { hint, signature })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use stellar_xdr::curr::BytesM;
+
+    use crate::mock::mock_transaction;
+
+    use super::*;
+
+    #[test]
+    fn test_public_key() {
+        let signing_key = SigningKey::from_bytes(&[42; 32]);
+        let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
+
+        let signer = Signer::new(signing_key);
+        assert_eq!(signer.public_key(), public_key);
+    }
+
+    #[test]
+    fn test_account_id() {
+        let signing_key = SigningKey::from_bytes(&[42; 32]);
+        let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
+        let account_id = AccountId(XDRPublicKey::PublicKeyTypeEd25519(public_key.0.into()));
+
+        let signer = Signer::new(signing_key);
+        assert_eq!(signer.account_id(), account_id);
+    }
+
+    #[test]
+    fn test_sign_transaction() {
+        let signing_key = SigningKey::from_bytes(&[42; 32]);
+        let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
+        let account_id = AccountId(XDRPublicKey::PublicKeyTypeEd25519(public_key.0.into()));
+
+        let signer = Signer::new(signing_key);
+
+        let transaction = mock_transaction(account_id);
+        let network_id = Hash::from([42; 32]);
+
+        let decorated_signature = signer
+            .sign_transaction(&transaction, &network_id)
+            .unwrap();
+    
+        // hex encoded hint
+        let hint_vec = hex::decode("3d368d61").expect("Invalid hex");
+        let hint: [u8; 4] = hint_vec[..4].try_into().expect("slice with incorrect length");
+
+        // hex encoded signature
+        let signature_vec = hex::decode("c84612be60b83b3e13e18880b6f35c94bda449a53103367b78e211f0a7614dc0df02e45539a4879fc37fb908d7983efba2d7019c1ef5732f0c1331b808eec102").expect("Invalid hex");
+        let signature_bytes: BytesM<64> = signature_vec.try_into().expect("slice with incorrect length");
+
+        assert_eq!(decorated_signature.hint, SignatureHint(hint));
+        assert_eq!(decorated_signature.signature, Signature(signature_bytes));
+    }
+}
