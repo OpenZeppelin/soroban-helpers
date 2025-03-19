@@ -266,7 +266,7 @@ impl TransactionBuilder {
 mod test {
     use crate::{
         Account, TransactionBuilder,
-        mock::mocks::{
+        mock::{
             mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_simulate_tx_response,
         },
         operation::Operations,

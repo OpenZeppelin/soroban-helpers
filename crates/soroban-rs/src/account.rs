@@ -558,7 +558,7 @@ mod test {
     use stellar_xdr::curr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
 
     use crate::account::AuthorizedCalls;
-    use crate::mock::mocks::{all_signers, mock_env, mock_signer1, mock_signer3};
+    use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
     use crate::{Account, AccountConfig, TransactionBuilder};
 
     #[tokio::test]

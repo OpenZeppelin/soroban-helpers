@@ -285,7 +285,7 @@ impl Contract {
 
 #[cfg(test)]
 mod test {
-    use crate::{ mock::mocks::MockFileReader, Contract};
+    use crate::{ mock::fs::MockFileReader, Contract};
 
     #[tokio::test]
     async fn test_file_reader() {
