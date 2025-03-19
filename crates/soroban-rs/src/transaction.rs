@@ -261,3 +261,54 @@ impl TransactionBuilder {
         Ok(tx)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        Account, TransactionBuilder,
+        mock::mocks::{
+            mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_simulate_tx_response,
+        },
+        operation::Operations,
+        transaction::DEFAULT_TRANSACTION_FEES,
+    };
+
+    #[tokio::test]
+    async fn test_build_transaction() {
+        let account = Account::single(mock_signer1());
+        let get_account_result = Ok(mock_account_entry(&account.account_id().0.to_string()));
+
+        let env = mock_env(Some(get_account_result), None, None);
+        let contract_id = mock_contract_id(account.clone(), &env);
+        let operation = Operations::invoke_contract(&contract_id, "test", vec![]).unwrap();
+        let transaction = TransactionBuilder::new(&account, &env)
+            .add_operation(operation)
+            .build()
+            .await
+            .unwrap();
+
+        assert!(transaction.source_account.account_id() == account.account_id());
+        assert!(transaction.operations.len() == 1);
+        assert!(transaction.fee == DEFAULT_TRANSACTION_FEES);
+    }
+
+    #[tokio::test]
+    async fn test_simulate_and_build() {
+        let simulation_fee = 42;
+
+        let account = Account::single(mock_signer1());
+        let get_account_result = Ok(mock_account_entry(&account.account_id().0.to_string()));
+        let simulate_tx_result = Ok(mock_simulate_tx_response(Some(simulation_fee)));
+
+        let env = mock_env(Some(get_account_result), Some(simulate_tx_result), None);
+        let contract_id = mock_contract_id(account.clone(), &env);
+        let operation = Operations::invoke_contract(&contract_id, "test", vec![]).unwrap();
+        let tx_builder = TransactionBuilder::new(&account, &env).add_operation(operation.clone());
+
+        let tx = tx_builder.simulate_and_build(&env, &account).await.unwrap();
+
+        assert!(tx.fee == 142); // DEFAULT_TRANSACTION_FEE + SIMULATION_FEE 
+        assert!(tx.operations.len() == 1);
+        assert!(tx.operations[0].body == operation.body);
+    }
+}

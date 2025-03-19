@@ -2,10 +2,11 @@
 pub mod mocks {
     use crate::error::SorobanHelperError;
     use crate::fs::FileReader;
-    use crate::{Env, EnvConfigs};
+    use crate::{crypto, Account, Env, EnvConfigs};
     use crate::{Signer, rpc::RpcClient};
     use async_trait::async_trait;
     use ed25519_dalek::SigningKey;
+    use stellar_strkey::Contract as ContractStrKey;
     use std::cell::RefCell;
     use std::default::Default;
     use std::str::FromStr;
@@ -13,9 +14,23 @@ pub mod mocks {
     use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
     use stellar_strkey::ed25519::PrivateKey;
     use stellar_xdr::curr::{
-        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds,
-        TransactionEnvelope, VecM,
+        AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds, TransactionEnvelope, Uint256, VecM
     };
+
+    pub fn mock_contract_id(account: Account, env: &Env) -> ContractStrKey {
+        crypto::calculate_contract_id(
+            &account.account_id(),
+            &Uint256([0; 32]),
+            &env.network_id()
+        ).unwrap()
+    }
+
+    pub fn mock_simulate_tx_response(min_resource_fee: Option<u64>) -> SimulateTransactionResponse {
+        let mut response = SimulateTransactionResponse::default();
+        response.min_resource_fee = min_resource_fee.unwrap_or(100);
+        response.transaction_data = "test".to_string();
+        response
+    }
 
     pub fn mock_env(
         get_account_result: Option<Result<AccountEntry, SorobanHelperError>>,
