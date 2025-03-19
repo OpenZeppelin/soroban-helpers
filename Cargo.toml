@@ -2,7 +2,7 @@
 resolver = "3"
 members = [
   "crates/soroban-test-helpers",
-  "crates/soroban-test-helpers-usage",
+  "crates/example",
   "crates/soroban-rs"
 ]
 default-members = ["crates/soroban-test-helpers"]
@@ -33,3 +33,4 @@ async-trait = "0.1.88"
 
 # members
 soroban-test-helpers = { path = "crates/soroban-test-helpers" }
+soroban-rs = { path = "crates/soroban-rs" }

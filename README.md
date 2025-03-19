@@ -8,7 +8,7 @@ This project provides three main components:
 
 1. **soroban-rs**: A high-level client library for interacting with the Soroban RPC API
 2. **soroban-test-helpers**: A procedural macro library that simplifies writing tests for Soroban smart contracts
-3. **soroban-test-helpers-usage**: An example contract demonstrating how to use the test helpers
+3. **example**: An example contract demonstrating how to use the test helpers.
 
 ## Components
 
@@ -16,8 +16,9 @@ This project provides three main components:
 
 A high-level client library that abstracts away the complexity of interacting with the Soroban RPC API. It provides:
 
-- **Provider**: Manages connections to Soroban RPC endpoints and handles network configuration
+- **Env**: Manages connections to Soroban RPC endpoints and handles network configuration
 - **Signer**: Manages transaction signing with Stellar keypairs
+- **Account**: Manages higher level account interactions.
 - **Contract**: Simplifies contract deployment and interaction, including support for constructor arguments
 - **Transaction Builder**: Helps create and manage Soroban transactions
 
@@ -26,6 +27,8 @@ A high-level client library that abstracts away the complexity of interacting wi
 For detailed examples of how to use `soroban-rs`, please refer to the [examples](crates/soroban-rs/examples) directory. The examples include:
 
 - `deploy_and_invoke.rs`: Demonstrates deploying and invoking a contract.
+- `invoke_contract.rs`: Demonstrates invoking an already deployed contract.
+- `create_multisig.rs`: Demonstrates adding signers to an existing account.
 
 ### soroban-test-helpers
 
@@ -63,9 +66,12 @@ fn test_injected_args(e: Env, alice: Address, bob: Address) {
 }
 ```
 
-### soroban-test-helpers-usage
+### Example
 
-An example crate demonstrating how to use the `soroban-test-helpers` library for testing Soroban contracts. This serves as a reference implementation to show how to write tests using both traditional methods and the simplified `soroban-test-helpers` approach
+An example crate demonstrating how to use the `soroban-test-helpers` and `soroban-rs` libraries for testing Soroban contracts. This serves as a reference implementation to show how to:
+
+- Write testsusing both traditional methods and the simplified `soroban-test-helpers` approach.
+- Add scripts to your soroban project for deploying and invoking contracts.
 
 ## Contributing
 

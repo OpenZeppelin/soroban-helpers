@@ -2051,6 +2051,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "soroban-helpers-example"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "ed25519-dalek",
+ "soroban-rs",
+ "soroban-sdk",
+ "soroban-test-helpers",
+ "stellar-strkey 0.0.11",
+ "tokio",
+]
+
+[[package]]
 name = "soroban-ledger-snapshot"
 version = "22.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2157,14 +2170,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.98",
-]
-
-[[package]]
-name = "soroban-test-helpers-usage"
-version = "0.1.0"
-dependencies = [
- "soroban-sdk",
- "soroban-test-helpers",
 ]
 
 [[package]]
