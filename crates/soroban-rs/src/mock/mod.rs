@@ -37,10 +37,11 @@ pub fn mock_contract_id(account: Account, env: &Env) -> ContractStrKey {
 
 #[allow(dead_code)]
 pub fn mock_simulate_tx_response(min_resource_fee: Option<u64>) -> SimulateTransactionResponse {
-    let mut response = SimulateTransactionResponse::default();
-    response.min_resource_fee = min_resource_fee.unwrap_or(100);
-    response.transaction_data = "test".to_string();
-    response
+    SimulateTransactionResponse {
+        min_resource_fee: min_resource_fee.unwrap_or(100),
+        transaction_data: "test".to_string(),
+        ..Default::default()
+    }
 }
 
 #[allow(dead_code)]
