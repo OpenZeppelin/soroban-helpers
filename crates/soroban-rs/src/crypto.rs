@@ -1,3 +1,27 @@
+//! # Soroban Cryptography Utilities
+//!
+//! This module provides cryptographic functions for Soroban contracts, including
+//! hashing, random salt generation, and contract ID calculation.
+//!
+//! ## Features
+//!
+//! - SHA-256 hashing
+//! - Salt generation for contract identifiers
+//! - Contract ID calculation from account IDs and salts
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use soroban_rs::crypto;
+//! use stellar_xdr::curr::{AccountId, PublicKey, Hash, Uint256};
+//!
+//! // Generate a SHA-256 hash of data
+//! let data = b"contract data to hash";
+//! let hash = crypto::sha256_hash(data);
+//!
+//! // Generate a random salt for contract ID creation
+//! let salt = crypto::generate_salt();
+//! ```
 use crate::error::SorobanHelperError;
 use sha2::{Digest, Sha256};
 use stellar_xdr::curr::{
@@ -5,16 +29,46 @@ use stellar_xdr::curr::{
     HashIdPreimageContractId, Limits, ScAddress, Uint256, WriteXdr,
 };
 
+/// Computes the SHA-256 hash of the provided data.
+///
+/// # Parameters
+///
+/// * `data` - The byte slice to hash
+///
+/// # Returns
+///
+/// The SHA-256 hash as a `Hash` type
 pub fn sha256_hash(data: &[u8]) -> Hash {
     let hash_bytes: [u8; 32] = Sha256::digest(data).into();
     Hash(hash_bytes)
 }
 
+/// Generates a random salt.
+///
+/// # Returns
+///
+/// A random 32-byte salt as `Uint256`
 pub fn generate_salt() -> Uint256 {
     let salt_bytes: [u8; 32] = rand::random();
     Uint256(salt_bytes)
 }
 
+/// Calculates a contract ID from an account ID, salt, and network ID.
+///
+/// # Parameters
+///
+/// * `account_id` - The account ID of the deployer
+/// * `salt` - A random salt to ensure uniqueness
+/// * `network_id` - The network ID hash
+///
+/// # Returns
+///
+/// The calculated contract ID or an error if XDR encoding fails
+///
+/// # Errors
+///
+/// Returns `SorobanHelperError::XdrEncodingFailed` if the HashIdPreimage
+/// cannot be encoded to XDR format
 pub fn calculate_contract_id(
     account_id: &stellar_xdr::curr::AccountId,
     salt: &Uint256,

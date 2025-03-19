@@ -1,3 +1,36 @@
+//! # Soroban Contract Management
+//!
+//! This module provides functionality for interacting with Soroban Smart Contracts,
+//! including deployment and function invocation.
+//!
+//! ## Features
+//!
+//! - Loading contract WASM bytecode from file
+//! - Deploying contracts to the Soroban network
+//! - Invoking contract functions with arguments
+//! - Managing contract identifiers
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer};
+//! use stellar_xdr::curr::ScVal;
+//!
+//! async fn deploy_and_invoke() {
+//!     // Setup environment and account
+//!     let env = Env::new(...});
+//!     let signing_key = SigningKey::from_bytes(...);
+//!     let mut account = Account::single(Signer::new(signing_key));
+//!
+//!     // Load and deploy contract
+//!     let contract = Contract::new("path/to/contract.wasm", None)?;
+//!     let mut deployed = contract.deploy(&env, &mut account, None).await?;
+//!
+//!     // Invoke contract function
+//!     let args = vec![/* function arguments as ScVal */];
+//!     let result = deployed.invoke("function_name", args).await?;
+//! }
+//! ```
 use crate::{
     Account, Env, crypto, error::SorobanHelperError, operation::Operations,
     transaction::TransactionBuilder,
@@ -8,18 +41,34 @@ use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
 };
 
+/// Name of the constructor function
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";
 
+/// Configuration for client interaction with a deployed contract
+///
+/// Contains all necessary information to interact with a deployed contract,
+/// including the contract identifier, environment, and signing account.
 #[derive(Clone)]
 pub struct ClientContractConfigs {
+    /// The deployed contract's identifier
     pub contract_id: ContractId,
+    /// The environment for interacting with the network
     pub env: Env,
+    /// The account used for signing transactions
     pub account: Account,
 }
 
+/// Represents a Soroban smart contract
+///
+/// Provides functionality to deploy and interact with Soroban smart contracts.
+/// A Contract instance can represent either an undeployed contract (with just WASM bytecode)
+/// or a deployed contract (with client configuration for interacting with it).
 pub struct Contract {
+    /// Raw WASM bytecode of the contract
     wasm_bytes: Vec<u8>,
+    /// SHA-256 hash of the WASM bytecode
     wasm_hash: Hash,
+    /// Optional configuration for interacting with a deployed instance of this contract
     client_configs: Option<ClientContractConfigs>,
 }
 
@@ -34,6 +83,16 @@ impl Clone for Contract {
 }
 
 impl Contract {
+    /// Creates a new Contract instance from a WASM file path
+    ///
+    /// # Parameters
+    ///
+    /// * `wasm_path` - Path to the contract's WASM file
+    /// * `client_configs` - Optional configuration for interacting with an already deployed instance
+    ///
+    /// # Returns
+    ///
+    /// A new Contract instance or an error if the file couldn't be read
     pub fn new(
         wasm_path: &str,
         client_configs: Option<ClientContractConfigs>,
@@ -48,6 +107,24 @@ impl Contract {
         })
     }
 
+    /// Deploys the contract to the Soroban network
+    ///
+    /// This method performs two operations:
+    /// 1. Uploads the contract WASM bytecode if it doesn't exist on the network
+    /// 2. Creates a contract instance with the uploaded WASM
+    ///
+    /// If the contract has a constructor function,
+    /// the provided constructor arguments will be passed to it during deployment.
+    ///
+    /// # Parameters
+    ///
+    /// * `env` - The environment to use for deployment
+    /// * `account` - The account that will deploy the contract and pay for the transaction
+    /// * `constructor_args` - Optional arguments to pass to the contract's constructor
+    ///
+    /// # Returns
+    ///
+    /// The Contract instance updated with client configuration for the deployed contract
     pub async fn deploy(
         mut self,
         env: &Env,
@@ -92,14 +169,34 @@ impl Contract {
         Ok(self)
     }
 
+    /// Sets the client configuration for interacting with a deployed contract
+    ///
+    /// # Parameters
+    ///
+    /// * `client_configs` - The client configuration to set
     fn set_client_configs(&mut self, client_configs: ClientContractConfigs) {
         self.client_configs = Some(client_configs);
     }
 
+    /// Returns the contract ID if the contract has been deployed
+    ///
+    /// # Returns
+    ///
+    /// The contract ID or None if the contract has not been deployed
     pub fn contract_id(&self) -> Option<ContractId> {
         self.client_configs.as_ref().map(|c| c.contract_id)
     }
 
+    /// Uploads the contract WASM bytecode to the network
+    ///
+    /// # Parameters
+    ///
+    /// * `account` - The account that will pay for the upload
+    /// * `env` - The environment to use for the upload
+    ///
+    /// # Returns
+    ///
+    /// Ok(()) if the upload was successful or the code already exists
     async fn upload_wasm(
         &self,
         account: &mut Account,
@@ -125,6 +222,21 @@ impl Contract {
         }
     }
 
+    /// Invokes a function on the deployed contract
+    ///
+    /// # Parameters
+    ///
+    /// * `function_name` - The name of the function to invoke
+    /// * `args` - The arguments to pass to the function
+    ///
+    /// # Returns
+    ///
+    /// The transaction response from the network
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the contract has not been deployed or
+    /// if there's an issue with the invocation
     pub async fn invoke(
         &mut self,
         function_name: &str,

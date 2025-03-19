@@ -1,3 +1,26 @@
+//! # Soroban Operation Creation
+//!
+//! This module provides functionality for creating Stellar operations for Soroban contracts.
+//! These operations represent the fundamental actions that can be performed with Soroban,
+//! such as uploading contract code, deploying contracts, and invoking contract functions.
+//!
+//! ## Features
+//!
+//! - Creating WASM uploading operations
+//! - Creating contract deployment operations (with or without constructor)
+//! - Creating contract function invocation operations
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use soroban_rs::operation::Operations;
+//! use stellar_xdr::curr::{ContractIdPreimage, Hash, ScVal};
+//! use stellar_strkey::Contract;
+//!
+//! // Upload contract WASM
+//! let wasm_bytes = std::fs::read("path/to/contract.wasm")?;
+//! let upload_op = Operations::upload_wasm(wasm_bytes)?;
+//! ```
 use stellar_xdr::curr::{
     ContractExecutable, ContractIdPreimage, CreateContractArgs, CreateContractArgsV2, Hash,
     HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation, OperationBody, ScAddress,
@@ -7,9 +30,28 @@ use stellar_xdr::curr::{
 
 use crate::error::SorobanHelperError;
 
+/// Factory for creating Soroban operations.
+///
+/// This struct provides methods to create operations for common Soroban tasks,
+/// such as uploading contract WASM, deploying contracts, and invoking contract functions.
+/// These operations can be added to transactions and submitted to the Stellar network.
 pub struct Operations;
 
 impl Operations {
+    /// Creates an operation to upload contract WASM code to the Stellar network.
+    ///
+    /// # Parameters
+    ///
+    /// * `wasm_bytes` - The raw WASM bytecode to upload
+    ///
+    /// # Returns
+    ///
+    /// An operation that can be added to a transaction to upload the WASM
+    ///
+    /// # Errors
+    ///
+    /// Returns `SorobanHelperError::XdrEncodingFailed` if the WASM bytes
+    /// cannot be encoded into the XDR format
     pub fn upload_wasm(wasm_bytes: Vec<u8>) -> Result<Operation, SorobanHelperError> {
         Ok(Operation {
             source_account: None,
@@ -27,6 +69,22 @@ impl Operations {
         })
     }
 
+    /// Creates an operation to deploy a contract to the Stellar network.
+    ///
+    /// # Parameters
+    ///
+    /// * `contract_id_preimage` - The preimage used to derive the contract ID
+    /// * `wasm_hash` - The hash of the previously uploaded WASM code
+    /// * `constructor_args` - Optional arguments to pass to the contract constructor
+    ///
+    /// # Returns
+    ///
+    /// An operation that can be added to a transaction to deploy the contract
+    ///
+    /// # Errors
+    ///
+    /// Returns `SorobanHelperError::XdrEncodingFailed` if any of the arguments
+    /// cannot be encoded into the XDR format
     pub fn create_contract(
         contract_id_preimage: ContractIdPreimage,
         wasm_hash: Hash,
@@ -40,6 +98,22 @@ impl Operations {
         }
     }
 
+    /// Creates an operation to deploy a contract with constructor arguments.
+    ///
+    /// # Parameters
+    ///
+    /// * `contract_id_preimage` - The preimage used to derive the contract ID
+    /// * `wasm_hash` - The hash of the previously uploaded WASM code
+    /// * `constructor_args` - Arguments to pass to the contract constructor
+    ///
+    /// # Returns
+    ///
+    /// An operation that can be added to a transaction to deploy the contract
+    ///
+    /// # Errors
+    ///
+    /// Returns `SorobanHelperError::XdrEncodingFailed` if any of the arguments
+    /// cannot be encoded into the XDR format
     fn create_contract_with_constructor(
         contract_id_preimage: ContractIdPreimage,
         wasm_hash: Hash,
@@ -80,6 +154,21 @@ impl Operations {
         })
     }
 
+    /// Creates an operation to deploy a contract without constructor arguments.
+    ///
+    /// # Parameters
+    ///
+    /// * `contract_id_preimage` - The preimage used to derive the contract ID
+    /// * `wasm_hash` - The hash of the previously uploaded WASM code
+    ///
+    /// # Returns
+    ///
+    /// An operation that can be added to a transaction to deploy the contract
+    ///
+    /// # Errors
+    ///
+    /// Returns `SorobanHelperError::XdrEncodingFailed` if any of the arguments
+    /// cannot be encoded into the XDR format
     fn create_contract_without_constructor(
         contract_id_preimage: ContractIdPreimage,
         wasm_hash: Hash,
@@ -111,6 +200,23 @@ impl Operations {
         })
     }
 
+    /// Creates an operation to invoke a function on a deployed contract.
+    ///
+    /// # Parameters
+    ///
+    /// * `contract_id` - The ID of the deployed contract
+    /// * `function_name` - The name of the function to invoke
+    /// * `args` - Arguments to pass to the function
+    ///
+    /// # Returns
+    ///
+    /// An operation that can be added to a transaction to invoke the contract function
+    ///
+    /// # Errors
+    ///
+    /// Returns:
+    /// - `SorobanHelperError::InvalidArgument` if the function name is invalid
+    /// - `SorobanHelperError::XdrEncodingFailed` if the arguments cannot be encoded
     pub fn invoke_contract(
         contract_id: &stellar_strkey::Contract,
         function_name: &str,
