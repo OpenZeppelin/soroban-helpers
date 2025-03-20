@@ -15,20 +15,29 @@
 //! ```rust,no_run
 //! use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer};
 //! use stellar_xdr::curr::ScVal;
+//! use ed25519_dalek::SigningKey;
 //!
 //! async fn deploy_and_invoke() {
 //!     // Setup environment and account
-//!     let env = Env::new(...});
-//!     let signing_key = SigningKey::from_bytes(...);
+//!     let env = Env::new(EnvConfigs {
+//!         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
+//!         network_passphrase: "Test SDF Network ; September 2015".to_string(),
+//!     }).unwrap();
+//!
+//!     let private_key_bytes: [u8; 32] = [
+//!         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+//!         26, 27, 28, 29, 30, 31, 32,
+//!     ];
+//!     let signing_key = SigningKey::from_bytes(&private_key_bytes);
 //!     let mut account = Account::single(Signer::new(signing_key));
 //!
 //!     // Load and deploy contract
-//!     let contract = Contract::new("path/to/contract.wasm", None)?;
-//!     let mut deployed = contract.deploy(&env, &mut account, None).await?;
+//!     let contract = Contract::new("path/to/contract.wasm", None).unwrap();
+//!     let mut deployed = contract.deploy(&env, &mut account, None).await.unwrap();
 //!
 //!     // Invoke contract function
 //!     let args = vec![/* function arguments as ScVal */];
-//!     let result = deployed.invoke("function_name", args).await?;
+//!     let result = deployed.invoke("function_name", args).await.unwrap();
 //! }
 //! ```
 use crate::{

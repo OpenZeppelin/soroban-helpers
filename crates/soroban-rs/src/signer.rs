@@ -7,19 +7,25 @@
 //! ## Example
 //!
 //! ```rust,no_run
-//! use soroban_rs::Signer;
+//! use soroban_rs::{Env, Signer};
 //! use ed25519_dalek::SigningKey;
-//! use stellar_xdr::curr::{Hash, Transaction};
+//! use stellar_xdr::curr::Transaction;
 //!
-//! // Create a signer from a signing key
-//! let signing_key = SigningKey::from_bytes(&[/* your private key bytes */]);
-//! let signer = Signer::new(signing_key);
+//! async fn example(tx: Transaction, env: Env) {
+//!     // Create a signer from a signing key
+//!     let private_key_bytes: [u8; 32] = [
+//!         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+//!         26, 27, 28, 29, 30, 31, 32,
+//!     ];
+//!     let signing_key = SigningKey::from_bytes(&private_key_bytes);
+//!     let signer = Signer::new(signing_key);
 //!
-//! // Get the associated Stellar account ID
-//! let account_id = signer.account_id();
+//!     // Get the associated Stellar account ID
+//!     let account_id = signer.account_id();
 //!
-//! // Sign a transaction
-//! let signature = signer.sign_transaction(&tx, &network_id)?;
+//!     // Sign a transaction
+//!     let signature = signer.sign_transaction(&tx, &env.network_id()).unwrap();
+//! }
 //! ```
 use crate::error::SorobanHelperError;
 use ed25519_dalek::{SigningKey, ed25519::signature::SignerMut};

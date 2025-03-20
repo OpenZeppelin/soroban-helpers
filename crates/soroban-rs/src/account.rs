@@ -14,15 +14,17 @@
 //!
 //! ```rust,no_run
 //! use soroban_rs::{Account, Env, EnvConfigs, Signer};
+//! use ed25519_dalek::SigningKey;
 //!
-//! // Create a new environment
-//! let env = Env::new(EnvConfigs {
-//!     rpc_url: "https://soroban-testnet.stellar.org".to_string(),
-//!     network_passphrase: "Test SDF Network ; September 2015".to_string(),
-//! });
+//! // Example private key (32 bytes)
+//! let private_key_bytes: [u8; 32] = [
+//!     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+//!     26, 27, 28, 29, 30, 31, 32,
+//! ];
 //!
 //! // Create a signer from a secret key
-//! let signer = Signer::new(SigningKey::from_bytes(...));
+//! let signing_key = SigningKey::from_bytes(&private_key_bytes);
+//! let signer = Signer::new(signing_key);
 //!
 //! // Single-signature account
 //! let account = Account::single(signer);
@@ -124,10 +126,13 @@ impl AuthorizedCalls {
 /// # Example
 ///
 /// ```rust,no_run
+/// use soroban_rs::AccountConfig;
+/// use stellar_strkey::ed25519::PublicKey;
+///
 /// let config = AccountConfig::new()
 ///     .with_master_weight(10)
 ///     .with_thresholds(1, 5, 10)
-///     .add_signer(some_public_key, 5);
+///     .add_signer(PublicKey::from_string("PUBLIC KEY").unwrap(), 5);
 /// ```
 pub struct AccountConfig {
     /// Weight assigned to the master key (account owner)

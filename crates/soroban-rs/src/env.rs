@@ -12,19 +12,20 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust
 //! use soroban_rs::{Env, EnvConfigs};
 //! use stellar_xdr::curr::TransactionEnvelope;
 //!
-//! async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! async fn example() {
 //!     // Create a new environment for the Stellar testnet
 //!     let env = Env::new(EnvConfigs {
 //!         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
 //!         network_passphrase: "Test SDF Network ; September 2015".to_string(),
-//!     })?;
+//!     }).unwrap();
 //!
 //!     // Retrieve account information
-//!     let account = env.get_account(...).await?;
+//!     let account = env.get_account("G..........").await.unwrap();
+//!     println!("Account: {:?}", account);
 //! }
 //! ```
 use crate::{
