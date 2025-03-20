@@ -12,8 +12,7 @@ use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_strkey::Contract as ContractStrKey;
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber,
-    String32, Thresholds, Transaction, TransactionExt, Uint256, VecM,
+    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber, String32, Thresholds, Transaction, TransactionEnvelope, TransactionExt, TransactionV1Envelope, Uint256, VecM
 };
 
 #[allow(dead_code)]
@@ -27,6 +26,14 @@ pub fn mock_transaction(account_id: AccountId) -> Transaction {
         operations: VecM::default(),
         ext: TransactionExt::V0,
     }
+}
+
+#[allow(dead_code)]
+pub fn mock_transaction_envelope(account_id: AccountId) -> TransactionEnvelope {
+    TransactionEnvelope::Tx(TransactionV1Envelope {
+        tx: mock_transaction(account_id),
+        signatures: VecM::default(),
+    })
 }
 
 #[allow(dead_code)]
@@ -113,4 +120,9 @@ pub fn mock_transaction_response() -> GetTransactionResponse {
         result_meta: None,
         status: "".to_string(),
     }
+}
+
+#[allow(dead_code)]
+pub fn mock_simulate_transaction_response() -> SimulateTransactionResponse {
+    SimulateTransactionResponse::default()
 }

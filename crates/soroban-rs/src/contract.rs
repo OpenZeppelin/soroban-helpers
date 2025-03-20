@@ -298,7 +298,11 @@ impl Contract {
 
 #[cfg(test)]
 mod test {
-    use crate::{Contract, mock::fs::MockFileReader};
+    use crate::{
+        crypto, error::SorobanHelperError, mock::{
+            fs::MockFileReader, mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_simulate_transaction_response, mock_transaction_response,
+        }, Account, ClientContractConfigs, Contract
+    };
 
     #[tokio::test]
     async fn test_file_reader() {
@@ -311,16 +315,115 @@ mod test {
 
     #[tokio::test]
     async fn test_upload_wasm() {
-        // TODO.
+        let simulate_transaction_envelope_result = mock_simulate_transaction_response();
+        let signer_1_account_id = mock_signer1().account_id().0.to_string();
+        let get_account_result = mock_account_entry(&signer_1_account_id);
+
+        let env = mock_env(
+            Some(Ok(get_account_result)),
+            Some(Ok(simulate_transaction_envelope_result)),
+            None,
+        );
+        let wasm_path = "path/to/wasm";
+        let mut account = Account::single(mock_signer1());
+        let client_configs = ClientContractConfigs {
+            contract_id: mock_contract_id(account.clone(), &env),
+            env: env.clone(),
+            account: account.clone(),
+        };
+        let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
+        let contract =
+            Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
+
+        assert!(contract.upload_wasm(&mut account, &env).await.is_ok());
     }
 
     #[tokio::test]
-    async fn test_contract_deploy() {
-        // TODO.
+    async fn test_upload_wasm_contract_code_already_exists() {
+        let simulate_transaction_envelope_result = mock_simulate_transaction_response();
+
+        let signer_1_account_id = mock_signer1().account_id().0.to_string();
+        let get_account_result = mock_account_entry(&signer_1_account_id);
+
+        let send_transaction_result = Err(SorobanHelperError::ContractCodeAlreadyExists);
+
+        let env = mock_env(
+            Some(Ok(get_account_result)),
+            Some(Ok(simulate_transaction_envelope_result)),
+            Some(send_transaction_result),
+        );
+        let wasm_path = "path/to/wasm";
+        let mut account = Account::single(mock_signer1());
+        let client_configs = ClientContractConfigs {
+            contract_id: mock_contract_id(account.clone(), &env),
+            env: env.clone(),
+            account: account.clone(),
+        };
+        let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
+        let contract =
+            Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
+
+        let res = contract.upload_wasm(&mut account, &env).await;
+        // result must be Ok, because the contract code already exists.
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
     async fn test_contract_invoke() {
-        // TODO.
+        let simulate_transaction_envelope_result = mock_simulate_transaction_response();
+
+        let signer_1_account_id = mock_signer1().account_id().0.to_string();
+        let get_account_result = mock_account_entry(&signer_1_account_id);
+
+        let send_transaction_result = Ok(mock_transaction_response());
+
+        let env = mock_env(
+            Some(Ok(get_account_result)),
+            Some(Ok(simulate_transaction_envelope_result)),
+            Some(send_transaction_result),
+        );
+        let wasm_path = "path/to/wasm";
+        let account = Account::single(mock_signer1());
+        let client_configs = ClientContractConfigs {
+            contract_id: mock_contract_id(account.clone(), &env),
+            env: env.clone(),
+            account: account.clone(),
+        };
+        let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
+        let mut contract =
+            Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
+
+        let res = contract.invoke("function_name", vec![]).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().result_meta, mock_transaction_response().result_meta);
+    }
+
+    #[tokio::test]
+    async fn test_contract_deploy() {
+        let simulate_transaction_envelope_result = mock_simulate_transaction_response();
+        let signer_1_account_id = mock_signer1().account_id().0.to_string();
+        let get_account_result = mock_account_entry(&signer_1_account_id);
+        let send_transaction_result = Ok(mock_transaction_response());
+
+        let env = mock_env(
+            Some(Ok(get_account_result)),
+            Some(Ok(simulate_transaction_envelope_result)),
+            Some(send_transaction_result),
+        );
+        let wasm_path = "path/to/wasm";
+        let mut account = Account::single(mock_signer1());
+        let client_configs = ClientContractConfigs {
+            contract_id: mock_contract_id(account.clone(), &env),
+            env: env.clone(),
+            account: account.clone(),
+        };
+        let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
+
+        let wasm_hash = crypto::sha256_hash(&b"mock wasm bytes".to_vec());
+        let contract =
+            Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
+        let res = contract.deploy(&env, &mut account, None).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().wasm_hash, wasm_hash);
     }
 }
