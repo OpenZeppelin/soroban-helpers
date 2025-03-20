@@ -1,7 +1,8 @@
 use crate::error::SorobanHelperError;
 use stellar_rpc_client::GetTransactionResponse;
+use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
-    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScVal, TransactionMeta,
+    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScAddress, ScVal, TransactionMeta,
     TransactionResultResult,
 };
 
@@ -17,7 +18,7 @@ pub enum ParserType {
 pub enum ParseResult {
     AccountSetOptions(Option<AccountEntry>),
     InvokeFunction(Option<ScVal>),
-    Deploy(Option<ScVal>),
+    Deploy(Option<ContractId>),
     // Add more result types as needed
 }
 
@@ -70,7 +71,24 @@ impl Parser {
                 // If we couldn't extract a valid result but transaction succeeded
                 Ok(ParseResult::InvokeFunction(None))
             }
-            ParserType::Deploy => todo!(),
+            ParserType::Deploy => {
+                self.check_tx_success(&response.result)?;
+                
+                // Extract contract hash from transaction metadata
+                let result = response
+                    .result_meta
+                    .as_ref()
+                    .and_then(|meta| self.extract_return_value(meta))
+                    .and_then(|val| self.extract_contract_id(&val))
+                    .map(|contract_id| ParseResult::Deploy(Some(contract_id)));
+                
+                if let Some(result) = result {
+                    return Ok(result);
+                }
+                
+                // If we couldn't extract a valid result but transaction succeeded
+                Ok(ParseResult::Deploy(None))
+            },
         }
     }
 
@@ -123,6 +141,15 @@ impl Parser {
             )) => Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
                 value.0.to_vec().try_into().unwrap_or_default(),
             ))),
+            _ => None,
+        }
+    }
+    
+    fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
+        match val {
+            ScVal::Address(ScAddress::Contract(hash)) => {
+                Some(ContractId(hash.0))
+            },
             _ => None,
         }
     }

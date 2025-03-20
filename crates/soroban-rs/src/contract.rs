@@ -32,11 +32,7 @@
 //! }
 //! ```
 use crate::{
-    Account, Env, crypto,
-    error::SorobanHelperError,
-    fs::{DefaultFileReader, FileReader},
-    operation::Operations,
-    transaction::TransactionBuilder,
+    crypto, error::SorobanHelperError, fs::{DefaultFileReader, FileReader}, operation::Operations, transaction::TransactionBuilder, Account, Env, ParseResult, Parser, ParserType
 };
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
@@ -155,8 +151,6 @@ impl Contract {
         self.upload_wasm(account, env).await?;
 
         let salt = crypto::generate_salt();
-        let contract_id =
-            crypto::calculate_contract_id(&account.account_id(), &salt, &env.network_id())?;
 
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account.account_id()),
@@ -179,7 +173,15 @@ impl Contract {
 
         let deploy_tx = builder.simulate_and_build(env, account).await?;
         let tx_envelope = account.sign_transaction(&deploy_tx, &env.network_id())?;
-        env.send_transaction(&tx_envelope).await?;
+        let tx_result = env.send_transaction(&tx_envelope).await?;
+
+        let parser = Parser::new(ParserType::Deploy);
+        let result = parser.parse(&tx_result)?;
+
+        let contract_id = match result {
+            ParseResult::Deploy(Some(contract_id)) => contract_id,
+            _ => return Err(SorobanHelperError::ContractDeployedConfigsNotSet),
+        };
 
         self.set_client_configs(ClientContractConfigs {
             contract_id,
