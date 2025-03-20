@@ -425,7 +425,7 @@ mod test {
         };
         let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
 
-        let wasm_hash = crypto::sha256_hash(&b"mock wasm bytes".to_vec());
+        let wasm_hash = crypto::sha256_hash(b"mock wasm bytes");
         let contract =
             Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
         let res = contract.deploy(&env, &mut account, None).await;
