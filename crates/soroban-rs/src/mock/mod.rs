@@ -12,7 +12,9 @@ use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_strkey::Contract as ContractStrKey;
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber, String32, Thresholds, Transaction, TransactionEnvelope, TransactionExt, TransactionV1Envelope, Uint256, VecM
+    AccountEntry, AccountEntryExt, AccountId, Memo, Preconditions, PublicKey, SequenceNumber,
+    String32, Thresholds, Transaction, TransactionEnvelope, TransactionExt, TransactionV1Envelope,
+    Uint256, VecM,
 };
 
 #[allow(dead_code)]

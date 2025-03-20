@@ -187,7 +187,8 @@ impl Env {
             .map_err(|e| {
                 // Check if this is a "contract code already exists" error
                 let error_string = e.to_string();
-                if  error_string.contains(&SorobanHelperError::ContractCodeAlreadyExists.to_string()) {
+                if error_string.contains(&SorobanHelperError::ContractCodeAlreadyExists.to_string())
+                {
                     return SorobanHelperError::ContractCodeAlreadyExists;
                 }
                 // Otherwise, it's a general transaction failure
@@ -210,10 +211,14 @@ pub mod test {
         let env = Env::new(EnvConfigs {
             rpc_url: "https://soroban-testnet.stellar.org".to_string(),
             network_passphrase: "Test SDF Network ; September 2015".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
         assert_eq!(env.configs.rpc_url, "https://soroban-testnet.stellar.org");
-        assert_eq!(env.configs.network_passphrase, "Test SDF Network ; September 2015");    
+        assert_eq!(
+            env.configs.network_passphrase,
+            "Test SDF Network ; September 2015"
+        );
     }
 
     #[test]
@@ -221,9 +226,16 @@ pub mod test {
         let env = Env::new(EnvConfigs {
             rpc_url: "https://test.com".to_string(),
             network_passphrase: "test".to_string(),
-        }).unwrap();
+        })
+        .unwrap();
 
-        assert_eq!(env.network_id().0, [159, 134, 208, 129, 136, 76, 125, 101, 154, 47, 234, 160, 197, 90, 208, 21, 163, 191, 79, 27, 43, 11, 130, 44, 209, 93, 108, 21, 176, 240, 10, 8]);
+        assert_eq!(
+            env.network_id().0,
+            [
+                159, 134, 208, 129, 136, 76, 125, 101, 154, 47, 234, 160, 197, 90, 208, 21, 163,
+                191, 79, 27, 43, 11, 130, 44, 209, 93, 108, 21, 176, 240, 10, 8
+            ]
+        );
     }
 
     #[tokio::test]
@@ -231,16 +243,28 @@ pub mod test {
         let send_transaction_polling_result = Err(SorobanHelperError::ContractCodeAlreadyExists);
         let env = mock_env(None, None, Some(send_transaction_polling_result));
         let account_id = mock_signer3().account_id();
-        let result = env.send_transaction(&mock_transaction_envelope(account_id)).await;
-        assert!(matches!(result, Err(SorobanHelperError::ContractCodeAlreadyExists)));
+        let result = env
+            .send_transaction(&mock_transaction_envelope(account_id))
+            .await;
+        assert!(matches!(
+            result,
+            Err(SorobanHelperError::ContractCodeAlreadyExists)
+        ));
     }
 
     #[tokio::test]
     async fn test_send_transaction_error() {
-        let send_transaction_polling_result = Err(SorobanHelperError::NetworkRequestFailed("OtherError".to_string()));
+        let send_transaction_polling_result = Err(SorobanHelperError::NetworkRequestFailed(
+            "OtherError".to_string(),
+        ));
         let env = mock_env(None, None, Some(send_transaction_polling_result));
         let account_id = mock_signer3().account_id();
-        let result = env.send_transaction(&mock_transaction_envelope(account_id)).await;
-        assert!(matches!(result, Err(SorobanHelperError::NetworkRequestFailed(_))));
+        let result = env
+            .send_transaction(&mock_transaction_envelope(account_id))
+            .await;
+        assert!(matches!(
+            result,
+            Err(SorobanHelperError::NetworkRequestFailed(_))
+        ));
     }
 }

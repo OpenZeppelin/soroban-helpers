@@ -299,9 +299,12 @@ impl Contract {
 #[cfg(test)]
 mod test {
     use crate::{
-        crypto, error::SorobanHelperError, mock::{
-            fs::MockFileReader, mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_simulate_transaction_response, mock_transaction_response,
-        }, Account, ClientContractConfigs, Contract
+        Account, ClientContractConfigs, Contract, crypto,
+        error::SorobanHelperError,
+        mock::{
+            fs::MockFileReader, mock_account_entry, mock_contract_id, mock_env, mock_signer1,
+            mock_simulate_transaction_response, mock_transaction_response,
+        },
     };
 
     #[tokio::test]
@@ -395,7 +398,10 @@ mod test {
 
         let res = contract.invoke("function_name", vec![]).await;
         assert!(res.is_ok());
-        assert_eq!(res.unwrap().result_meta, mock_transaction_response().result_meta);
+        assert_eq!(
+            res.unwrap().result_meta,
+            mock_transaction_response().result_meta
+        );
     }
 
     #[tokio::test]

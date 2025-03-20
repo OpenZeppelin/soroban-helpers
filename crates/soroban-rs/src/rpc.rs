@@ -119,8 +119,8 @@ impl RpcClient for ExternalRpcClient {
 pub mod test {
     use super::*;
 
-   #[test]
-   fn test_new() {
+    #[test]
+    fn test_new() {
         // use 443 port for https
         let client = ExternalRpcClient::new("https://test.com").unwrap();
         assert_eq!(client.client.base_url(), "https://test.com:443/");
@@ -128,5 +128,5 @@ pub mod test {
         // use 80 port for http
         let client = ExternalRpcClient::new("http://test.com").unwrap();
         assert_eq!(client.client.base_url(), "http://test.com:80/");
-    } 
+    }
 }
