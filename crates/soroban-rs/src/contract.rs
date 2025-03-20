@@ -32,10 +32,12 @@
 //! }
 //! ```
 use crate::{
-    Account, Env, crypto, error::SorobanHelperError, operation::Operations,
+    Account, Env, crypto,
+    error::SorobanHelperError,
+    fs::{DefaultFileReader, FileReader},
+    operation::Operations,
     transaction::TransactionBuilder,
 };
-use std::fs;
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
@@ -97,7 +99,26 @@ impl Contract {
         wasm_path: &str,
         client_configs: Option<ClientContractConfigs>,
     ) -> Result<Self, SorobanHelperError> {
-        let wasm_bytes = fs::read(wasm_path)?;
+        Self::new_with_reader(wasm_path, client_configs, DefaultFileReader)
+    }
+
+    /// Creates a new Contract instance from a WASM file path and custom file reader
+    ///
+    /// ### Parameters
+    ///
+    /// * `wasm_path` - Path to the contract's WASM file
+    /// * `client_configs` - Optional configuration for interacting with an already deployed instance
+    /// * `file_reader` - Custom file reader for reading the WASM file adopting the `FileReader` trait.
+    ///
+    /// ### Returns
+    ///
+    /// A new Contract instance or an error if the file couldn't be read
+    pub fn new_with_reader<T: FileReader>(
+        wasm_path: &str,
+        client_configs: Option<ClientContractConfigs>,
+        file_reader: T,
+    ) -> Result<Self, SorobanHelperError> {
+        let wasm_bytes = file_reader.read(wasm_path)?;
         let wasm_hash = crypto::sha256_hash(&wasm_bytes);
 
         Ok(Self {
@@ -268,6 +289,22 @@ impl Contract {
 
 #[cfg(test)]
 mod test {
+    use crate::{Contract, mock::fs::MockFileReader};
+
+    #[tokio::test]
+    async fn test_file_reader() {
+        let wasm_path = "path/to/wasm";
+        let client_configs = None;
+        let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
+        let contract = Contract::new_with_reader(wasm_path, client_configs, file_reader).unwrap();
+        assert_eq!(contract.wasm_bytes, b"mock wasm bytes".to_vec());
+    }
+
+    #[tokio::test]
+    async fn test_upload_wasm() {
+        // TODO.
+    }
+
     #[tokio::test]
     async fn test_contract_deploy() {
         // TODO.
@@ -275,11 +312,6 @@ mod test {
 
     #[tokio::test]
     async fn test_contract_invoke() {
-        // TODO.
-    }
-
-    #[tokio::test]
-    async fn test_upload_wasm() {
         // TODO.
     }
 }

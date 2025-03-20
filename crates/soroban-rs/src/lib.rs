@@ -3,6 +3,7 @@ mod contract;
 mod crypto;
 mod env;
 mod error;
+mod fs;
 mod mock;
 mod operation;
 mod parser;

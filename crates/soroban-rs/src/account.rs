@@ -558,21 +558,12 @@ mod test {
     use stellar_xdr::curr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
 
     use crate::account::AuthorizedCalls;
-    use crate::mock::mocks::{MockRpcClient, all_signers, mock_signer1, mock_signer3};
-    use crate::{Account, AccountConfig, Env, EnvConfigs, TransactionBuilder};
-    use std::sync::Arc;
+    use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
+    use crate::{Account, AccountConfig, TransactionBuilder};
 
     #[tokio::test]
     async fn load_account() {
-        let env_configs = EnvConfigs {
-            rpc_url: "https://test.com".to_string(),
-            network_passphrase: "Test Network".to_string(),
-        };
-
-        let env = Env {
-            configs: env_configs,
-            rpc_client: Arc::new(MockRpcClient::new()),
-        };
+        let env = mock_env(None, None, None);
 
         // Test single account operations
         let account = Account::single(mock_signer1());
@@ -588,15 +579,7 @@ mod test {
 
     #[tokio::test]
     async fn multisig() {
-        let env_configs = EnvConfigs {
-            rpc_url: "https://test.com".to_string(),
-            network_passphrase: "Test Network".to_string(),
-        };
-
-        let env = Env {
-            configs: env_configs,
-            rpc_client: Arc::new(MockRpcClient::new()),
-        };
+        let env = mock_env(None, None, None);
 
         // Test single account operations
         let account = Account::multisig(mock_signer3().account_id(), all_signers());
@@ -618,15 +601,7 @@ mod test {
 
     #[tokio::test]
     async fn sign_transaction() {
-        let env_configs = EnvConfigs {
-            rpc_url: "https://test.com".to_string(),
-            network_passphrase: "Test Network".to_string(),
-        };
-
-        let env = Env {
-            configs: env_configs,
-            rpc_client: Arc::new(MockRpcClient::new()),
-        };
+        let env = mock_env(None, None, None);
 
         // Test single account operations
         let mut account = Account::single(mock_signer1());
@@ -646,15 +621,7 @@ mod test {
 
     #[tokio::test]
     async fn sign_transaction_unsafe() {
-        let env_configs = EnvConfigs {
-            rpc_url: "https://test.com".to_string(),
-            network_passphrase: "Test Network".to_string(),
-        };
-
-        let env = Env {
-            configs: env_configs,
-            rpc_client: Arc::new(MockRpcClient::new()),
-        };
+        let env = mock_env(None, None, None);
 
         // Test single account operations
         let mut account = Account::single(mock_signer1());
@@ -685,15 +652,7 @@ mod test {
 
     #[tokio::test]
     async fn test_configure() {
-        let env_configs = EnvConfigs {
-            rpc_url: "https://test.com".to_string(),
-            network_passphrase: "Test Network".to_string(),
-        };
-
-        let env = Env {
-            configs: env_configs,
-            rpc_client: Arc::new(MockRpcClient::new()),
-        };
+        let env = mock_env(None, None, None);
 
         let account = Account::single(mock_signer1());
         let config = AccountConfig::new()

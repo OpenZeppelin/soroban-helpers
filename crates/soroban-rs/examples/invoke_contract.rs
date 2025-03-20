@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Path to the contract wasm file (needed for function schemas)
     let mut contract = Contract::new(
-        "./fixtures/soroban_test_helpers_usage.wasm",
+        "./fixtures/soroban-helpers-example.wasm",
         Some(client_configs),
     )?;
 

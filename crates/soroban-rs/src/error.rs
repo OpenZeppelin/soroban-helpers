@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 ///
 /// This enum covers errors from various operations including transaction
 /// submission, signing, contract deployment, and network communication.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SorobanHelperError {
     /// Error when a transaction fails to execute successfully.
     TransactionFailed(String),
@@ -37,6 +37,9 @@ pub enum SorobanHelperError {
 
     /// Error when attempting to invoke a contract without setting deployment configs.
     ContractDeployedConfigsNotSet,
+
+    /// Error when a file operation fails.
+    FileReadError(String),
 }
 
 impl fmt::Display for SorobanHelperError {
@@ -51,6 +54,7 @@ impl fmt::Display for SorobanHelperError {
             Self::TransactionBuildFailed(msg) => write!(f, "Transaction build failed: {}", msg),
             Self::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
             Self::ContractDeployedConfigsNotSet => write!(f, "Contract deployed configs not set"),
+            Self::FileReadError(msg) => write!(f, "File read error: {}", msg),
         }
     }
 }

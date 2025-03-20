@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let signer = Signer::new(&private_key)?;
     let contract = Contract::new(
-        "path/to/target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm",
+        "path/to/contract.wasm",
     )?;
 
     // Deploy contract with constructor argument (u32 value of 42)
