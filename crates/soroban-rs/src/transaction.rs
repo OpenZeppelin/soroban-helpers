@@ -25,11 +25,11 @@
 //!         .set_preconditions(Preconditions::None);
 //!     
 //!     // Build a transaction with simulation to set proper fees
-//!     let tx = tx_builder.simulate_and_build(env, account).await?;
+//!     let tx = tx_builder.simulate_and_build(env, account).await.unwrap();
 //!     
 //!     // Sign and submit the transaction
-//!     let tx_envelope = account.sign_transaction(&tx, &env.network_id())?;
-//!     env.send_transaction(&tx_envelope).await?;
+//!     let tx_envelope = account.sign_transaction(&tx, &env.network_id()).unwrap();
+//!     env.send_transaction(&tx_envelope).await.unwrap();
 //! }
 //! ```
 use crate::{Account, Env, error::SorobanHelperError};
