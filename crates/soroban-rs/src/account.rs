@@ -128,7 +128,7 @@ impl AuthorizedCalls {
 /// ```rust,no_run
 /// use soroban_rs::AccountConfig;
 /// use stellar_strkey::ed25519::PublicKey;
-/// 
+///
 /// let config = AccountConfig::new()
 ///     .with_master_weight(10)
 ///     .with_thresholds(1, 5, 10)
