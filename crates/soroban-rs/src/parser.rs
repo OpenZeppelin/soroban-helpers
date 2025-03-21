@@ -1,8 +1,9 @@
 use crate::error::SorobanHelperError;
 use stellar_rpc_client::GetTransactionResponse;
+use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
-    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScVal, TransactionMeta,
-    TransactionResultResult,
+    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScAddress, ScVal,
+    TransactionMeta, TransactionResultResult,
 };
 
 #[derive(Debug)]
@@ -17,7 +18,7 @@ pub enum ParserType {
 pub enum ParseResult {
     AccountSetOptions(Option<AccountEntry>),
     InvokeFunction(Option<ScVal>),
-    Deploy(Option<ScVal>),
+    Deploy(Option<ContractId>),
     // Add more result types as needed
 }
 
@@ -70,7 +71,24 @@ impl Parser {
                 // If we couldn't extract a valid result but transaction succeeded
                 Ok(ParseResult::InvokeFunction(None))
             }
-            ParserType::Deploy => todo!(),
+            ParserType::Deploy => {
+                self.check_tx_success(&response.result)?;
+
+                // Extract contract hash from transaction metadata
+                let result = response
+                    .result_meta
+                    .as_ref()
+                    .and_then(|meta| self.extract_return_value(meta))
+                    .and_then(|val| self.extract_contract_id(&val))
+                    .map(|contract_id| ParseResult::Deploy(Some(contract_id)));
+
+                if let Some(result) = result {
+                    return Ok(result);
+                }
+
+                // If we couldn't extract a valid result but transaction succeeded
+                Ok(ParseResult::Deploy(None))
+            }
         }
     }
 
@@ -125,5 +143,171 @@ impl Parser {
             ))),
             _ => None,
         }
+    }
+
+    fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
+        match val {
+            ScVal::Address(ScAddress::Contract(hash)) => Some(ContractId(hash.0)),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::error::SorobanHelperError;
+    use crate::mock::transaction::{
+        create_contract_id_val, mock_transaction_response_with_account_entry,
+        mock_transaction_response_with_return_value,
+    };
+    use crate::parser::{ParseResult, Parser, ParserType};
+    use stellar_rpc_client::GetTransactionResponse;
+    use stellar_xdr::curr::{
+        AccountEntry, ScVal, TransactionResult, TransactionResultExt, TransactionResultResult,
+    };
+
+    #[test]
+    fn test_new_parser() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+        assert!(matches!(parser.parser_type, ParserType::InvokeFunction));
+    }
+
+    #[test]
+    fn test_deploy_parser() {
+        let parser = Parser::new(ParserType::Deploy);
+
+        let contract_val = create_contract_id_val();
+        let direct_response = mock_transaction_response_with_return_value(contract_val.clone());
+
+        let result = parser.parse(&direct_response);
+        assert!(matches!(result, Ok(ParseResult::Deploy(Some(_)))));
+    }
+
+    #[test]
+    fn test_invoke_function_parser() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+
+        let return_val = ScVal::I32(42);
+        let response = mock_transaction_response_with_return_value(return_val.clone());
+
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::InvokeFunction(Some(_)))));
+        if let Ok(ParseResult::InvokeFunction(Some(value))) = result {
+            assert_eq!(value, return_val);
+        }
+    }
+
+    #[test]
+    fn test_account_set_options_parser() {
+        let parser = Parser::new(ParserType::AccountSetOptions);
+
+        // Create a mock account entry
+        let account_entry = AccountEntry {
+            account_id: stellar_xdr::curr::AccountId(
+                stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(stellar_xdr::curr::Uint256(
+                    [0; 32],
+                )),
+            ),
+            balance: 1000,
+            seq_num: 123.into(),
+            num_sub_entries: 0,
+            inflation_dest: None,
+            flags: 0,
+            home_domain: stellar_xdr::curr::String32(vec![].try_into().unwrap()),
+            thresholds: stellar_xdr::curr::Thresholds([0, 0, 0, 0]),
+            signers: stellar_xdr::curr::VecM::default(),
+            ext: stellar_xdr::curr::AccountEntryExt::V0,
+        };
+        let response = mock_transaction_response_with_account_entry(account_entry.clone());
+
+        let result = parser.parse(&response);
+        assert!(matches!(
+            result,
+            Ok(ParseResult::AccountSetOptions(Some(_)))
+        ));
+        if let Ok(ParseResult::AccountSetOptions(Some(acct))) = result {
+            assert_eq!(acct.balance, 1000);
+        }
+    }
+
+    #[test]
+    fn test_no_transaction_result() {
+        let response = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result: None, // This is what we're testing - no result
+            result_meta: None,
+        };
+
+        let parser = Parser::new(ParserType::InvokeFunction);
+        let result = parser.parse(&response);
+        assert!(matches!(
+            result,
+            Err(SorobanHelperError::TransactionFailed(_))
+        ));
+        if let Err(SorobanHelperError::TransactionFailed(msg)) = result {
+            assert!(msg.contains("No transaction result available"));
+        }
+    }
+
+    #[test]
+    fn test_invoke_function_fallback_to_operation_result() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+
+        // Create a transaction with no metadata but with operation results
+        // We simulate a successful transaction but with no result_meta
+        let response = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result_meta: None,
+            result: Some(TransactionResult {
+                fee_charged: 100,
+                result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
+                ext: TransactionResultExt::V0,
+            }),
+        };
+
+        // Test the fallback code path where an operation result is checked
+        // but not found (empty operations)
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::InvokeFunction(None))));
+    }
+
+    #[test]
+    fn test_extract_contract_id() {
+        let parser = Parser::new(ParserType::Deploy);
+
+        let sc_val = create_contract_id_val();
+
+        let result = parser.extract_contract_id(&sc_val);
+        assert!(result.is_some());
+
+        let non_contract_val = ScVal::Bool(true);
+        assert!(parser.extract_contract_id(&non_contract_val).is_none());
+    }
+
+    #[test]
+    fn test_deploy_parser_fallback() {
+        let parser = Parser::new(ParserType::Deploy);
+
+        let non_contract_val = ScVal::Bool(true);
+        let response = mock_transaction_response_with_return_value(non_contract_val);
+
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::Deploy(None))));
+
+        let response_no_meta = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result: Some(TransactionResult {
+                fee_charged: 100,
+                result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
+                ext: TransactionResultExt::V0,
+            }),
+            result_meta: None,
+        };
+
+        let result = parser.parse(&response_no_meta);
+        assert!(matches!(result, Ok(ParseResult::Deploy(None))));
     }
 }

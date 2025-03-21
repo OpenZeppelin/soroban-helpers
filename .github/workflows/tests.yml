@@ -30,9 +30,9 @@ jobs:
       - name: 'Run tests with coverage'
         # Generate separate reports for nextest and doctests, and combine them.
         run: |
-          cargo llvm-cov --no-report nextest --workspace
+          cargo llvm-cov --no-report nextest --workspace --ignore-filename-regex "mock/*"
           # cargo llvm-cov --no-report --doc
-          cargo llvm-cov report --doctests --lcov --output-path lcov.info
+          cargo llvm-cov report --doctests --lcov --output-path lcov.info --ignore-filename-regex "mock/*"
       - name: Upload coverage data to codecov
         uses: codecov/codecov-action@0565863a31f2c772f9f0395002a31e3f06189574 # v5
         with:
