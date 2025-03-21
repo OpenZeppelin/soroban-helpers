@@ -6,7 +6,8 @@ pub mod account;
 
 // Re-export transaction mock functions
 pub use transaction::{
-    mock_transaction, mock_simulate_tx_response, mock_transaction_response,
+    mock_transaction, mock_transaction_response, mock_simulate_tx_response, 
+    mock_transaction_envelope, mock_transaction_response_with_return_value,
 };
 
 // Re-export account mock functions

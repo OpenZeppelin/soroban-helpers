@@ -28,14 +28,25 @@ pub fn mock_simulate_tx_response(min_resource_fee: Option<u64>) -> SimulateTrans
     }
 }
 
-/// Creates a basic empty transaction response
+/// Creates a basic transaction response that indicates success
 #[allow(dead_code)]
 pub fn mock_transaction_response() -> GetTransactionResponse {
+    use stellar_xdr::curr::{
+        TransactionResult, TransactionResultExt, TransactionResultResult, VecM,
+    };
+    
+    // Create success result
+    let result = Some(TransactionResult {
+        fee_charged: 100,
+        result: TransactionResultResult::TxSuccess(VecM::default()),
+        ext: TransactionResultExt::V0,
+    });
+    
     GetTransactionResponse {
         envelope: None,
-        result: None,
+        result,
         result_meta: None,
-        status: "".to_string(),
+        status: "SUCCESS".to_string(),
     }
 }
 
@@ -137,4 +148,26 @@ pub fn create_contract_id_val() -> ScVal {
     let contract_hash = stellar_xdr::curr::Hash([1; 32]);
     let address = stellar_xdr::curr::ScAddress::Contract(contract_hash);
     stellar_xdr::curr::ScVal::Address(address)
+}
+
+/// Creates a basic transaction envelope for testing
+#[allow(dead_code)]
+pub fn mock_transaction_envelope(account_id: stellar_xdr::curr::AccountId) -> stellar_xdr::curr::TransactionEnvelope {
+    use stellar_xdr::curr::{
+        Memo, Preconditions, Transaction, TransactionEnvelope, 
+        TransactionExt, TransactionV1Envelope,
+    };
+
+    TransactionEnvelope::Tx(TransactionV1Envelope {
+        tx: Transaction {
+            source_account: account_id.into(),
+            fee: 100,
+            seq_num: 1.into(),
+            cond: Preconditions::None,
+            memo: Memo::None,
+            operations: VecM::default(),
+            ext: TransactionExt::V0,
+        },
+        signatures: Default::default(),
+    })
 } 

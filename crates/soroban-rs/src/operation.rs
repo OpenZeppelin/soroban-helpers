@@ -3,24 +3,6 @@
 //! This module provides functionality for creating Stellar operations for Soroban contracts.
 //! These operations represent the fundamental actions that can be performed with Soroban,
 //! such as uploading contract code, deploying contracts, and invoking contract functions.
-//!
-//! ## Features
-//!
-//! - Creating WASM uploading operations
-//! - Creating contract deployment operations (with or without constructor)
-//! - Creating contract function invocation operations
-//!
-//! ## Example
-//!
-//! ```rust,no_run
-//! use soroban_rs::operation::Operations;
-//! use stellar_xdr::curr::{ContractIdPreimage, Hash, ScVal};
-//! use stellar_strkey::Contract;
-//!
-//! // Upload contract WASM
-//! let wasm_bytes = std::fs::read("path/to/contract.wasm")?;
-//! let upload_op = Operations::upload_wasm(wasm_bytes)?;
-//! ```
 use stellar_xdr::curr::{
     ContractExecutable, ContractIdPreimage, CreateContractArgs, CreateContractArgsV2, Hash,
     HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation, OperationBody, ScAddress,

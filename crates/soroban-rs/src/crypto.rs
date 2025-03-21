@@ -2,26 +2,6 @@
 //!
 //! This module provides cryptographic functions for Soroban contracts, including
 //! hashing, random salt generation, and contract ID calculation.
-//!
-//! ## Features
-//!
-//! - SHA-256 hashing
-//! - Salt generation for contract identifiers
-//! - Contract ID calculation from account IDs and salts
-//!
-//! ## Example
-//!
-//! ```rust,no_run
-//! use soroban_rs::crypto;
-//! use stellar_xdr::curr::{AccountId, PublicKey, Hash, Uint256};
-//!
-//! // Generate a SHA-256 hash of data
-//! let data = b"contract data to hash";
-//! let hash = crypto::sha256_hash(data);
-//!
-//! // Generate a random salt for contract ID creation
-//! let salt = crypto::generate_salt();
-//! ```
 use crate::error::SorobanHelperError;
 use sha2::{Digest, Sha256};
 use stellar_xdr::curr::{

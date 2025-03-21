@@ -33,7 +33,7 @@ pub trait RpcClient: Send + Sync {
 /// methods for interacting with the Stellar network.
 pub struct ExternalRpcClient {
     /// The internal Stellar RPC client
-    inner: Client,
+    client: Client,
 }
 
 impl ExternalRpcClient {
@@ -54,7 +54,7 @@ impl ExternalRpcClient {
         let client = Client::new(url).map_err(|e| {
             SorobanHelperError::NetworkRequestFailed(format!("Failed to create client: {}", e))
         })?;
-        Ok(Self { inner: client })
+        Ok(Self { client })
     }
 }
 
@@ -70,7 +70,7 @@ impl RpcClient for ExternalRpcClient {
     ///
     /// The account entry information or an error if the account could not be retrieved
     async fn get_account(&self, account_id: &str) -> Result<AccountEntry, SorobanHelperError> {
-        self.inner
+        self.client
             .get_account(account_id)
             .await
             .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Error: {}", e)))
@@ -89,7 +89,7 @@ impl RpcClient for ExternalRpcClient {
         &self,
         tx_envelope: &TransactionEnvelope,
     ) -> Result<SimulateTransactionResponse, SorobanHelperError> {
-        self.inner
+        self.client
             .simulate_transaction_envelope(tx_envelope)
             .await
             .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Error: {}", e)))
@@ -108,9 +108,69 @@ impl RpcClient for ExternalRpcClient {
         &self,
         tx_envelope: &TransactionEnvelope,
     ) -> Result<GetTransactionResponse, SorobanHelperError> {
-        self.inner
+        self.client
             .send_transaction_polling(tx_envelope)
             .await
             .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Error: {}", e)))
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+    use crate::mock::{mock_signer1, mock_transaction_envelope};
+
+    use super::*;
+
+    #[test]
+    fn test_new() {
+        // use 443 port for https
+        let client = ExternalRpcClient::new("https://test.com").unwrap();
+        assert_eq!(client.client.base_url(), "https://test.com:443/");
+
+        // use 80 port for http
+        let client = ExternalRpcClient::new("http://test.com").unwrap();
+        assert_eq!(client.client.base_url(), "http://test.com:80/");
+    }
+
+    #[tokio::test]
+    async fn test_get_account_error() {
+        let client = ExternalRpcClient::new("https://test.com").unwrap();
+        let account_id = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        let res = client.get_account(account_id).await;
+        assert!(res.is_err());
+        assert!(matches!(
+            res.err().unwrap(),
+            SorobanHelperError::NetworkRequestFailed(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_simulate_transaction_envelope_error() {
+        let client = ExternalRpcClient::new("https://soroban-testnet.stellar.org").unwrap();
+        let account_id = mock_signer1().account_id();
+        let transaction_envelope = mock_transaction_envelope(account_id);
+        let res = client
+            .simulate_transaction_envelope(&transaction_envelope)
+            .await;
+
+        // simulations always succeed
+        assert!(res.is_ok());
+        assert_eq!(
+            res.unwrap().error.unwrap(),
+            "Transaction contains more than one operation"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_send_transaction_polling_error() {
+        let client = ExternalRpcClient::new("https://soroban-testnet.stellar.org").unwrap();
+        let account_id = mock_signer1().account_id();
+        let transaction_envelope = mock_transaction_envelope(account_id);
+        let res = client.send_transaction_polling(&transaction_envelope).await;
+        assert!(res.is_err());
+        assert!(matches!(
+            res.err().unwrap(),
+            SorobanHelperError::NetworkRequestFailed(_)
+        ));
     }
 }
