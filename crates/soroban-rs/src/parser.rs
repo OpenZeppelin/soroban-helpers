@@ -158,9 +158,8 @@ mod tests {
     use super::*;
     use crate::mock::transaction::{
         MockGetTransactionResponse, MockTransactionMeta, MockTransactionResult,
-        create_mock_set_options_tx_envelope, mock_to_real_response,
-        create_contract_id_val, mock_transaction_response_with_account_entry,
-        mock_transaction_response_with_return_value,
+        create_contract_id_val, create_mock_set_options_tx_envelope, mock_to_real_response,
+        mock_transaction_response_with_account_entry, mock_transaction_response_with_return_value,
     };
     use std::convert::TryInto;
     use stellar_xdr::curr::{AccountEntry, ScVal};
