@@ -179,12 +179,8 @@ mod tests {
         let contract_val = create_contract_id_val();
         let direct_response = mock_transaction_response_with_return_value(contract_val.clone());
 
-        match parser.parse(&direct_response) {
-            Ok(ParseResult::Deploy(contract_id)) => {
-                assert!(contract_id.is_some());
-            }
-            _ => panic!("Expected Deploy result with contract ID using direct mock"),
-        }
+        let result = parser.parse(&direct_response);
+        assert!(matches!(result, Ok(ParseResult::Deploy(Some(_)))));
     }
 
     #[test]
@@ -194,12 +190,10 @@ mod tests {
         let return_val = ScVal::I32(42);
         let response = mock_transaction_response_with_return_value(return_val.clone());
 
-        match parser.parse(&response) {
-            Ok(ParseResult::InvokeFunction(value)) => {
-                assert!(value.is_some());
-                assert_eq!(value.unwrap(), return_val);
-            }
-            _ => panic!("Expected InvokeFunction result with value"),
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::InvokeFunction(Some(_)))));
+        if let Ok(ParseResult::InvokeFunction(Some(value))) = result {
+            assert_eq!(value, return_val);
         }
     }
 
@@ -226,14 +220,13 @@ mod tests {
         };
         let response = mock_transaction_response_with_account_entry(account_entry.clone());
 
-        match parser.parse(&response) {
-            Ok(ParseResult::AccountSetOptions(acct)) => {
-                assert!(acct.is_some());
-                if let Some(a) = acct {
-                    assert_eq!(a.balance, 1000);
-                }
-            }
-            _ => panic!("Expected AccountSetOptions result"),
+        let result = parser.parse(&response);
+        assert!(matches!(
+            result,
+            Ok(ParseResult::AccountSetOptions(Some(_)))
+        ));
+        if let Ok(ParseResult::AccountSetOptions(Some(acct))) = result {
+            assert_eq!(acct.balance, 1000);
         }
     }
 
@@ -247,11 +240,13 @@ mod tests {
         };
 
         let parser = Parser::new(ParserType::InvokeFunction);
-        match parser.parse(&response) {
-            Err(SorobanHelperError::TransactionFailed(msg)) => {
-                assert!(msg.contains("No transaction result available"));
-            }
-            _ => panic!("Expected TransactionFailed error due to missing result"),
+        let result = parser.parse(&response);
+        assert!(matches!(
+            result,
+            Err(SorobanHelperError::TransactionFailed(_))
+        ));
+        if let Err(SorobanHelperError::TransactionFailed(msg)) = result {
+            assert!(msg.contains("No transaction result available"));
         }
     }
 
@@ -274,11 +269,7 @@ mod tests {
 
         // Test the fallback code path where an operation result is checked
         // but not found (empty operations)
-        match parser.parse(&response) {
-            Ok(ParseResult::InvokeFunction(value)) => {
-                assert!(value.is_none());
-            }
-            _ => panic!("Expected InvokeFunction result with None value"),
-        }
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::InvokeFunction(None))));
     }
 }
