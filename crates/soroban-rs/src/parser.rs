@@ -2,8 +2,8 @@ use crate::error::SorobanHelperError;
 use stellar_rpc_client::GetTransactionResponse;
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
-    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScAddress, ScVal, TransactionMeta,
-    TransactionResultResult,
+    AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScAddress, ScVal,
+    TransactionMeta, TransactionResultResult,
 };
 
 #[derive(Debug)]
@@ -73,7 +73,7 @@ impl Parser {
             }
             ParserType::Deploy => {
                 self.check_tx_success(&response.result)?;
-                
+
                 // Extract contract hash from transaction metadata
                 let result = response
                     .result_meta
@@ -81,14 +81,14 @@ impl Parser {
                     .and_then(|meta| self.extract_return_value(meta))
                     .and_then(|val| self.extract_contract_id(&val))
                     .map(|contract_id| ParseResult::Deploy(Some(contract_id)));
-                
+
                 if let Some(result) = result {
                     return Ok(result);
                 }
-                
+
                 // If we couldn't extract a valid result but transaction succeeded
                 Ok(ParseResult::Deploy(None))
-            },
+            }
         }
     }
 
@@ -144,12 +144,10 @@ impl Parser {
             _ => None,
         }
     }
-    
+
     fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
         match val {
-            ScVal::Address(ScAddress::Contract(hash)) => {
-                Some(ContractId(hash.0))
-            },
+            ScVal::Address(ScAddress::Contract(hash)) => Some(ContractId(hash.0)),
             _ => None,
         }
     }

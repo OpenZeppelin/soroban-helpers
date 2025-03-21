@@ -32,7 +32,11 @@
 //! }
 //! ```
 use crate::{
-    crypto, error::SorobanHelperError, fs::{DefaultFileReader, FileReader}, operation::Operations, transaction::TransactionBuilder, Account, Env, ParseResult, Parser, ParserType
+    Account, Env, ParseResult, Parser, ParserType, crypto,
+    error::SorobanHelperError,
+    fs::{DefaultFileReader, FileReader},
+    operation::Operations,
+    transaction::TransactionBuilder,
 };
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
