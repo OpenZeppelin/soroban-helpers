@@ -305,12 +305,13 @@ impl Contract {
 #[cfg(test)]
 mod test {
     use crate::{
-        Account, Contract, ClientContractConfigs, crypto,
+        Account, ClientContractConfigs, Contract, crypto,
         error::SorobanHelperError,
         mock::{
-            fs::MockFileReader, mock_account_entry, mock_contract_id, mock_env, mock_signer1,
+            fs::MockFileReader,
+            mock_account_entry, mock_contract_id, mock_env, mock_signer1,
             mock_simulate_tx_response, mock_transaction_response,
-            transaction::{mock_transaction_response_with_return_value, create_contract_id_val},
+            transaction::{create_contract_id_val, mock_transaction_response_with_return_value},
         },
     };
 
@@ -416,7 +417,7 @@ mod test {
         let simulate_transaction_envelope_result = mock_simulate_tx_response(None);
         let signer_1_account_id = mock_signer1().account_id().0.to_string();
         let get_account_result = mock_account_entry(&signer_1_account_id);
-        
+
         // Create a contract ID value for the mock response
         let contract_val = create_contract_id_val();
         let send_transaction_result = Ok(mock_transaction_response_with_return_value(contract_val));

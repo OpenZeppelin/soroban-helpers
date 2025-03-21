@@ -1,7 +1,7 @@
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_xdr::curr::{
-    AccountEntry, AccountId, Memo, Preconditions, ScVal, SequenceNumber,
-    Transaction, TransactionExt, VecM,
+    AccountEntry, AccountId, Memo, Preconditions, ScVal, SequenceNumber, Transaction,
+    TransactionExt, VecM,
 };
 
 /// Creates a basic transaction for mocking purposes
@@ -34,14 +34,14 @@ pub fn mock_transaction_response() -> GetTransactionResponse {
     use stellar_xdr::curr::{
         TransactionResult, TransactionResultExt, TransactionResultResult, VecM,
     };
-    
+
     // Create success result
     let result = Some(TransactionResult {
         fee_charged: 100,
         result: TransactionResultResult::TxSuccess(VecM::default()),
         ext: TransactionResultExt::V0,
     });
-    
+
     GetTransactionResponse {
         envelope: None,
         result,
@@ -54,18 +54,17 @@ pub fn mock_transaction_response() -> GetTransactionResponse {
 #[allow(dead_code)]
 pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTransactionResponse {
     use stellar_xdr::curr::{
-        SorobanTransactionMeta, SorobanTransactionMetaExt, TransactionMeta,
-        TransactionMetaV3, TransactionResult, TransactionResultExt, TransactionResultResult,
-        ExtensionPoint, VecM,
+        ExtensionPoint, SorobanTransactionMeta, SorobanTransactionMetaExt, TransactionMeta,
+        TransactionMetaV3, TransactionResult, TransactionResultExt, TransactionResultResult, VecM,
     };
-    
+
     // Create success result
     let result = Some(TransactionResult {
         fee_charged: 100,
         result: TransactionResultResult::TxSuccess(VecM::default()),
         ext: TransactionResultExt::V0,
     });
-    
+
     // Create metadata with return value
     let meta = Some(TransactionMeta::V3(TransactionMetaV3 {
         ext: ExtensionPoint::V0,
@@ -79,7 +78,7 @@ pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTran
         tx_changes_after: Default::default(),
         operations: Default::default(),
     }));
-    
+
     GetTransactionResponse {
         status: "SUCCESS".to_string(),
         envelope: None,
@@ -90,41 +89,43 @@ pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTran
 
 /// Creates a successful transaction response with account entry
 #[allow(dead_code)]
-pub fn mock_transaction_response_with_account_entry(account: AccountEntry) -> GetTransactionResponse {
+pub fn mock_transaction_response_with_account_entry(
+    account: AccountEntry,
+) -> GetTransactionResponse {
     use stellar_xdr::curr::{
         ExtensionPoint, LedgerEntry, LedgerEntryChange, LedgerEntryData, LedgerEntryExt,
         OperationMeta, TransactionMeta, TransactionMetaV3, TransactionResult, TransactionResultExt,
         TransactionResultResult, VecM,
     };
-    
+
     // Create success result
     let result = Some(TransactionResult {
         fee_charged: 100,
         result: TransactionResultResult::TxSuccess(VecM::default()),
         ext: TransactionResultExt::V0,
     });
-    
+
     // Create a ledger entry for the account
     let ledger_entry = LedgerEntry {
         last_modified_ledger_seq: 1,
         data: LedgerEntryData::Account(account),
         ext: LedgerEntryExt::V0,
     };
-    
+
     // Create a change for the updated account
     let change = LedgerEntryChange::Updated(ledger_entry);
-    
+
     // Create a VecM of changes
     let changes = VecM::try_from(vec![change]).unwrap_or_default();
-    
+
     // Create an operation meta with the changes
     let op_meta = OperationMeta {
         changes: stellar_xdr::curr::LedgerEntryChanges(changes),
     };
-    
+
     // Create a VecM of operation metas
     let operations = VecM::try_from(vec![op_meta]).unwrap_or_default();
-    
+
     // Create metadata with account changes
     let meta = Some(TransactionMeta::V3(TransactionMetaV3 {
         ext: ExtensionPoint::V0,
@@ -133,7 +134,7 @@ pub fn mock_transaction_response_with_account_entry(account: AccountEntry) -> Ge
         tx_changes_after: Default::default(),
         operations,
     }));
-    
+
     GetTransactionResponse {
         status: "SUCCESS".to_string(),
         envelope: None,
@@ -152,10 +153,12 @@ pub fn create_contract_id_val() -> ScVal {
 
 /// Creates a basic transaction envelope for testing
 #[allow(dead_code)]
-pub fn mock_transaction_envelope(account_id: stellar_xdr::curr::AccountId) -> stellar_xdr::curr::TransactionEnvelope {
+pub fn mock_transaction_envelope(
+    account_id: stellar_xdr::curr::AccountId,
+) -> stellar_xdr::curr::TransactionEnvelope {
     use stellar_xdr::curr::{
-        Memo, Preconditions, Transaction, TransactionEnvelope, 
-        TransactionExt, TransactionV1Envelope,
+        Memo, Preconditions, Transaction, TransactionEnvelope, TransactionExt,
+        TransactionV1Envelope,
     };
 
     TransactionEnvelope::Tx(TransactionV1Envelope {
@@ -170,4 +173,4 @@ pub fn mock_transaction_envelope(account_id: stellar_xdr::curr::AccountId) -> st
         },
         signatures: Default::default(),
     })
-} 
+}

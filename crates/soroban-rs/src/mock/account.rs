@@ -9,8 +9,7 @@ use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_strkey::Contract as ContractStrKey;
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
-    AccountEntry, AccountEntryExt, AccountId, PublicKey,
-    String32, Thresholds, Uint256, VecM,
+    AccountEntry, AccountEntryExt, AccountId, PublicKey, String32, Thresholds, Uint256, VecM,
 };
 
 use super::rpc::MockRpcClient;
@@ -88,4 +87,4 @@ pub fn mock_account_entry(account_id: &str) -> AccountEntry {
         signers: VecM::default(),
         thresholds: Thresholds([0, 0, 0, 0]),
     }
-} 
+}
