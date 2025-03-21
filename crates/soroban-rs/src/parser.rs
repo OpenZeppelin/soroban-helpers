@@ -154,17 +154,17 @@ impl Parser {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage, coverage(off))]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
+    use crate::error::SorobanHelperError;
     use crate::mock::transaction::{
         create_contract_id_val, mock_transaction_response_with_account_entry,
         mock_transaction_response_with_return_value,
     };
     use crate::parser::{ParseResult, Parser, ParserType};
-    use crate::error::SorobanHelperError;
     use stellar_rpc_client::GetTransactionResponse;
     use stellar_xdr::curr::{
-        AccountEntry, ScVal, TransactionResult, TransactionResultResult, TransactionResultExt
+        AccountEntry, ScVal, TransactionResult, TransactionResultExt, TransactionResultResult,
     };
 
     #[test]
@@ -259,7 +259,7 @@ mod tests {
     #[test]
     fn test_invoke_function_fallback_to_operation_result() {
         let parser = Parser::new(ParserType::InvokeFunction);
-        
+
         // Create a transaction with no metadata but with operation results
         // We simulate a successful transaction but with no result_meta
         let response = GetTransactionResponse {
@@ -272,7 +272,7 @@ mod tests {
                 ext: TransactionResultExt::V0,
             }),
         };
-        
+
         // Test the fallback code path where an operation result is checked
         // but not found (empty operations)
         match parser.parse(&response) {
