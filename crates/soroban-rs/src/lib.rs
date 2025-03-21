@@ -18,4 +18,16 @@ pub use parser::{ParseResult, Parser, ParserType};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
+// Re-export mock parser utilities for testing
+pub use mock::parser::{
+    MockGetTransactionResponse, MockTransactionMeta, MockTransactionResult,
+    mock_to_real_response, create_mock_set_options_tx_envelope,
+};
+
+// Re-export mock functions from transaction module
+pub use mock::transaction::{
+    create_contract_id_val, mock_transaction_response_with_return_value,
+    mock_transaction_response_with_account_entry
+};
+
 pub use stellar_xdr::curr as xdr;
