@@ -1,5 +1,7 @@
 # Soroban Helpers
 
+[![codecov](https://codecov.io/gh/OpenZeppelin/soroban-helpers/graph/badge.svg?token=YIV3ZHYZKN)](https://codecov.io/gh/OpenZeppelin/soroban-helpers)
+
 A collection of Rust libraries designed to simplify development and testing with Soroban, the smart contract platform for the Stellar network.
 
 ## Overview
