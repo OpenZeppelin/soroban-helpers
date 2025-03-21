@@ -156,11 +156,9 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::parser::{
+    use crate::mock::transaction::{
         MockGetTransactionResponse, MockTransactionMeta, MockTransactionResult,
         create_mock_set_options_tx_envelope, mock_to_real_response,
-    };
-    use crate::mock::transaction::{
         create_contract_id_val, mock_transaction_response_with_account_entry,
         mock_transaction_response_with_return_value,
     };

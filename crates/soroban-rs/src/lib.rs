@@ -18,14 +18,10 @@ pub use parser::{ParseResult, Parser, ParserType};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
-// Re-export mock parser utilities for testing
-pub use mock::parser::{
+// Re-export mock utilities for testing
+pub use mock::transaction::{
     MockGetTransactionResponse, MockTransactionMeta, MockTransactionResult,
     create_mock_set_options_tx_envelope, mock_to_real_response,
-};
-
-// Re-export mock functions from transaction module
-pub use mock::transaction::{
     create_contract_id_val, mock_transaction_response_with_account_entry,
     mock_transaction_response_with_return_value,
 };
