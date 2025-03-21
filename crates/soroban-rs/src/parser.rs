@@ -289,13 +289,13 @@ mod tests {
     #[test]
     fn test_deploy_parser_fallback() {
         let parser = Parser::new(ParserType::Deploy);
-        
+
         let non_contract_val = ScVal::Bool(true);
         let response = mock_transaction_response_with_return_value(non_contract_val);
-        
+
         let result = parser.parse(&response);
         assert!(matches!(result, Ok(ParseResult::Deploy(None))));
-        
+
         let response_no_meta = GetTransactionResponse {
             status: "SUCCESS".to_string(),
             envelope: None,
@@ -306,7 +306,7 @@ mod tests {
             }),
             result_meta: None,
         };
-        
+
         let result = parser.parse(&response_no_meta);
         assert!(matches!(result, Ok(ParseResult::Deploy(None))));
     }
