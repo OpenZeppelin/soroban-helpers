@@ -329,6 +329,6 @@ pub fn mock_to_real_response(mock: &MockGetTransactionResponse) -> GetTransactio
         result_meta: mock
             .tx_meta
             .as_ref()
-            .map(|meta| create_tx_meta_from_mock(meta)),
+            .map(create_tx_meta_from_mock),
     }
 }
