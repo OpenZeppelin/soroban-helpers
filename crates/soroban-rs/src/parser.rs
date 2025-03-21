@@ -272,4 +272,42 @@ mod tests {
         let result = parser.parse(&response);
         assert!(matches!(result, Ok(ParseResult::InvokeFunction(None))));
     }
+
+    #[test]
+    fn test_extract_contract_id() {
+        let parser = Parser::new(ParserType::Deploy);
+
+        let sc_val = create_contract_id_val();
+
+        let result = parser.extract_contract_id(&sc_val);
+        assert!(result.is_some());
+
+        let non_contract_val = ScVal::Bool(true);
+        assert!(parser.extract_contract_id(&non_contract_val).is_none());
+    }
+
+    #[test]
+    fn test_deploy_parser_fallback() {
+        let parser = Parser::new(ParserType::Deploy);
+        
+        let non_contract_val = ScVal::Bool(true);
+        let response = mock_transaction_response_with_return_value(non_contract_val);
+        
+        let result = parser.parse(&response);
+        assert!(matches!(result, Ok(ParseResult::Deploy(None))));
+        
+        let response_no_meta = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result: Some(TransactionResult {
+                fee_charged: 100,
+                result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
+                ext: TransactionResultExt::V0,
+            }),
+            result_meta: None,
+        };
+        
+        let result = parser.parse(&response_no_meta);
+        assert!(matches!(result, Ok(ParseResult::Deploy(None))));
+    }
 }
