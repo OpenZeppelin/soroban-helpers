@@ -159,20 +159,8 @@ pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTran
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response_with_account_entry(
-    account: AccountEntry,
-) -> GetTransactionResponse {
+pub fn mock_transaction_response_with_account_entry(account: AccountEntry) -> GetTransactionResponse {
     mock_transaction_response_impl(MockResponseType::WithAccountEntry(account))
-}
-
-#[allow(dead_code)]
-pub fn mock_to_real_response(mock: &MockGetTransactionResponse) -> GetTransactionResponse {
-    GetTransactionResponse {
-        status: "SUCCESS".to_string(),
-        envelope: mock.tx_envelope.clone(),
-        result: mock.tx_result.as_ref().map(|_| create_success_tx_result()),
-        result_meta: mock.tx_meta.as_ref().map(create_tx_meta_from_mock),
-    }
 }
 
 #[allow(dead_code)]
