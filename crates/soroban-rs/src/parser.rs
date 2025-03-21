@@ -154,13 +154,18 @@ impl Parser {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use crate::mock::transaction::{
         create_contract_id_val, mock_transaction_response_with_account_entry,
         mock_transaction_response_with_return_value,
     };
     use crate::parser::{ParseResult, Parser, ParserType};
-    use stellar_xdr::curr::{AccountEntry, ScVal};
+    use crate::error::SorobanHelperError;
+    use stellar_rpc_client::GetTransactionResponse;
+    use stellar_xdr::curr::{
+        AccountEntry, ScVal, TransactionResult, TransactionResultResult, TransactionResultExt
+    };
 
     #[test]
     fn test_new_parser() {
@@ -230,6 +235,51 @@ mod tests {
                 }
             }
             _ => panic!("Expected AccountSetOptions result"),
+        }
+    }
+
+    #[test]
+    fn test_no_transaction_result() {
+        let response = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result: None, // This is what we're testing - no result
+            result_meta: None,
+        };
+
+        let parser = Parser::new(ParserType::InvokeFunction);
+        match parser.parse(&response) {
+            Err(SorobanHelperError::TransactionFailed(msg)) => {
+                assert!(msg.contains("No transaction result available"));
+            }
+            _ => panic!("Expected TransactionFailed error due to missing result"),
+        }
+    }
+
+    #[test]
+    fn test_invoke_function_fallback_to_operation_result() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+        
+        // Create a transaction with no metadata but with operation results
+        // We simulate a successful transaction but with no result_meta
+        let response = GetTransactionResponse {
+            status: "SUCCESS".to_string(),
+            envelope: None,
+            result_meta: None,
+            result: Some(TransactionResult {
+                fee_charged: 100,
+                result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
+                ext: TransactionResultExt::V0,
+            }),
+        };
+        
+        // Test the fallback code path where an operation result is checked
+        // but not found (empty operations)
+        match parser.parse(&response) {
+            Ok(ParseResult::InvokeFunction(value)) => {
+                assert!(value.is_none());
+            }
+            _ => panic!("Expected InvokeFunction result with None value"),
         }
     }
 }

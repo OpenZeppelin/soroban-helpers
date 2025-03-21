@@ -116,6 +116,7 @@ impl RpcClient for ExternalRpcClient {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 pub mod test {
     use crate::mock::{mock_signer1, mock_transaction_envelope};
 

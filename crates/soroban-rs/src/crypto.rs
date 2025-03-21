@@ -74,6 +74,7 @@ pub fn calculate_contract_id(
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use super::*;
 

@@ -151,6 +151,7 @@ impl Signer {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage, coverage(off))]
 mod tests {
     use stellar_xdr::curr::BytesM;
 
