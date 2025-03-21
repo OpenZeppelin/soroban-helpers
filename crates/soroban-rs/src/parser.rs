@@ -172,11 +172,9 @@ mod tests {
     fn test_deploy_parser() {
         let parser = Parser::new(ParserType::Deploy);
 
-        // Create a contract address value
         let contract_val = create_contract_id_val();
-
-        // Test with direct mock function
         let direct_response = mock_transaction_response_with_return_value(contract_val.clone());
+
         match parser.parse(&direct_response) {
             Ok(ParseResult::Deploy(contract_id)) => {
                 assert!(contract_id.is_some());
@@ -189,11 +187,9 @@ mod tests {
     fn test_invoke_function_parser() {
         let parser = Parser::new(ParserType::InvokeFunction);
 
-        // Create return value
         let return_val = ScVal::I32(42);
-
-        // Use direct mock function
         let response = mock_transaction_response_with_return_value(return_val.clone());
+
         match parser.parse(&response) {
             Ok(ParseResult::InvokeFunction(value)) => {
                 assert!(value.is_some());
@@ -205,6 +201,8 @@ mod tests {
 
     #[test]
     fn test_account_set_options_parser() {
+        let parser = Parser::new(ParserType::AccountSetOptions);
+
         // Create a mock account entry
         let account_entry = AccountEntry {
             account_id: stellar_xdr::curr::AccountId(
@@ -222,11 +220,8 @@ mod tests {
             signers: stellar_xdr::curr::VecM::default(),
             ext: stellar_xdr::curr::AccountEntryExt::V0,
         };
-
-        let parser = Parser::new(ParserType::AccountSetOptions);
-
-        // Use direct mock function
         let response = mock_transaction_response_with_account_entry(account_entry.clone());
+
         match parser.parse(&response) {
             Ok(ParseResult::AccountSetOptions(acct)) => {
                 assert!(acct.is_some());
