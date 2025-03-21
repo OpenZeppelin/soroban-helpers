@@ -156,8 +156,8 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use crate::mock::transaction::{
-        create_contract_id_val,
-        mock_transaction_response_with_account_entry, mock_transaction_response_with_return_value,
+        create_contract_id_val, mock_transaction_response_with_account_entry,
+        mock_transaction_response_with_return_value,
     };
     use crate::parser::{ParseResult, Parser, ParserType};
     use stellar_xdr::curr::{AccountEntry, ScVal};

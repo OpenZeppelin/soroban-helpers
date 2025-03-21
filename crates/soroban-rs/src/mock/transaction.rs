@@ -159,7 +159,9 @@ pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTran
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response_with_account_entry(account: AccountEntry) -> GetTransactionResponse {
+pub fn mock_transaction_response_with_account_entry(
+    account: AccountEntry,
+) -> GetTransactionResponse {
     mock_transaction_response_impl(MockResponseType::WithAccountEntry(account))
 }
 
