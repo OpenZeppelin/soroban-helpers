@@ -303,7 +303,6 @@ impl Contract {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
     use crate::{
         Account, ClientContractConfigs, Contract, crypto,

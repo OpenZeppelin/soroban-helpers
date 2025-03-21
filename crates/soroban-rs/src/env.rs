@@ -201,7 +201,6 @@ impl Env {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 pub mod test {
     use crate::mock::{mock_env, mock_signer3, mock_transaction_envelope};
 

@@ -29,6 +29,3 @@ async-trait.workspace = true
 [dev-dependencies]
 # example dependency
 dotenv.workspace = true
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }
