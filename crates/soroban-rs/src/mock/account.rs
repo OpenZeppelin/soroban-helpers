@@ -30,10 +30,13 @@ pub fn mock_env(
     >,
     send_transaction_polling_result: Option<Result<GetTransactionResponse, SorobanHelperError>>,
 ) -> Env {
+    let random_id = rand::random::<u64>();
+    let network_passphrase = format!("Mock Test Random Network {}", random_id);
+
     Env {
         configs: EnvConfigs {
             rpc_url: "http://test.com".to_string(),
-            network_passphrase: "test".to_string(),
+            network_passphrase,
         },
         rpc_client: Arc::new(MockRpcClient::new(
             get_account_result,

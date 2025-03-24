@@ -272,6 +272,7 @@ mod test {
         operation::Operations,
         transaction::DEFAULT_TRANSACTION_FEES,
     };
+    use stellar_xdr::curr::{Memo, Preconditions, TimeBounds, TimePoint};
 
     #[tokio::test]
     async fn test_build_transaction() {
@@ -310,5 +311,93 @@ mod test {
         assert!(tx.fee == 142); // DEFAULT_TRANSACTION_FEE + SIMULATION_FEE 
         assert!(tx.operations.len() == 1);
         assert!(tx.operations[0].body == operation.body);
+    }
+
+    #[tokio::test]
+    async fn test_set_env() {
+        let account = Account::single(mock_signer1());
+        let first_env = mock_env(None, None, None);
+        let second_env = mock_env(None, None, None);
+
+        let tx_builder = TransactionBuilder::new(&account, &first_env);
+        assert_eq!(
+            tx_builder.env.network_passphrase(),
+            first_env.network_passphrase()
+        );
+
+        let updated_builder = tx_builder.set_env(second_env.clone());
+        assert_eq!(
+            updated_builder.env.network_passphrase(),
+            second_env.network_passphrase()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_set_memo() {
+        let account = Account::single(mock_signer1());
+        let env = mock_env(None, None, None);
+
+        let memo_text = "Test memo";
+        let memo = Memo::Text(memo_text.as_bytes().try_into().unwrap());
+
+        let tx_builder = TransactionBuilder::new(&account, &env);
+        assert!(matches!(tx_builder.memo, Memo::None));
+
+        let updated_builder = tx_builder.set_memo(memo.clone());
+        assert!(matches!(updated_builder.memo, Memo::Text(_)));
+
+        if let Memo::Text(text) = updated_builder.memo {
+            assert_eq!(text.as_slice(), memo_text.as_bytes());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_set_preconditions() {
+        let account = Account::single(mock_signer1());
+        let env = mock_env(None, None, None);
+
+        let min_time = TimePoint(100);
+        let max_time = TimePoint(200);
+        let time_bounds = TimeBounds {
+            min_time: min_time,
+            max_time: max_time,
+        };
+        let preconditions = Preconditions::Time(time_bounds);
+
+        let tx_builder = TransactionBuilder::new(&account, &env);
+        assert!(matches!(tx_builder.preconditions, Preconditions::None));
+
+        let updated_builder = tx_builder.set_preconditions(preconditions);
+        assert!(matches!(
+            updated_builder.preconditions,
+            Preconditions::Time(_)
+        ));
+
+        if let Preconditions::Time(tb) = updated_builder.preconditions {
+            assert_eq!(tb.min_time.0, 100);
+            assert_eq!(tb.max_time.0, 200);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_add_operation() {
+        let account = Account::single(mock_signer1());
+        let env = mock_env(None, None, None);
+        let contract_id = mock_contract_id(account.clone(), &env);
+
+        let operation1 = Operations::invoke_contract(&contract_id, "function1", vec![]).unwrap();
+        let operation2 = Operations::invoke_contract(&contract_id, "function2", vec![]).unwrap();
+
+        let tx_builder = TransactionBuilder::new(&account, &env);
+        assert_eq!(tx_builder.operations.len(), 0);
+
+        let builder_with_one_op = tx_builder.add_operation(operation1.clone());
+        assert_eq!(builder_with_one_op.operations.len(), 1);
+        assert_eq!(builder_with_one_op.operations[0].body, operation1.body);
+
+        let builder_with_two_ops = builder_with_one_op.add_operation(operation2.clone());
+        assert_eq!(builder_with_two_ops.operations.len(), 2);
+        assert_eq!(builder_with_two_ops.operations[0].body, operation1.body);
+        assert_eq!(builder_with_two_ops.operations[1].body, operation2.body);
     }
 }
