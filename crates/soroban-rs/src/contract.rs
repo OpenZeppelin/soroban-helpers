@@ -314,6 +314,84 @@ mod test {
             transaction::{create_contract_id_val, mock_transaction_response_with_return_value},
         },
     };
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_contract_clone() {
+        let wasm_bytes = b"mock wasm bytes".to_vec();
+        let wasm_hash = crypto::sha256_hash(&wasm_bytes);
+        let env = mock_env(None, None, None);
+        let account = Account::single(mock_signer1());
+
+        let client_configs = Some(ClientContractConfigs {
+            contract_id: mock_contract_id(account.clone(), &env),
+            env: env.clone(),
+            account: account.clone(),
+        });
+
+        let original_contract = Contract {
+            wasm_bytes: wasm_bytes.clone(),
+            wasm_hash,
+            client_configs: client_configs.clone(),
+        };
+
+        let cloned_contract = original_contract.clone();
+
+        assert_eq!(cloned_contract.wasm_bytes, original_contract.wasm_bytes);
+        assert_eq!(cloned_contract.wasm_hash.0, original_contract.wasm_hash.0);
+
+        assert!(cloned_contract.client_configs.is_some());
+        let cloned_configs = cloned_contract.client_configs.unwrap();
+        let original_configs = original_contract.client_configs.unwrap();
+
+        assert_eq!(cloned_configs.contract_id.0, original_configs.contract_id.0);
+    }
+
+    #[test]
+    fn test_contract_new() {
+        // Create fake temp wasm file because of DefaultFileReader
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let wasm_bytes = b"test wasm bytes";
+        temp_file.write_all(wasm_bytes).unwrap();
+
+        let wasm_path = temp_file.path().to_str().unwrap();
+        let contract = Contract::new(wasm_path, None).unwrap();
+
+        assert_eq!(contract.wasm_bytes, wasm_bytes);
+        assert_eq!(contract.wasm_hash, crypto::sha256_hash(wasm_bytes));
+        assert!(contract.client_configs.is_none());
+    }
+
+    #[test]
+    fn test_contract_id() {
+        let wasm_bytes = b"mock wasm bytes".to_vec();
+        let contract_without_configs = Contract {
+            wasm_bytes: wasm_bytes.clone(),
+            wasm_hash: crypto::sha256_hash(&wasm_bytes),
+            client_configs: None,
+        };
+
+        assert!(contract_without_configs.contract_id().is_none());
+
+        let env = mock_env(None, None, None);
+        let account = Account::single(mock_signer1());
+        let contract_id = mock_contract_id(account.clone(), &env);
+
+        let contract_with_configs = Contract {
+            wasm_bytes: wasm_bytes.clone(),
+            wasm_hash: crypto::sha256_hash(&wasm_bytes),
+            client_configs: Some(ClientContractConfigs {
+                contract_id: contract_id.clone(),
+                env: env.clone(),
+                account: account.clone(),
+            }),
+        };
+
+        let retrieved_id = contract_with_configs.contract_id();
+        assert!(retrieved_id.is_some());
+        assert_eq!(retrieved_id.unwrap().0, contract_id.0);
+    }
 
     #[tokio::test]
     async fn test_file_reader() {
@@ -442,5 +520,31 @@ mod test {
         let res = contract.deploy(&env, &mut account, None).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().wasm_hash, wasm_hash);
+    }
+
+    #[test]
+    fn test_set_client_configs() {
+        let wasm_bytes = b"mock wasm bytes".to_vec();
+        let mut contract = Contract {
+            wasm_bytes: wasm_bytes.clone(),
+            wasm_hash: crypto::sha256_hash(&wasm_bytes),
+            client_configs: None,
+        };
+
+        let env = mock_env(None, None, None);
+        let account = Account::single(mock_signer1());
+        let contract_id = mock_contract_id(account.clone(), &env);
+
+        let configs = ClientContractConfigs {
+            contract_id: contract_id.clone(),
+            env: env.clone(),
+            account: account.clone(),
+        };
+
+        contract.set_client_configs(configs.clone());
+
+        assert!(contract.client_configs.is_some());
+        let set_configs = contract.client_configs.unwrap();
+        assert_eq!(set_configs.contract_id.0, contract_id.0);
     }
 }
