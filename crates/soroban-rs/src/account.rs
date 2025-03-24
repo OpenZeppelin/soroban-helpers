@@ -655,6 +655,43 @@ mod test {
         assert!(auth.try_decrement().is_err());
     }
 
+    #[test]
+    fn test_authorized_calls_value() {
+        let auth_zero = AuthorizedCalls::new(0);
+        assert_eq!(auth_zero.value(), 0);
+        assert!(!auth_zero.can_call());
+
+        let auth_with_calls = AuthorizedCalls::new(42);
+        assert_eq!(auth_with_calls.value(), 42);
+        assert!(auth_with_calls.can_call());
+
+        let mut auth_decrement = AuthorizedCalls::new(5);
+        assert_eq!(auth_decrement.value(), 5);
+
+        assert!(auth_decrement.try_decrement().is_ok());
+        assert_eq!(auth_decrement.value(), 4);
+
+        assert!(auth_decrement.try_decrement().is_ok());
+        assert_eq!(auth_decrement.value(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_next_sequence() {
+        let env = mock_env(None, None, None);
+        let account = Account::single(mock_signer1());
+
+        let current_seq = account.get_sequence(&env).await.unwrap();
+
+        let next_seq = account.next_sequence(&env).await.unwrap();
+        assert_eq!(next_seq.value(), current_seq.value() + 1);
+
+        let second_current = account.get_sequence(&env).await.unwrap();
+        let second_next = account.next_sequence(&env).await.unwrap();
+        assert_eq!(second_current.value(), current_seq.value());
+
+        assert_eq!(second_next.value(), second_current.value() + 1);
+    }
+
     #[tokio::test]
     async fn test_configure() {
         let env = mock_env(None, None, None);
@@ -685,5 +722,48 @@ mod test {
                 assert_eq!(op.high_threshold, Some(3));
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_sign_transaction_envelope() {
+        let env = mock_env(None, None, None);
+
+        let mut first_account = Account::single(mock_signer1());
+        let mut second_account = Account::single(mock_signer3());
+
+        first_account.set_authorized_calls(1);
+        second_account.set_authorized_calls(1);
+
+        let tx = TransactionBuilder::new(&first_account, &env)
+            .build()
+            .await
+            .unwrap();
+
+        let first_signed_envelope = first_account
+            .sign_transaction(&tx, &env.network_id())
+            .unwrap();
+
+        let first_envelope_signatures = match &first_signed_envelope {
+            TransactionEnvelope::Tx(tx_v1) => &tx_v1.signatures,
+            _ => &[][..], // Empty slice as fallback, assertion below will fail if this happens
+        };
+        assert_eq!(first_envelope_signatures.len(), 1); // First envelope should have exactly one signature
+
+        let final_envelope = second_account
+            .sign_transaction_envelope(&first_signed_envelope, &env.network_id())
+            .unwrap();
+
+        let final_signatures = match &final_envelope {
+            TransactionEnvelope::Tx(tx_v1) => &tx_v1.signatures,
+            _ => &[][..], // Empty slice as fallback, assertion below will fail if this happens
+        };
+        assert_eq!(final_signatures.len(), 2); // Final envelope should have exactly two signatures
+
+        let first_public_key = mock_signer1().public_key();
+        let second_public_key = mock_signer3().public_key();
+        assert_eq!(final_signatures[0].hint.0, &first_public_key.0[28..32]); //  First signature should match first account's public key
+        assert_eq!(final_signatures[1].hint.0, &second_public_key.0[28..32]); // Second signature should match second account's public key
+
+        assert_eq!(second_account.authorized_calls().value(), 0); // Authorized calls should be decremented after signing
     }
 }
