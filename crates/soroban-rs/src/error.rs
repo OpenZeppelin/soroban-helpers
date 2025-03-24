@@ -74,3 +74,74 @@ impl From<std::io::Error> for SorobanHelperError {
         Self::InvalidArgument(format!("File operation failed: {}", err))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Error as IoError, ErrorKind};
+
+    #[test]
+    fn test_display_implementations() {
+        let cases = [
+            (
+                SorobanHelperError::TransactionFailed("timeout".to_string()),
+                "Transaction failed: timeout",
+            ),
+            (
+                SorobanHelperError::ContractCodeAlreadyExists,
+                "Contract code already exists",
+            ),
+            (
+                SorobanHelperError::NetworkRequestFailed("connection refused".to_string()),
+                "Network request failed: connection refused",
+            ),
+            (
+                SorobanHelperError::SigningFailed("invalid key".to_string()),
+                "Signing operation failed: invalid key",
+            ),
+            (
+                SorobanHelperError::XdrEncodingFailed("invalid format".to_string()),
+                "XDR encoding failed: invalid format",
+            ),
+            (
+                SorobanHelperError::InvalidArgument("wrong type".to_string()),
+                "Invalid argument: wrong type",
+            ),
+            (
+                SorobanHelperError::TransactionBuildFailed("missing field".to_string()),
+                "Transaction build failed: missing field",
+            ),
+            (
+                SorobanHelperError::Unauthorized("missing signature".to_string()),
+                "Unauthorized: missing signature",
+            ),
+            (
+                SorobanHelperError::ContractDeployedConfigsNotSet,
+                "Contract deployed configs not set",
+            ),
+            (
+                SorobanHelperError::FileReadError("file not found".to_string()),
+                "File read error: file not found",
+            ),
+        ];
+
+        for (error, expected_msg) in cases {
+            assert_eq!(error.to_string(), expected_msg);
+        }
+    }
+
+    #[test]
+    fn test_from_io_error() {
+        let io_error = IoError::new(ErrorKind::NotFound, "file not found");
+        let helper_error = SorobanHelperError::from(io_error);
+
+        assert!(
+            matches!(helper_error, SorobanHelperError::InvalidArgument(_)),
+            "Expected InvalidArgument variant"
+        );
+
+        let error_string = helper_error.to_string();
+        assert!(error_string.contains("file not found"));
+        assert!(error_string.contains("File operation failed"));
+    }
+}
