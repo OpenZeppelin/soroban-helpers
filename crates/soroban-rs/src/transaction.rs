@@ -358,10 +358,7 @@ mod test {
 
         let min_time = TimePoint(100);
         let max_time = TimePoint(200);
-        let time_bounds = TimeBounds {
-            min_time: min_time,
-            max_time: max_time,
-        };
+        let time_bounds = TimeBounds { min_time, max_time };
         let preconditions = Preconditions::Time(time_bounds);
 
         let tx_builder = TransactionBuilder::new(&account, &env);
