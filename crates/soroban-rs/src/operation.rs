@@ -223,3 +223,144 @@ impl Operations {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use stellar_xdr::curr::{ContractIdPreimageFromAddress, PublicKey, ScVal};
+
+    #[test]
+    fn test_upload_wasm() {
+        let wasm_bytes = vec![0, 1, 2, 3, 4, 5];
+        let operation = Operations::upload_wasm(wasm_bytes.clone()).unwrap();
+
+        assert!(matches!(
+            operation.body,
+            OperationBody::InvokeHostFunction(_)
+        ));
+        if let OperationBody::InvokeHostFunction(op) = operation.body {
+            assert!(matches!(
+                op.host_function,
+                HostFunction::UploadContractWasm(_)
+            ));
+            assert_eq!(op.auth.len(), 0);
+        }
+    }
+
+    #[test]
+    fn test_create_contract_without_args() {
+        let account_id =
+            stellar_xdr::curr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
+        let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
+            address: ScAddress::Account(account_id),
+            salt: [1; 32].into(),
+        });
+
+        let wasm_hash = Hash([2; 32]);
+        let operation =
+            Operations::create_contract(contract_id_preimage.clone(), wasm_hash.clone(), None)
+                .unwrap();
+
+        assert!(matches!(
+            operation.body,
+            OperationBody::InvokeHostFunction(_)
+        ));
+        if let OperationBody::InvokeHostFunction(op) = operation.body {
+            assert!(matches!(op.host_function, HostFunction::CreateContract(_)));
+            assert_eq!(op.auth.len(), 1);
+
+            if let HostFunction::CreateContract(args) = op.host_function {
+                assert_eq!(args.contract_id_preimage, contract_id_preimage);
+                assert!(matches!(args.executable, ContractExecutable::Wasm(h) if h == wasm_hash));
+            }
+        }
+    }
+
+    #[test]
+    fn test_create_contract_with_args() {
+        let account_id =
+            stellar_xdr::curr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
+        let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
+            address: ScAddress::Account(account_id),
+            salt: [1; 32].into(),
+        });
+
+        let wasm_hash = Hash([2; 32]);
+        let constructor_args = vec![ScVal::I32(42), ScVal::Bool(true)];
+        let operation = Operations::create_contract(
+            contract_id_preimage.clone(),
+            wasm_hash.clone(),
+            Some(constructor_args.clone()),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            operation.body,
+            OperationBody::InvokeHostFunction(_)
+        ));
+        if let OperationBody::InvokeHostFunction(op) = operation.body {
+            assert!(matches!(
+                op.host_function,
+                HostFunction::CreateContractV2(_)
+            ));
+            assert_eq!(op.auth.len(), 1);
+
+            if let HostFunction::CreateContractV2(args) = op.host_function {
+                assert_eq!(args.contract_id_preimage, contract_id_preimage);
+                assert!(matches!(args.executable, ContractExecutable::Wasm(h) if h == wasm_hash));
+
+                assert_eq!(args.constructor_args.len(), 2);
+                assert!(matches!(args.constructor_args[0], ScVal::I32(42)));
+                assert!(matches!(args.constructor_args[1], ScVal::Bool(true)));
+            }
+        }
+    }
+
+    #[test]
+    fn test_invoke_contract() {
+        let contract_bytes = [3; 32];
+        let contract_id = stellar_strkey::Contract(contract_bytes);
+
+        let function_name = "test_function";
+        let args = vec![ScVal::I32(42), ScVal::Bool(true)];
+        let operation =
+            Operations::invoke_contract(&contract_id, function_name, args.clone()).unwrap();
+
+        assert!(matches!(
+            operation.body,
+            OperationBody::InvokeHostFunction(_)
+        ));
+        if let OperationBody::InvokeHostFunction(op) = operation.body {
+            assert!(matches!(op.host_function, HostFunction::InvokeContract(_)));
+            assert_eq!(op.auth.len(), 0);
+
+            if let HostFunction::InvokeContract(args) = op.host_function {
+                assert!(
+                    matches!(args.contract_address, ScAddress::Contract(hash) if hash.0 == contract_bytes)
+                );
+                assert_eq!(args.function_name.0.as_slice(), function_name.as_bytes());
+
+                assert_eq!(args.args.len(), 2);
+                assert!(matches!(args.args[0], ScVal::I32(42)));
+                assert!(matches!(args.args[1], ScVal::Bool(true)));
+            }
+        }
+    }
+
+    #[test]
+    fn test_invoke_contract_invalid_function_name() {
+        let contract_bytes = [3; 32];
+        let contract_id = stellar_strkey::Contract(contract_bytes);
+
+        let invalid_function_name = "a".repeat(33); // ScSymbol has a max length of 32
+        let args = vec![];
+
+        let result = Operations::invoke_contract(&contract_id, &invalid_function_name, args);
+
+        assert!(result.is_err());
+        assert!(matches!(
+            result,
+            Err(SorobanHelperError::InvalidArgument(_))
+        ));
+    }
+}
