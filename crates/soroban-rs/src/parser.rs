@@ -163,13 +163,59 @@ mod tests {
     use crate::parser::{ParseResult, Parser, ParserType};
     use stellar_rpc_client::GetTransactionResponse;
     use stellar_xdr::curr::{
-        AccountEntry, ScVal, TransactionResult, TransactionResultExt, TransactionResultResult,
+        AccountEntry, InvokeHostFunctionResult, OperationResult, OperationResultTr, ScVal,
+        TransactionResult, TransactionResultExt, TransactionResultResult,
     };
 
     #[test]
     fn test_new_parser() {
         let parser = Parser::new(ParserType::InvokeFunction);
         assert!(matches!(parser.parser_type, ParserType::InvokeFunction));
+    }
+
+    #[test]
+    fn test_extract_operation_result_success() {
+        let hash_data = [42u8; 32];
+        let hash = stellar_xdr::curr::Hash(hash_data);
+
+        let parser = Parser::new(ParserType::InvokeFunction);
+        let result = parser
+            .extract_operation_result(&OperationResult::OpInner(
+                OperationResultTr::InvokeHostFunction(InvokeHostFunctionResult::Success(
+                    hash.clone(),
+                )),
+            ))
+            .unwrap();
+
+        assert!(matches!(result, ScVal::Symbol(_)));
+        if let ScVal::Symbol(symbol) = result {
+            assert_eq!(symbol.0.as_slice(), hash_data);
+        }
+    }
+    #[test]
+    fn test_extract_operation_result_non_invoke_function() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+
+        // non-InvokeHostFunction operation result
+        let op_result = OperationResult::OpInner(OperationResultTr::CreateAccount(
+            stellar_xdr::curr::CreateAccountResult::Success,
+        ));
+
+        let extracted = parser.extract_operation_result(&op_result);
+        assert!(extracted.is_none());
+    }
+
+    #[test]
+    fn test_extract_operation_result_non_success() {
+        let parser = Parser::new(ParserType::InvokeFunction);
+
+        // Failed InvokeHostFunction result
+        let op_result = OperationResult::OpInner(OperationResultTr::InvokeHostFunction(
+            InvokeHostFunctionResult::ResourceLimitExceeded,
+        ));
+
+        let extracted = parser.extract_operation_result(&op_result);
+        assert!(extracted.is_none());
     }
 
     #[test]
