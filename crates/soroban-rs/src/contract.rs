@@ -382,7 +382,7 @@ mod test {
             wasm_bytes: wasm_bytes.clone(),
             wasm_hash: crypto::sha256_hash(&wasm_bytes),
             client_configs: Some(ClientContractConfigs {
-                contract_id: contract_id.clone(),
+                contract_id,
                 env: env.clone(),
                 account: account.clone(),
             }),
@@ -536,7 +536,7 @@ mod test {
         let contract_id = mock_contract_id(account.clone(), &env);
 
         let configs = ClientContractConfigs {
-            contract_id: contract_id.clone(),
+            contract_id,
             env: env.clone(),
             account: account.clone(),
         };
