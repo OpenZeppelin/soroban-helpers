@@ -29,3 +29,4 @@ async-trait.workspace = true
 [dev-dependencies]
 # example dependency
 dotenv.workspace = true
+tempfile.workspace = true
