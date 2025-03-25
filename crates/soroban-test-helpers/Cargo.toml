@@ -5,9 +5,9 @@ edition.workspace = true
 description.workspace = true
 license.workspace = true
 repository.workspace = true
-documentation = "https://github.com/OpenZeppelin/soroban-helpers"
-readme = "README.md"
+documentation.workspace = true
 keywords.workspace = true
+readme = "README.md"
 categories = ["development-tools::testing", "wasm"]
 
 [lib]
