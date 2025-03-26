@@ -13,7 +13,7 @@ rust-version = "1.85.0" #MSRV
 repository = "https://github.com/OpenZeppelin/soroban-helpers"
 documentation = "https://github.com/OpenZeppelin/soroban-helpers"
 description = "A collection of helpers for writing tests for Soroban contracts"
-license = "AGPL-3.0"
+license = "MIT"
 keywords = ["soroban", "stellar", "blockchain", "smart-contracts", "testing"]
 
 [workspace.dependencies]
