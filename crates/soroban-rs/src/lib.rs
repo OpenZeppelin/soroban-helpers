@@ -26,3 +26,4 @@ pub use mock::transaction::{
 };
 
 pub use stellar_xdr::curr as xdr;
+pub use stellar_strkey::Contract as ContractId;

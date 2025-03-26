@@ -1,0 +1,20 @@
+[package]
+name = "soroban-contract-client"
+version = "0.1.0"
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+readme = "README.md"
+categories = ["development-tools", "wasm"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+soroban-rs.workspace = true

@@ -1,8 +1,25 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer, xdr::ScVal};
+use soroban_contract_client::soroban;
+use soroban_rs::{xdr::{ScAddress, ScVal}, Account, ContractId, Env, EnvConfigs, Signer};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
+
+soroban!(r#"
+    pub struct Token;
+
+    impl Token {
+        pub fn __constructor(env: Env, value: u32) {
+            env.storage().instance().set(&KEY, &value);
+        }
+
+        pub fn send(env: &Env, from: Address, to: Address) -> Vec<String> {
+            let from_str = from.to_string();
+            let to_str = to.to_string();
+            vec![&env, from_str, to_str]
+        }
+    }
+"#);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -29,21 +46,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
     account.set_authorized_calls(2);
 
-    // Path to the contract wasm file
-    let contract = Contract::new(
-        "../../target/wasm32-unknown-unknown/release/soroban_helpers_example.wasm",
-        None,
-    )?;
+    let contract_id = ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
 
-    // Deploys the contract
-    let deployed = contract
-        .deploy(&env, &mut account, Some(vec![ScVal::U32(42)]))
-        .await?;
+    let token_client = TokenClient::new(&env, &contract_id);
 
-    println!(
-        "Contract deployed successfully with ID: {:?}",
-        deployed.contract_id()
-    );
+    let alice = ScVal::Address(ScAddress::Account(account.account_id()));
+    let bob = ScVal::Address(ScAddress::Account(account.account_id()));
 
+    let res = token_client.send(alice, bob).await;
+
+    println!("Result: {:?}", res);
+    
     Ok(())
 }

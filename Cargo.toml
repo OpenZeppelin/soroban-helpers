@@ -3,7 +3,8 @@ resolver = "3"
 members = [
   "crates/soroban-test-helpers",
   "crates/example",
-  "crates/soroban-rs"
+  "crates/soroban-rs",
+  "crates/soroban-contract-client"
 ]
 default-members = ["crates/soroban-test-helpers"]
 
@@ -36,3 +37,4 @@ tempfile = "3.10.1"
 # members
 soroban-test-helpers = { path = "crates/soroban-test-helpers" }
 soroban-rs = { path = "crates/soroban-rs" }
+soroban-contract-client = { path = "crates/soroban-contract-client" }

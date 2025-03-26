@@ -8,6 +8,10 @@ edition.workspace = true
 name = "deploy"
 path = "src/scripts/deploy.rs"
 
+[[example]]
+name = "send"
+path = "src/scripts/send.rs"
+
 [dependencies]
 soroban-test-helpers.workspace = true
 soroban-sdk = { workspace = true }
@@ -21,3 +25,4 @@ dotenv.workspace = true
 ed25519-dalek.workspace = true
 stellar-strkey.workspace = true
 tokio.workspace = true
+soroban-contract-client.workspace = true
