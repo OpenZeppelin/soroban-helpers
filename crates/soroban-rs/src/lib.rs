@@ -29,3 +29,4 @@ pub use mock::transaction::{
 pub use stellar_xdr::curr as xdr;
 pub use stellar_strkey::Contract as ContractId;
 pub use stellar_rpc_client::GetTransactionResponse;
+pub use soroban_rs_macros::soroban;

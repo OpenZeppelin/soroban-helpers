@@ -25,4 +25,3 @@ dotenv.workspace = true
 ed25519-dalek.workspace = true
 stellar-strkey.workspace = true
 tokio.workspace = true
-soroban-rs-macros.workspace = true

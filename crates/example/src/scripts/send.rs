@@ -1,11 +1,16 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
-use soroban_rs_macros::soroban;
-use soroban_rs::{xdr::{ScAddress, ScVal}, Account, ClientContractConfigs, ContractId, Env, EnvConfigs, GetTransactionResponse, ParseResult, Parser, ParserType, Signer, SorobanHelperError};
+use soroban_rs::{
+    Account, ClientContractConfigs, ContractId, Env, EnvConfigs, GetTransactionResponse,
+    ParseResult, Parser, ParserType, Signer, SorobanHelperError,
+    xdr::{ScAddress, ScVal},
+    soroban
+};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 
-soroban!(r#"
+soroban!(
+    r#"
     pub struct Token;
 
     impl Token {
@@ -19,7 +24,8 @@ soroban!(r#"
             vec![&env, from_str, to_str]
         }
     }
-"#);
+"#
+);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -46,7 +52,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
     account.set_authorized_calls(2);
 
-    let contract_id = ContractId::from_string("CDJJN63F35UQA5FQTW77FTWO3VFF3PP2KD4AZ3BODTZE2XCDEMGRSWHI")?;
+    let contract_id =
+        ContractId::from_string("CDJJN63F35UQA5FQTW77FTWO3VFF3PP2KD4AZ3BODTZE2XCDEMGRSWHI")?;
 
     let client_configs = ClientContractConfigs {
         env: env.clone(),
@@ -57,7 +64,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let res: Result<GetTransactionResponse, SorobanHelperError> = token_client.send(alice, bob).await;
+    let res: Result<GetTransactionResponse, SorobanHelperError> =
+        token_client.send(alice, bob).await;
 
     let parser = Parser::new(ParserType::InvokeFunction);
     let result = parser.parse(&res.unwrap())?;

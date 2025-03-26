@@ -2092,7 +2092,6 @@ dependencies = [
  "dotenv",
  "ed25519-dalek",
  "soroban-rs",
- "soroban-rs-macros",
  "soroban-sdk",
  "soroban-test-helpers",
  "stellar-strkey 0.0.11",
@@ -2123,6 +2122,7 @@ dependencies = [
  "hex",
  "rand 0.9.0",
  "sha2",
+ "soroban-rs-macros",
  "stellar-rpc-client",
  "stellar-strkey 0.0.11",
  "stellar-xdr",
@@ -2136,7 +2136,6 @@ version = "0.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
- "soroban-rs",
  "syn 2.0.98",
 ]
 
