@@ -448,7 +448,7 @@ If you are unsure which label to apply, feel free to leave the issue or PR with 
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the [AGPL-3.0 License](LICENSE).
+By contributing to this project, you agree that your contributions will be licensed under the [MIT](LICENSE).
 
 ## Code of Conduct
 
