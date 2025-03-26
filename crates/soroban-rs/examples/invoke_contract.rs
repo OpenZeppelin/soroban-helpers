@@ -4,6 +4,7 @@ use soroban_rs::{
     Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
     Signer,
     xdr::{ScAddress, ScVal},
+    GetTransactionResponse,
 };
 use std::{env, path::Path};
 use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Get the contract ID from env (this would be obtained from the deploy step)
     let contract_id =
-        ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
+        ContractId::from_string("CDJJN63F35UQA5FQTW77FTWO3VFF3PP2KD4AZ3BODTZE2XCDEMGRSWHI")?;
 
     // Initialize contract with existing contract ID
     let client_configs = ClientContractConfigs {
@@ -44,16 +45,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Path to the contract wasm file (needed for function schemas)
-    let mut contract = Contract::new(
-        "./fixtures/soroban-helpers-example.wasm",
-        Some(client_configs),
-    )?;
+    let mut contract = Contract::from_configs(client_configs);
 
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
 
-    let invoke_res = contract.invoke("send", vec![alice, bob]).await?;
+    let invoke_res: GetTransactionResponse = contract.invoke("send", vec![alice, bob]).await?;
 
     let parser = Parser::new(ParserType::InvokeFunction);
     let result = parser.parse(&invoke_res)?;

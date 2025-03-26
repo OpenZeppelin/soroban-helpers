@@ -111,6 +111,23 @@ impl Contract {
         Self::new_with_reader(wasm_path, client_configs, DefaultFileReader)
     }
 
+    /// Creates a new Contract instance from a deployed contract
+    ///
+    /// # Parameters
+    ///
+    /// * `client_configs` - Configuration for interacting with the deployed contract
+    ///
+    /// # Returns
+    ///
+    /// A new Contract instance
+    pub fn from_configs(client_configs: ClientContractConfigs) -> Self {
+        Self {
+            wasm_bytes: Vec::new(),
+            wasm_hash: crypto::sha256_hash(&[]),
+            client_configs: Some(client_configs),
+        }
+    }
+
     /// Creates a new Contract instance from a WASM file path and custom file reader
     ///
     /// ### Parameters

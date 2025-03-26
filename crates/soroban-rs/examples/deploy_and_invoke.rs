@@ -2,7 +2,7 @@ use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
     Account, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType, Signer,
-    xdr::{ScAddress, ScVal},
+    xdr::{ScAddress, ScVal}
 };
 use std::{env, error::Error, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!(
         "Contract deployed successfully with ID: {:?}",
-        deployed.contract_id()
+        stellar_strkey::Contract::from(deployed.contract_id().expect("Contract ID not found"))
     );
 
     // Calls send function in contract from Alice and Bob

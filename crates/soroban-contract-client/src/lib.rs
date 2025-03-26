@@ -41,7 +41,7 @@ pub fn soroban(input: TokenStream) -> TokenStream {
         }
     
         // Transform inputs: Skip first arg (env), transform rest
-        let transformed_inputs = method.sig.inputs.iter().skip(1).map(|arg| {
+        let transformed_inputs: Vec<_> = method.sig.inputs.iter().skip(1).map(|arg| {
             match arg {
                 FnArg::Typed(pat_type) => {
                     let pat = &pat_type.pat;
@@ -49,35 +49,44 @@ pub fn soroban(input: TokenStream) -> TokenStream {
                 },
                 FnArg::Receiver(r) => quote! { #r },
             }
-        });
-    
+        }).collect();
+
+        // Also create a list of just the parameter names for the invoke call
+        let param_names = method.sig.inputs.iter().skip(1).map(|arg| {
+            match arg {
+                FnArg::Typed(pat_type) => {
+                    let pat = &pat_type.pat;
+                    quote! { #pat }
+                },
+                FnArg::Receiver(r) => quote! { #r },
+            }
+        }).collect::<Vec<_>>();
+
         // Transform return type to ScVal
         let transformed_output = match &method.sig.output {
             ReturnType::Default => quote! {},
-            ReturnType::Type(_, _) => quote! { -> soroban_rs::xdr::ScVal },
+            ReturnType::Type(_, _) => quote! { -> Result<GetTransactionResponse, soroban_rs::SorobanHelperError>  },
         };
     
         Some(quote! {
-            pub async fn #method_name(&self, #(#transformed_inputs),*) #transformed_output {
-                println!("Calling {} on contract {}", stringify!(#method_name), self.contract_id);
-                ScVal::Void
+            pub async fn #method_name(&mut self, #(#transformed_inputs),*) #transformed_output {
+                // internally calls invoke API.
+                self.contract.invoke(stringify!(#method_name), vec![#(#param_names),*]).await
             }
         })
     });
 
     let expanded = quote! {
         pub struct #client_struct_ident {
-            env: soroban_rs::Env,
-            contract_id: soroban_rs::ContractId,
+            client_configs: soroban_rs::ClientContractConfigs,
+            contract: soroban_rs::Contract,
         }
 
         impl #client_struct_ident {
             #(#transformed_methods)*
-            pub fn new(env: &soroban_rs::Env, contract_id: &soroban_rs::ContractId) -> Self {
-                Self {
-                    env: env.clone(),
-                    contract_id: contract_id.clone(),
-                }
+            pub fn new(client_configs: &soroban_rs::ClientContractConfigs) -> Self {
+                let contract = soroban_rs::Contract::from_configs(client_configs.clone());
+                Self { client_configs: client_configs.clone(), contract }
             }
 
         }

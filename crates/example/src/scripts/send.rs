@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
 use soroban_contract_client::soroban;
-use soroban_rs::{xdr::{ScAddress, ScVal}, Account, ContractId, Env, EnvConfigs, Signer};
+use soroban_rs::{xdr::{ScAddress, ScVal}, Account, ClientContractConfigs, ContractId, Env, EnvConfigs, GetTransactionResponse, ParseResult, Parser, ParserType, Signer, SorobanHelperError};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -46,16 +46,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
     account.set_authorized_calls(2);
 
-    let contract_id = ContractId::from_string("CARNMCLJQ5OCV7AG7XACKLRBQSFLY7GGZTYVCYULSPRJXWQ37UZUNBCF")?;
+    let contract_id = ContractId::from_string("CDJJN63F35UQA5FQTW77FTWO3VFF3PP2KD4AZ3BODTZE2XCDEMGRSWHI")?;
 
-    let token_client = TokenClient::new(&env, &contract_id);
+    let client_configs = ClientContractConfigs {
+        env: env.clone(),
+        contract_id: contract_id.clone(),
+        account: account.clone(),
+    };
+    let mut token_client = TokenClient::new(&client_configs);
 
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
+    let res: Result<GetTransactionResponse, SorobanHelperError> = token_client.send(alice, bob).await;
 
-    let res = token_client.send(alice, bob).await;
+    let parser = Parser::new(ParserType::InvokeFunction);
+    let result = parser.parse(&res.unwrap())?;
 
-    println!("Result: {:?}", res);
-    
-    Ok(())
+    match result {
+        ParseResult::InvokeFunction(Some(sc_val)) => {
+            println!("Invocation result: {:?}", sc_val);
+            Ok(())
+        }
+        _ => Err("Failed to parse InvokeFunction result".into()),
+    }
 }

@@ -17,6 +17,7 @@ pub use env::{Env, EnvConfigs};
 pub use parser::{ParseResult, Parser, ParserType};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
+pub use error::SorobanHelperError;
 
 // Re-export mock utilities for testing
 pub use mock::transaction::{
@@ -27,3 +28,4 @@ pub use mock::transaction::{
 
 pub use stellar_xdr::curr as xdr;
 pub use stellar_strkey::Contract as ContractId;
+pub use stellar_rpc_client::GetTransactionResponse;
