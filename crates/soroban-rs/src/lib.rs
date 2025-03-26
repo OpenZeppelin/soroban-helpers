@@ -4,13 +4,13 @@ mod crypto;
 mod env;
 mod error;
 mod fs;
+pub mod macros;
 mod mock;
 mod operation;
 mod parser;
 mod rpc;
 mod signer;
 mod transaction;
-pub mod macros;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
