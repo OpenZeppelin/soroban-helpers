@@ -1,9 +1,88 @@
+//! # Soroban Macros
+//! 
+//! This crate provides procedural macros for working with Soroban smart contracts.
+//!
+//! ## Features
+//!
+//! - `soroban!` macro: Automatically generates client code for interacting with Soroban contracts by:
+//!   - Parsing contract interface from Rust code
+//!   - Creating type-safe client structs with matching methods
+//!   - Handling parameter transformations and RPC communication
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use soroban_rs_macros::soroban;
+//! use soroban_rs::{xdr::ScVal, ClientContractConfigs};
+//!
+//! soroban!(r#"
+//!     pub struct Token;
+//!
+//!     impl Token {
+//!         pub fn transfer(env: &Env, from: Address, to: Address, amount: u128) -> bool {
+//!             // Contract implementation...
+//!         }
+//!     }
+//! "#);
+//!
+//! // Generated client can be used like this:
+//! async fn use_token_client() {
+//!     let client_configs = ClientContractConfigs::new(/* ... */);
+//!     let mut token_client = TokenClient::new(&client_configs);
+//!     
+//!     // Call the contract method with ScVal parameters
+//!     let result = token_client.transfer(from_scval, to_scval, amount_scval).await;
+//! }
+//! ```
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
     parse_macro_input, FnArg, Item, ReturnType, File, 
 };
 
+
+/// A procedural macro for generating Soroban contract client code.
+///
+/// This macro parses a Soroban contract interface and generates a client struct with
+/// corresponding methods that can be used to interact with the deployed contract.
+///
+/// # How It Works
+///
+/// 1. Parses the provided Rust code containing a contract struct and implementation
+/// 2. Extracts the contract's public methods
+/// 3. Generates a client struct with matching methods that:
+///    - Skip the first parameter (env)
+///    - Convert all other parameters to use `ScVal` types
+///    - Return `Result<GetTransactionResponse, SorobanHelperError>`
+///
+/// # Parameters
+///
+/// * `input`: A string literal containing the Rust code of the contract interface
+///
+/// # Generated Code
+///
+/// For a contract named `Token`, the macro generates:
+/// - A `TokenClient` struct with client configuration
+/// - Methods matching the contract's public interface but with modified signatures
+/// - A `new` method to instantiate the client
+///
+/// # Example
+///
+/// ```rust,no_run
+/// soroban!(r#"
+///     pub struct Counter;
+///
+///     impl Counter {
+///         pub fn increment(env: &Env, amount: u32) -> u32 {
+///             // Contract implementation...
+///         }
+///     }
+/// "#);
+///
+/// // Use the generated client:
+/// let mut counter_client = CounterClient::new(&client_configs);
+/// let result = counter_client.increment(amount_scval).await?;
+/// ```
 #[proc_macro]
 pub fn soroban(input: TokenStream) -> TokenStream {
     let input_str = parse_macro_input!(input as syn::LitStr).value();

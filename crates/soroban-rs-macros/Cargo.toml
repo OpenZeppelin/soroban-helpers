@@ -1,5 +1,5 @@
 [package]
-name = "soroban-contract-client"
+name = "soroban-rs-macros"
 version = "0.1.0"
 edition.workspace = true
 description.workspace = true
