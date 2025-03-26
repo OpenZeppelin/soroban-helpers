@@ -581,10 +581,9 @@ mod test {
         assert!(contract.client_configs.is_some());
         let stored_configs = contract.client_configs.unwrap();
         assert_eq!(stored_configs.contract_id.0, contract_id.0);
-        
+
         // Verify WASM bytes are empty
         assert!(contract.wasm_bytes.is_empty());
         assert_eq!(contract.wasm_hash, crypto::sha256_hash(&[]));
     }
-
 }

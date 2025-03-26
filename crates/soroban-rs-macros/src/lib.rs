@@ -1,5 +1,5 @@
 //! # Soroban Macros
-//! 
+//!
 //! This crate provides procedural macros for working with Soroban smart contracts.
 //!
 //! ## Features
@@ -36,10 +36,7 @@
 //! ```
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{
-    parse_macro_input, FnArg, Item, ReturnType, File, 
-};
-
+use syn::{File, FnArg, Item, ReturnType, parse_macro_input};
 
 /// A procedural macro for generating Soroban contract client code.
 ///
@@ -113,40 +110,50 @@ pub fn soroban(input: TokenStream) -> TokenStream {
     let transformed_methods = methods.iter().filter_map(|method| {
         let method_name = &method.sig.ident;
         let method_name_str = method_name.to_string();
-        
+
         // Skip __constructor or new() methods
         if method_name_str == "__constructor" || method_name_str == "new" {
             return None;
         }
-    
+
         // Transform inputs: Skip first arg (env), transform rest
-        let transformed_inputs: Vec<_> = method.sig.inputs.iter().skip(1).map(|arg| {
-            match arg {
+        let transformed_inputs: Vec<_> = method
+            .sig
+            .inputs
+            .iter()
+            .skip(1)
+            .map(|arg| match arg {
                 FnArg::Typed(pat_type) => {
                     let pat = &pat_type.pat;
                     quote! { #pat : soroban_rs::xdr::ScVal }
-                },
+                }
                 FnArg::Receiver(r) => quote! { #r },
-            }
-        }).collect();
+            })
+            .collect();
 
         // Also create a list of just the parameter names for the invoke call
-        let param_names = method.sig.inputs.iter().skip(1).map(|arg| {
-            match arg {
+        let param_names = method
+            .sig
+            .inputs
+            .iter()
+            .skip(1)
+            .map(|arg| match arg {
                 FnArg::Typed(pat_type) => {
                     let pat = &pat_type.pat;
                     quote! { #pat }
-                },
+                }
                 FnArg::Receiver(r) => quote! { #r },
-            }
-        }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         // Transform return type to ScVal
         let transformed_output = match &method.sig.output {
             ReturnType::Default => quote! {},
-            ReturnType::Type(_, _) => quote! { -> Result<GetTransactionResponse, soroban_rs::SorobanHelperError>  },
+            ReturnType::Type(_, _) => {
+                quote! { -> Result<GetTransactionResponse, soroban_rs::SorobanHelperError>  }
+            }
         };
-    
+
         Some(quote! {
             pub async fn #method_name(&mut self, #(#transformed_inputs),*) #transformed_output {
                 // internally calls invoke API.
