@@ -150,7 +150,7 @@ pub fn soroban(input: TokenStream) -> TokenStream {
         let transformed_output = match &method.sig.output {
             ReturnType::Default => quote! {},
             ReturnType::Type(_, _) => {
-                quote! { -> Result<GetTransactionResponse, soroban_rs::SorobanHelperError>  }
+                quote! { -> Result<soroban_rs::GetTransactionResponse, soroban_rs::SorobanHelperError>  }
             }
         };
 

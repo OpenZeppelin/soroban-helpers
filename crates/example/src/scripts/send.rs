@@ -2,8 +2,9 @@ use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
     Account, ClientContractConfigs, ContractId, Env, EnvConfigs, GetTransactionResponse,
-    ParseResult, Parser, ParserType, Signer, SorobanHelperError, soroban,
+    ParseResult, Parser, ParserType, Signer, SorobanHelperError,
     xdr::{ScAddress, ScVal},
+    macros::soroban,
 };
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;

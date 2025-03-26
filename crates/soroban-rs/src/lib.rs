@@ -10,6 +10,7 @@ mod parser;
 mod rpc;
 mod signer;
 mod transaction;
+pub mod macros;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
@@ -26,7 +27,6 @@ pub use mock::transaction::{
     mock_transaction_response_with_return_value,
 };
 
-pub use soroban_rs_macros::soroban;
 pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
 pub use stellar_xdr::curr as xdr;
