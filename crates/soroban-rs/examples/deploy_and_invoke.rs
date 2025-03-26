@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!(
         "Contract deployed successfully with ID: {:?}",
-        stellar_strkey::Contract::from(deployed.contract_id().expect("Contract ID not found"))
+        deployed.contract_id().expect("Contract ID not found")
     );
 
     // Calls send function in contract from Alice and Bob
