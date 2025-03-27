@@ -1,7 +1,9 @@
-use stellar_xdr::curr::{AccountId, ScAddress, ScString, ScVal, StringM};
+use std::time::Duration;
+
+use stellar_xdr::curr::{AccountId, BytesM, Duration as XDRDuration, ScAddress, ScBytes, ScString, ScVal, ScVec, StringM, VecM};
 use crate::SorobanHelperError;
 
-/// A trait for converting a value into a `ScVal`.
+/// A trait for converting native rust values into a `ScVal`.
 pub trait IntoScVal {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError>;
     fn into_val(&self) -> ScVal;
@@ -80,3 +82,47 @@ impl IntoScVal for String {
         ScVal::String(ScString::from(string_m))
     }
 }
+
+impl IntoScVal for [u8; 32] {
+    fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
+        let bytes_m = BytesM::<{ u32::MAX }>::try_from(self)
+            .map_err(|_| SorobanHelperError::XdrEncodingFailed("Failed to convert Bytes to BytesM".to_string()))?;
+        Ok(ScVal::Bytes(ScBytes::from(bytes_m)))
+    }
+
+    fn into_val(&self) -> ScVal {
+        let bytes_m = BytesM::<{ u32::MAX }>::try_from(self)
+            .expect("Failed to convert Bytes to BytesM");
+        ScVal::Bytes(ScBytes::from(bytes_m))
+    }
+}
+
+impl IntoScVal for Duration {
+    fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
+        let milis: u64 = self.as_secs() as u64;
+        Ok(ScVal::Duration(XDRDuration::from(milis)))
+    }
+
+    fn into_val(&self) -> ScVal {
+        let milis: u64 = self.as_secs() as u64;
+        ScVal::Duration(XDRDuration::from(milis))
+    }
+}
+
+impl IntoScVal for Vec<ScVal> {
+    fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
+        let vec_m = VecM::try_from(self)
+            .map_err(|_| SorobanHelperError::XdrEncodingFailed("Failed to convert Vec to VecM".to_string()))?;
+        Ok(ScVal::Vec(Some(ScVec::from(vec_m))))
+    }
+
+    fn into_val(&self) -> ScVal {
+        let vec_m = VecM::try_from(self)
+            .expect("Failed to convert Vec to VecM");
+        ScVal::Vec(Some(ScVec::from(vec_m)))
+    }
+}
+        
+    
+    
+    

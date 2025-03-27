@@ -1,5 +1,5 @@
 use dotenv::from_path;
-use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Parser, ParserType, IntoSigner};
+use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Parser, ParserType, Signer};
 use std::{env, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -22,9 +22,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .expect("Invalid private key");
 
     // Create signers
-    let signer_1 = (&private_key_1.0).into_signer();
-    let signer_2 = (&private_key_2.0).into_signer();
-    let signer_3 = (&private_key_3.0).into_signer();
+    let signer_1 = Signer::from(&private_key_1.0);
+    let signer_2 = Signer::from(&private_key_2.0);
+    let signer_3 = Signer::from(&private_key_3.0);
 
     // Create account that will become multisig
     let target_account = Account::single(signer_3.clone());

@@ -34,4 +34,3 @@ pub use stellar_xdr::curr as xdr;
 
 // traits
 pub use scval::IntoScVal;
-pub use signer::IntoSigner;
