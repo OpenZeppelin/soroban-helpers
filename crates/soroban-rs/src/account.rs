@@ -952,6 +952,42 @@ mod test {
         assert_eq!(second_next.value(), second_current.value() + 1);
     }
 
+    #[test]
+    fn test_create_thresholds_operation() {
+        let empty_config = AccountConfig::new();
+        assert!(empty_config.create_thresholds_operation().is_none());
+
+        let master_weight_config = AccountConfig::new().with_master_weight(5);
+        assert!(master_weight_config.create_thresholds_operation().is_some());
+
+        let thresholds_config = AccountConfig::new().with_thresholds(1, 2, 3);
+        assert!(thresholds_config.create_thresholds_operation().is_some());
+
+        let low_threshold_config = AccountConfig::new().with_thresholds(1, 0, 0);
+        let low_op = low_threshold_config.create_thresholds_operation().unwrap();
+        if let OperationBody::SetOptions(op_body) = &low_op.body {
+            assert_eq!(op_body.low_threshold, Some(1));
+            assert_eq!(op_body.med_threshold, Some(0));
+            assert_eq!(op_body.high_threshold, Some(0));
+        }
+
+        let med_threshold_config = AccountConfig::new().with_thresholds(0, 2, 0);
+        let med_op = med_threshold_config.create_thresholds_operation().unwrap();
+        if let OperationBody::SetOptions(op_body) = &med_op.body {
+            assert_eq!(op_body.low_threshold, Some(0));
+            assert_eq!(op_body.med_threshold, Some(2));
+            assert_eq!(op_body.high_threshold, Some(0));
+        }
+
+        let high_threshold_config = AccountConfig::new().with_thresholds(0, 0, 3);
+        let high_op = high_threshold_config.create_thresholds_operation().unwrap();
+        if let OperationBody::SetOptions(op_body) = &high_op.body {
+            assert_eq!(op_body.low_threshold, Some(0));
+            assert_eq!(op_body.med_threshold, Some(0));
+            assert_eq!(op_body.high_threshold, Some(3));
+        }
+    }
+
     #[tokio::test]
     async fn test_configure() {
         let env = mock_env(None, None, None);

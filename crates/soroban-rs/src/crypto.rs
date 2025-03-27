@@ -129,14 +129,8 @@ mod tests {
         let lower_critical_value = 190.87;
 
         // Assert that our chi-squared value is within the acceptable range
-        assert!(
-            chi_squared > lower_critical_value,
-            "Chi-squared value too low"
-        );
-        assert!(
-            chi_squared < upper_critical_value,
-            "Chi-squared value too high"
-        );
+        assert!(chi_squared > lower_critical_value,);
+        assert!(chi_squared < upper_critical_value,);
     }
 
     #[test]
