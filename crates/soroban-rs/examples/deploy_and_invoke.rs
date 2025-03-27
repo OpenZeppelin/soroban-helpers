@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!(
         "Contract deployed successfully with ID: {:?}",
-        deployed.contract_id().expect("Contract ID not found")
+        deployed.contract_id().expect("Contract ID not found").to_string()
     );
 
     let client_configs = ClientContractConfigs {
