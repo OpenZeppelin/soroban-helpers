@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Deploys the contract
     let deployed = contract
-        .deploy(&env, &mut account, Some(vec![(42 as u32).into_val()]))
+        .deploy(&env, &mut account, Some(vec![(42_u32).into_val()]))
         .await?;
 
     println!(
