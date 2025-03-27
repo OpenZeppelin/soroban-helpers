@@ -11,6 +11,7 @@ mod parser;
 mod rpc;
 mod signer;
 mod transaction;
+mod scval;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
@@ -30,3 +31,7 @@ pub use mock::transaction::{
 pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
 pub use stellar_xdr::curr as xdr;
+
+// traits
+pub use scval::IntoScVal;
+pub use signer::IntoSigner;

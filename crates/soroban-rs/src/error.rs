@@ -40,6 +40,9 @@ pub enum SorobanHelperError {
 
     /// Error when a file operation fails.
     FileReadError(String),
+
+    /// Error when a conversion fails.
+    ConversionError(String),
 }
 
 impl fmt::Display for SorobanHelperError {
@@ -55,6 +58,7 @@ impl fmt::Display for SorobanHelperError {
             Self::Unauthorized(msg) => write!(f, "Unauthorized: {}", msg),
             Self::ContractDeployedConfigsNotSet => write!(f, "Contract deployed configs not set"),
             Self::FileReadError(msg) => write!(f, "File read error: {}", msg),
+            Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
         }
     }
 }

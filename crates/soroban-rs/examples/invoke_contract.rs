@@ -3,7 +3,7 @@ use ed25519_dalek::SigningKey;
 use soroban_rs::{
     Account, ClientContractConfigs, Env, EnvConfigs, GetTransactionResponse, ParseResult, Parser,
     ParserType, Signer,
-    xdr::{ScAddress, ScVal},
+    IntoScVal
 };
 use soroban_rs_macros::soroban;
 use std::{env, path::Path};
@@ -51,8 +51,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut token = TokenMockClient::new(&client_configs);
 
     // Calls send function in contract from Alice and Bob
-    let alice = ScVal::Address(ScAddress::Account(account.account_id()));
-    let bob = ScVal::Address(ScAddress::Account(account.account_id()));
+    let alice = account.account_id().try_into_val()?;
+    let bob = account.account_id().try_into_val()?;
 
     let invoke_res: GetTransactionResponse = token.send(alice, bob).await?;
 

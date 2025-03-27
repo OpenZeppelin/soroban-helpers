@@ -37,6 +37,22 @@ use stellar_xdr::curr::{
     TransactionSignaturePayloadTaggedTransaction, WriteXdr,
 };
 
+/// A trait for converting a raw array of bytes into a `Signer`.
+pub trait IntoSigner {
+    fn try_into_signer(&self) -> Result<Signer, SorobanHelperError>;
+    fn into_signer(&self) -> Signer;
+}
+
+impl IntoSigner for &[u8; 32] {
+    fn try_into_signer(&self) -> Result<Signer, SorobanHelperError> {
+        Ok(Signer::new(SigningKey::from_bytes(*self)))
+    }
+
+    fn into_signer(&self) -> Signer {
+        Signer::new(SigningKey::from_bytes(*self))
+    }
+}
+
 /// A transaction signer for Soroban operations.
 ///
 /// The Signer manages an Ed25519 key pair and provides methods to sign Stellar transactions.
