@@ -36,7 +36,7 @@
 //! ```
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{File, FnArg, Item, ReturnType, parse_macro_input};
+use syn::{parse_macro_input, File, FnArg, Item, ReturnType};
 
 /// A procedural macro for generating Soroban contract client code.
 ///
@@ -82,8 +82,18 @@ use syn::{File, FnArg, Item, ReturnType, parse_macro_input};
 /// ```
 #[proc_macro]
 pub fn soroban(input: TokenStream) -> TokenStream {
-    let input_str = parse_macro_input!(input as syn::LitStr).value();
-    let file_ast: File = syn::parse_str(&input_str).expect("Failed to parse input");
+    let lit = parse_macro_input!(input as syn::LitStr);
+    let value = lit.value();
+
+    let code = if value.ends_with(".rs") {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let full_path = std::path::Path::new(&manifest_dir).join(&value);
+        std::fs::read_to_string(&full_path)
+            .unwrap_or_else(|_| panic!("Failed to read file at {}", full_path.display()))
+    } else {
+        value
+    };
+    let file_ast: File = syn::parse_str(&code).expect("Failed to parse input");
 
     let mut struct_name = None;
     let mut methods = Vec::new();

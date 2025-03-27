@@ -9,6 +9,7 @@ use soroban_rs::{
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 
+// Generates TokenClient
 soroban!(
     r#"
     pub struct Token;
@@ -26,6 +27,9 @@ soroban!(
     }
 "#
 );
+
+// Optionally, you can just use:
+// soroban!("src/lib.rs");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
