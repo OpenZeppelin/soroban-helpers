@@ -66,7 +66,6 @@ pub mod test {
         );
     }
 
-
     // Genarates Token2Client
     soroban!(
         r#"
@@ -115,7 +114,6 @@ pub mod test {
         );
     }
 
-
     // Genarates TokenMockClient
     soroban!("fixtures/lib.rs");
 
@@ -153,5 +151,4 @@ pub mod test {
             mock_transaction_response().result_meta
         );
     }
-
 }

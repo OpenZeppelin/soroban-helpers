@@ -36,7 +36,7 @@
 //! ```
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, File, FnArg, Item, ReturnType};
+use syn::{File, FnArg, Item, ReturnType, parse_macro_input};
 
 /// A procedural macro for generating Soroban contract client code.
 ///
