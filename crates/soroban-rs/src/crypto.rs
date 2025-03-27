@@ -83,11 +83,7 @@ mod tests {
         let hash = sha256_hash(data);
         let expected_hash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9";
 
-        assert_eq!(
-            hash.to_string(),
-            expected_hash,
-            "Hash value should match the expected SHA256 hash"
-        );
+        assert_eq!(hash.to_string(), expected_hash);
     }
 
     #[test]
@@ -132,14 +128,14 @@ mod tests {
         let upper_critical_value = 330.52;
         let lower_critical_value = 190.87;
 
-        // Assert that our chi-squared value doesn't exceed or fall below the critical values
-        // If it does, it suggests the distribution is not uniform
+        // Assert that our chi-squared value is within the acceptable range
         assert!(
-            chi_squared > lower_critical_value && chi_squared < upper_critical_value,
-            "Chi-squared test failed: Chi-squared value ({}) outside acceptable range ({} to {})",
-            chi_squared,
-            lower_critical_value,
-            upper_critical_value
+            chi_squared > lower_critical_value,
+            "Chi-squared value too low"
+        );
+        assert!(
+            chi_squared < upper_critical_value,
+            "Chi-squared value too high"
         );
     }
 
@@ -151,13 +147,10 @@ mod tests {
         let network_id = Hash([0; 32]);
 
         let result = calculate_contract_id(&account_id, &salt, &network_id);
-        assert!(result.is_ok(), "Contract ID calculation should succeed");
+        assert!(result.is_ok());
 
         let contract_id = result.unwrap();
         assert_eq!(contract_id.0.len(), 32);
-        assert!(
-            contract_id.0.iter().any(|&x| x != 0),
-            "Contract ID should not be all zeros"
-        );
+        assert!(contract_id.0.iter().any(|&x| x != 0));
     }
 }
