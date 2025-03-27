@@ -1,7 +1,9 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    xdr::{ScAddress, ScVal}, Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType, Signer
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
+    Signer,
+    xdr::{ScAddress, ScVal},
 };
 use soroban_rs_macros::soroban;
 use std::{env, error::Error, path::Path};
@@ -46,7 +48,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!(
         "Contract deployed successfully with ID: {:?}",
-        deployed.contract_id().expect("Contract ID not found").to_string()
+        deployed
+            .contract_id()
+            .expect("Contract ID not found")
+            .to_string()
     );
 
     let client_configs = ClientContractConfigs {
