@@ -700,9 +700,9 @@ impl Account {
 mod test {
     use stellar_xdr::curr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
 
-    use crate::account::AuthorizedCalls;
+    use crate::account::{AccountConfig, AuthorizedCalls, MultisigAccount, SingleAccount};
     use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
-    use crate::{Account, AccountConfig, TransactionBuilder};
+    use crate::{Account, TransactionBuilder};
 
     #[tokio::test]
     async fn load_account() {
@@ -814,12 +814,125 @@ mod test {
     }
 
     #[test]
+    fn test_authorized_calls_deref_mut() {
+        let mut auth = AuthorizedCalls::new(5);
+        assert_eq!(*auth, 5);
+
+        *auth = 10;
+        assert_eq!(*auth, 10);
+        assert!(auth.can_call());
+    }
+
+    #[test]
+    fn test_authorized_calls_from() {
+        let auth_from_u16 = AuthorizedCalls::from(123_u16);
+        assert_eq!(*auth_from_u16, 123);
+
+        let auth_from_i16 = AuthorizedCalls::from(456_i16);
+        assert_eq!(*auth_from_i16, 456);
+    }
+
+    #[test]
     fn test_display_implementation() {
         let seq = crate::account::AccountSequence::new(42);
         assert_eq!(seq.to_string(), "42");
 
         let auth = crate::account::AuthorizedCalls::new(123);
         assert_eq!(auth.to_string(), "123");
+    }
+
+    #[test]
+    fn test_account_sequence_conversions() {
+        // Test From<i64> for AccountSequence
+        let seq_from_i64 = crate::account::AccountSequence::from(123_i64);
+        assert_eq!(seq_from_i64.value(), 123);
+
+        // Test From<AccountSequence> for i64
+        let seq = crate::account::AccountSequence::new(456);
+        let i64_from_seq: i64 = seq.into();
+        assert_eq!(i64_from_seq, 456);
+    }
+
+    #[test]
+    fn test_account_config_default() {
+        let config = AccountConfig::default();
+
+        assert_eq!(config.master_weight, None);
+        assert_eq!(config.low_threshold, None);
+        assert_eq!(config.med_threshold, None);
+        assert_eq!(config.high_threshold, None);
+        assert!(config.signers.is_empty());
+
+        let config_new = AccountConfig::new();
+        assert_eq!(config.master_weight, config_new.master_weight);
+        assert_eq!(config.low_threshold, config_new.low_threshold);
+        assert_eq!(config.med_threshold, config_new.med_threshold);
+        assert_eq!(config.high_threshold, config_new.high_threshold);
+        assert_eq!(config.signers.len(), config_new.signers.len());
+    }
+
+    #[test]
+    fn test_account_display_implementations() {
+        let signer = mock_signer1();
+        let single_account = SingleAccount::new(signer.clone(), 10_u16);
+        let expected_single_display = format!("SingleAccount({})", signer.account_id().0);
+        assert_eq!(single_account.to_string(), expected_single_display);
+
+        let signers = all_signers();
+        let account_id = mock_signer3().account_id();
+        let multisig_account = MultisigAccount::new(account_id.clone(), signers.clone(), 5_u16);
+        let expected_multisig_display = format!(
+            "MultisigAccount({}, {} signers)",
+            account_id.0,
+            signers.len()
+        );
+        assert_eq!(multisig_account.to_string(), expected_multisig_display);
+
+        let account_single = Account::single(mock_signer1());
+        let account_multisig = Account::multisig(mock_signer3().account_id(), all_signers());
+
+        assert!(account_single.to_string().starts_with("SingleAccount"));
+        assert!(account_multisig.to_string().starts_with("MultisigAccount"));
+    }
+
+    #[test]
+    fn test_account_from_implementations() {
+        let signer1 = mock_signer1();
+        let single_account = SingleAccount::new(signer1.clone(), 10_u16);
+        let expected_id = single_account.account_id.0.to_string();
+        let account_from_single: Account = single_account.into();
+
+        assert!(matches!(account_from_single, Account::KeyPair(_)));
+
+        assert!(
+            matches!(account_from_single, Account::KeyPair(inner) if inner.account_id.0.to_string() == expected_id)
+        );
+
+        let signers = all_signers();
+        let account_id = mock_signer3().account_id();
+
+        let expected_multi_id = account_id.0.to_string();
+        let expected_signers_len = signers.len();
+
+        let multisig_account = MultisigAccount::new(account_id, signers, 5_u16);
+        let account_from_multisig: Account = multisig_account.into();
+
+        assert!(matches!(account_from_multisig, Account::Multisig(_)));
+
+        assert!(matches!(account_from_multisig, Account::Multisig(inner) if
+            inner.account_id.0.to_string() == expected_multi_id &&
+            inner.signers.len() == expected_signers_len
+        ));
+
+        let signer2 = mock_signer1();
+        let expected_signer_id = signer2.account_id().0.to_string();
+        let account_from_signer: Account = signer2.into();
+
+        assert!(matches!(account_from_signer, Account::KeyPair(_)));
+
+        assert!(
+            matches!(account_from_signer, Account::KeyPair(inner) if inner.account_id.0.to_string() == expected_signer_id)
+        );
     }
 
     #[tokio::test]
