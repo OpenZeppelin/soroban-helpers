@@ -1,9 +1,10 @@
 use std::convert::TryInto;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_xdr::curr::{
-    AccountEntry, AccountId, ExtensionPoint, Hash, LedgerEntry, LedgerEntryChange, LedgerEntryData,
-    LedgerEntryExt, Memo, MuxedAccount, Operation, OperationBody, OperationMeta, OperationResult,
-    Preconditions, ScAddress, ScVal, SequenceNumber, SetOptionsOp, SorobanTransactionMeta,
+    AccountEntry, AccountId, ContractEvent, ContractEventBody, ContractEventType, ContractEventV0,
+    ExtensionPoint, Hash, LedgerEntry, LedgerEntryChange, LedgerEntryData, LedgerEntryExt, Memo,
+    MuxedAccount, Operation, OperationBody, OperationMeta, OperationResult, Preconditions,
+    ScAddress, ScVal, SequenceNumber, SetOptionsOp, SorobanTransactionMeta,
     SorobanTransactionMetaExt, Transaction, TransactionEnvelope, TransactionExt, TransactionMeta,
     TransactionMetaV3, TransactionResult, TransactionResultExt, TransactionResultResult,
     TransactionV1Envelope, Uint256, VecM,
@@ -241,4 +242,17 @@ fn create_tx_meta_from_mock(mock: &MockTransactionMeta) -> TransactionMeta {
         tx_changes_after: Default::default(),
         operations: Default::default(),
     })
+}
+
+#[allow(dead_code)]
+pub fn create_mock_contract_event() -> ContractEvent {
+    ContractEvent {
+        body: ContractEventBody::V0(ContractEventV0 {
+            data: ScVal::I32(0),
+            topics: VecM::default(),
+        }),
+        ext: ExtensionPoint::V0,
+        contract_id: Some(Hash([1; 32])),
+        type_: ContractEventType::Contract,
+    }
 }

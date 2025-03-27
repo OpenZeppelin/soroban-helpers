@@ -136,10 +136,12 @@ impl SorobanTransactionResponse {
 
 #[cfg(test)]
 mod tests {
+    use crate::mock::create_mock_contract_event;
+
     use super::*;
     use stellar_xdr::curr::{
-        ExtensionPoint, LedgerEntryChanges, SorobanTransactionMetaExt, TransactionResult,
-        TransactionResultExt, TransactionResultResult, VecM,
+        ContractEvent, ExtensionPoint, LedgerEntryChanges, SorobanTransactionMetaExt,
+        TransactionResult, TransactionResultExt, TransactionResultResult, VecM,
     };
 
     #[test]
@@ -175,6 +177,121 @@ mod tests {
         let soroban_meta = SorobanTransactionMeta {
             ext: SorobanTransactionMetaExt::V0,
             events: VecM::default(),
+            return_value: return_value.unwrap_or(ScVal::Void),
+            diagnostic_events: VecM::default(),
+        };
+
+        // Create a mock V3 transaction meta
+        let meta_v3 = TransactionMetaV3 {
+            ext: ExtensionPoint::V0,
+            tx_changes_before: LedgerEntryChanges::default(),
+            operations: VecM::default(),
+            tx_changes_after: LedgerEntryChanges::default(),
+            soroban_meta: Some(soroban_meta),
+        };
+
+        let transaction_result = TransactionResult {
+            fee_charged: 0,
+            result: TransactionResultResult::TxSuccess(VecM::default()),
+            ext: TransactionResultExt::V0,
+        };
+
+        // Create a mock GetTransactionResponse
+        GetTransactionResponse {
+            status: "success".to_string(),
+            envelope: None,
+            result: Some(transaction_result),
+            result_meta: Some(TransactionMeta::V3(meta_v3)),
+        }
+    }
+
+    #[test]
+    fn test_get_events_success() {
+        // Create a mock ContractEvent
+        let event1 = create_mock_contract_event();
+        let event2 = create_mock_contract_event();
+
+        // Create a VecM with the events
+        let events: VecM<ContractEvent> = vec![event1.clone(), event2.clone()].try_into().unwrap();
+
+        // Create a mock GetTransactionResponse with events
+        let response = create_mock_response_with_events(Some(ScVal::Void), events);
+        let soroban_response = SorobanTransactionResponse::new(response);
+
+        // Test extracting the events
+        let extracted_events = soroban_response.get_events().unwrap();
+        assert_eq!(extracted_events.len(), 2);
+    }
+
+    #[test]
+    fn test_get_events_no_meta() {
+        // Create a mock GetTransactionResponse with no transaction meta
+        let response = GetTransactionResponse {
+            status: "success".to_string(),
+            envelope: None,
+            result: None,
+            result_meta: None,
+        };
+        let soroban_response = SorobanTransactionResponse::new(response);
+
+        // Test extracting the events - should fail
+        let result = soroban_response.get_events();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_events_empty() {
+        // Create a mock GetTransactionResponse with empty events
+        let response = create_mock_response(Some(ScVal::Void));
+        let soroban_response = SorobanTransactionResponse::new(response);
+
+        // Test extracting the events - should return empty vector
+        let events = soroban_response.get_events().unwrap();
+        assert_eq!(events.len(), 0);
+    }
+
+    #[test]
+    fn test_get_soroban_meta_success() {
+        // Create a mock GetTransactionResponse
+        let return_value = ScVal::U32(42);
+        let response = create_mock_response(Some(return_value.clone()));
+        let soroban_response = SorobanTransactionResponse::new(response);
+
+        // Test extracting the Soroban metadata
+        let soroban_meta = soroban_response.get_soroban_meta().unwrap();
+
+        // Verify the metadata contents
+        assert_eq!(soroban_meta.return_value, return_value);
+        assert_eq!(soroban_meta.events.len(), 0);
+        assert_eq!(soroban_meta.diagnostic_events.len(), 0);
+        assert!(matches!(soroban_meta.ext, SorobanTransactionMetaExt::V0));
+    }
+
+    #[test]
+    fn test_get_soroban_meta_no_meta() {
+        // Create a mock GetTransactionResponse with no transaction meta
+        let response = GetTransactionResponse {
+            status: "success".to_string(),
+            envelope: None,
+            result: None,
+            result_meta: None,
+        };
+        let soroban_response = SorobanTransactionResponse::new(response);
+
+        // Test extracting the Soroban metadata - should fail
+        let result = soroban_response.get_soroban_meta();
+        assert!(result.is_err());
+    }
+
+    // Helper function to create a mock GetTransactionResponse with custom events
+    fn create_mock_response_with_events(
+        return_value: Option<ScVal>,
+        events: VecM<stellar_xdr::curr::ContractEvent>,
+    ) -> GetTransactionResponse {
+        // Create a mock Soroban transaction meta
+        let soroban_meta = SorobanTransactionMeta {
+            ext: SorobanTransactionMetaExt::V0,
+            events,
             return_value: return_value.unwrap_or(ScVal::Void),
             diagnostic_events: VecM::default(),
         };

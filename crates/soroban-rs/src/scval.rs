@@ -128,7 +128,6 @@ impl IntoScVal for Vec<ScVal> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,30 +137,36 @@ mod tests {
     fn test_account_id_into_scval() {
         let public_key = PublicKey::PublicKeyTypeEd25519(Uint256([0; 32]));
         let account_id = AccountId(public_key);
-        
+
         // Test try_into_val
         let scval = account_id.try_into_val().unwrap();
         match scval {
             ScVal::Address(ScAddress::Account(id)) => {
                 assert_eq!(id, account_id);
             }
-            _ => panic!("Expected ScVal::Address(ScAddress::Account), got {:?}", scval),
+            _ => panic!(
+                "Expected ScVal::Address(ScAddress::Account), got {:?}",
+                scval
+            ),
         }
-        
+
         // Test into_val
         let scval = account_id.clone().into_val();
         match scval {
             ScVal::Address(ScAddress::Account(id)) => {
                 assert_eq!(id, account_id);
             }
-            _ => panic!("Expected ScVal::Address(ScAddress::Account), got {:?}", scval),
+            _ => panic!(
+                "Expected ScVal::Address(ScAddress::Account), got {:?}",
+                scval
+            ),
         }
     }
 
     #[test]
     fn test_u32_into_scval() {
         let value: u32 = 42;
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -170,7 +175,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::U32, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -184,7 +189,7 @@ mod tests {
     #[test]
     fn test_u64_into_scval() {
         let value: u64 = 42;
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -193,7 +198,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::U64, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -207,7 +212,7 @@ mod tests {
     #[test]
     fn test_i32_into_scval() {
         let value: i32 = -42;
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -216,7 +221,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::I32, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -230,7 +235,7 @@ mod tests {
     #[test]
     fn test_i64_into_scval() {
         let value: i64 = -42;
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -239,7 +244,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::I64, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -254,7 +259,7 @@ mod tests {
     fn test_bool_into_scval() {
         // Test true value
         let value = true;
-        
+
         let scval = value.try_into_val().unwrap();
         match scval {
             ScVal::Bool(val) => {
@@ -262,7 +267,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::Bool, got {:?}", scval),
         }
-        
+
         let scval = value.into_val();
         match scval {
             ScVal::Bool(val) => {
@@ -270,10 +275,10 @@ mod tests {
             }
             _ => panic!("Expected ScVal::Bool, got {:?}", scval),
         }
-        
+
         // Test false value
         let value = false;
-        
+
         let scval = value.try_into_val().unwrap();
         match scval {
             ScVal::Bool(val) => {
@@ -286,7 +291,7 @@ mod tests {
     #[test]
     fn test_string_into_scval() {
         let value = "test string".to_string();
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -296,7 +301,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::String, got {:?}", scval),
         }
-        
+
         // Test into_val
         let value = "test string".to_string();
         let scval = value.into_val();
@@ -312,7 +317,7 @@ mod tests {
     #[test]
     fn test_bytes_into_scval() {
         let value = [42u8; 32];
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -321,7 +326,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::Bytes, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -335,7 +340,7 @@ mod tests {
     #[test]
     fn test_duration_into_scval() {
         let value = Duration::from_secs(42);
-        
+
         // Test try_into_val
         let scval = value.try_into_val().unwrap();
         match scval {
@@ -344,7 +349,7 @@ mod tests {
             }
             _ => panic!("Expected ScVal::Duration, got {:?}", scval),
         }
-        
+
         // Test into_val
         let scval = value.into_val();
         match scval {
@@ -357,12 +362,8 @@ mod tests {
 
     #[test]
     fn test_vec_scval_into_scval() {
-        let values = vec![
-            ScVal::U32(1),
-            ScVal::I32(-1),
-            ScVal::Bool(true),
-        ];
-        
+        let values = vec![ScVal::U32(1), ScVal::I32(-1), ScVal::Bool(true)];
+
         // Test try_into_val
         let scval = values.try_into_val().unwrap();
         match scval {
@@ -375,13 +376,9 @@ mod tests {
             }
             _ => panic!("Expected ScVal::Vec, got {:?}", scval),
         }
-        
+
         // Test into_val
-        let values = vec![
-            ScVal::U32(1),
-            ScVal::I32(-1),
-            ScVal::Bool(true),
-        ];
+        let values = vec![ScVal::U32(1), ScVal::I32(-1), ScVal::Bool(true)];
         let scval = values.into_val();
         match scval {
             ScVal::Vec(Some(sc_vec)) => {
