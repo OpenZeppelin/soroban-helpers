@@ -8,16 +8,18 @@ pub mod macros;
 mod mock;
 mod operation;
 mod parser;
+mod response;
 mod rpc;
+mod scval;
 mod signer;
 mod transaction;
-mod scval;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
 pub use env::{Env, EnvConfigs};
 pub use error::SorobanHelperError;
 pub use parser::{ParseResult, Parser, ParserType};
+pub use response::SorobanTransactionResponse;
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 

@@ -61,8 +61,8 @@ pub mod test {
         let res = token_contract.send(alice, bob).await;
         assert!(res.is_ok());
         assert_eq!(
-            res.unwrap().result_meta,
-            mock_transaction_response().result_meta
+            res.unwrap().response.result_meta,
+            mock_transaction_response().response.result_meta
         );
     }
 
@@ -109,8 +109,8 @@ pub mod test {
         let res: Result<_, crate::SorobanHelperError> = token_contract.transfer().await;
         assert!(res.is_ok());
         assert_eq!(
-            res.unwrap().result_meta,
-            mock_transaction_response().result_meta
+            res.unwrap().response.result_meta,
+            mock_transaction_response().response.result_meta
         );
     }
 
@@ -147,8 +147,8 @@ pub mod test {
         let res = token_mock_contract.send(alice, bob).await;
         assert!(res.is_ok());
         assert_eq!(
-            res.unwrap().result_meta,
-            mock_transaction_response().result_meta
+            res.unwrap().response.result_meta,
+            mock_transaction_response().response.result_meta
         );
     }
 }

@@ -223,9 +223,9 @@ mod tests {
         let parser = Parser::new(ParserType::Deploy);
 
         let contract_val = create_contract_id_val();
-        let direct_response = mock_transaction_response_with_return_value(contract_val.clone());
+        let res = mock_transaction_response_with_return_value(contract_val.clone());
 
-        let result = parser.parse(&direct_response);
+        let result = parser.parse(&res.response);
         assert!(matches!(result, Ok(ParseResult::Deploy(Some(_)))));
     }
 
@@ -234,9 +234,9 @@ mod tests {
         let parser = Parser::new(ParserType::InvokeFunction);
 
         let return_val = ScVal::I32(42);
-        let response = mock_transaction_response_with_return_value(return_val.clone());
+        let res = mock_transaction_response_with_return_value(return_val.clone());
 
-        let result = parser.parse(&response);
+        let result = parser.parse(&res.response);
         assert!(matches!(result, Ok(ParseResult::InvokeFunction(Some(_)))));
         if let Ok(ParseResult::InvokeFunction(Some(value))) = result {
             assert_eq!(value, return_val);
@@ -337,9 +337,9 @@ mod tests {
         let parser = Parser::new(ParserType::Deploy);
 
         let non_contract_val = ScVal::Bool(true);
-        let response = mock_transaction_response_with_return_value(non_contract_val);
+        let res = mock_transaction_response_with_return_value(non_contract_val);
 
-        let result = parser.parse(&response);
+        let result = parser.parse(&res.response);
         assert!(matches!(result, Ok(ParseResult::Deploy(None))));
 
         let response_no_meta = GetTransactionResponse {

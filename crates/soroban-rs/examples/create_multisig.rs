@@ -1,5 +1,5 @@
 use dotenv::from_path;
-use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Parser, ParserType, Signer};
+use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Signer};
 use std::{env, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -46,14 +46,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tx_envelope = target_account.configure(&env, config).await?;
 
     // Send transaction
-    let response = env
+    let result = env
         .send_transaction(&tx_envelope)
         .await
         .expect("Failed to send transaction");
 
-    let parser = Parser::new(ParserType::AccountSetOptions);
-    let result = parser.parse(&response)?;
-
-    println!("{:?}", result);
+    println!("Result: {:?}", result.response.status);
     Ok(())
 }

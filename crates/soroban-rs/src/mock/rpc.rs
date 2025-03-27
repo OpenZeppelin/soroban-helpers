@@ -1,9 +1,9 @@
-use crate::error::SorobanHelperError;
 use crate::rpc::RpcClient;
+use crate::{SorobanTransactionResponse, error::SorobanHelperError};
 use async_trait::async_trait;
 use std::default::Default;
 use std::sync::RwLock;
-use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
+use stellar_rpc_client::SimulateTransactionResponse;
 use stellar_xdr::curr::{AccountEntry, TransactionEnvelope};
 
 use super::{mock_account_entry, mock_transaction_response};
@@ -13,7 +13,7 @@ pub struct MockRpcClient {
     simulate_transaction_envelope_result:
         RwLock<Option<Result<SimulateTransactionResponse, SorobanHelperError>>>,
     send_transaction_polling_result:
-        RwLock<Option<Result<GetTransactionResponse, SorobanHelperError>>>,
+        RwLock<Option<Result<SorobanTransactionResponse, SorobanHelperError>>>,
 }
 impl MockRpcClient {
     pub fn new(
@@ -21,7 +21,9 @@ impl MockRpcClient {
         simulate_transaction_envelope_result: Option<
             Result<SimulateTransactionResponse, SorobanHelperError>,
         >,
-        send_transaction_polling_result: Option<Result<GetTransactionResponse, SorobanHelperError>>,
+        send_transaction_polling_result: Option<
+            Result<SorobanTransactionResponse, SorobanHelperError>,
+        >,
     ) -> Self {
         Self {
             get_account_result: RwLock::new(get_account_result),
@@ -55,7 +57,7 @@ impl RpcClient for MockRpcClient {
     async fn send_transaction_polling(
         &self,
         _tx_envelope: &TransactionEnvelope,
-    ) -> Result<GetTransactionResponse, SorobanHelperError> {
+    ) -> Result<SorobanTransactionResponse, SorobanHelperError> {
         let result = self.send_transaction_polling_result.read().unwrap();
         match result.as_ref() {
             Some(res) => res.clone(),

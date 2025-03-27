@@ -1,10 +1,6 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{
-    Account, ClientContractConfigs, Env, EnvConfigs, GetTransactionResponse, ParseResult, Parser,
-    ParserType, Signer,
-    IntoScVal
-};
+use soroban_rs::{Account, ClientContractConfigs, Env, EnvConfigs, IntoScVal, Signer};
 use soroban_rs_macros::soroban;
 use std::{env, path::Path};
 use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
@@ -54,16 +50,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alice = account.account_id().try_into_val()?;
     let bob = account.account_id().try_into_val()?;
 
-    let invoke_res: GetTransactionResponse = token.send(alice, bob).await?;
+    let invoke_res = token.send(alice, bob).await?;
 
-    let parser = Parser::new(ParserType::InvokeFunction);
-    let result = parser.parse(&invoke_res)?;
-
-    match result {
-        ParseResult::InvokeFunction(Some(sc_val)) => {
-            println!("Invocation result: {:?}", sc_val);
-            Ok(())
-        }
-        _ => Err("Failed to parse InvokeFunction result".into()),
-    }
+    println!("Result value: {:?}", invoke_res.get_return_value());
+    Ok(())
 }

@@ -9,6 +9,8 @@ use stellar_xdr::curr::{
     TransactionV1Envelope, Uint256, VecM,
 };
 
+use crate::SorobanTransactionResponse;
+
 pub struct MockTransactionResult {
     pub success: bool,
 }
@@ -149,13 +151,17 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response() -> GetTransactionResponse {
-    mock_transaction_response_impl(MockResponseType::Basic)
+pub fn mock_transaction_response() -> SorobanTransactionResponse {
+    SorobanTransactionResponse::from(mock_transaction_response_impl(MockResponseType::Basic))
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTransactionResponse {
-    mock_transaction_response_impl(MockResponseType::WithReturnValue(return_val))
+pub fn mock_transaction_response_with_return_value(
+    return_val: ScVal,
+) -> SorobanTransactionResponse {
+    SorobanTransactionResponse::from(mock_transaction_response_impl(
+        MockResponseType::WithReturnValue(return_val),
+    ))
 }
 
 #[allow(dead_code)]
