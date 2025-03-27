@@ -15,5 +15,6 @@ pub use transaction::{
 // Re-export account mock functions
 #[allow(unused_imports)]
 pub use account::{
-    all_signers, mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_signer3,
+    all_signers, mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_signer2,
+    mock_signer3,
 };

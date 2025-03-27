@@ -28,40 +28,45 @@ Here's a basic example of how to deploy and invoke a contract using `soroban-rs`
 
 ```rust
 use soroban_rs::{
-    Contract, Provider, ProviderConfigs, Signer,
+    Contract, Env, EnvConfigs, Signer,
     xdr::{ScAddress, ScVal},
 };
 use std::{env, path::Path};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let private_key =
+    let private_key_str =
         env::var("SOROBAN_PRIVATE_KEY").expect("SOROBAN_PRIVATE_KEY must be set");
+    let private_key = PrivateKey::from_string(&private_key_str).expect("Invalid private key");
+    let signing_key = SigningKey::from_bytes(&private_key.0);
 
-    let configs = ProviderConfigs {
+    let configs = EnvConfigs {
         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
         network_passphrase: "Test SDF Network ; September 2015".to_string(),
     };
-    let provider = Provider::new(configs)?;
+    let env = Env::new(configs)?;
 
-    let signer = Signer::new(&private_key)?;
+    let signer = Signer::new(signing_key)?;
+    let mut account = Account::single(Signer::new(signing_key));
+
     let contract = Contract::new(
         "path/to/contract.wasm",
+        None
     )?;
 
     // Deploy contract with constructor argument (u32 value of 42)
     let constructor_args = Some(vec![ScVal::U32(42)]);
-    let contract_id = contract
-        .deploy(&provider, &signer, constructor_args)
+    let mut deployed = contract
+        .deploy(&env, &mut account, constructor_args)
         .await?;
 
-    println!("Contract deployed successfully with ID: {:?}", contract_id);
+    println!("Contract deployed successfully with ID: {:?}", deployed.contract_id());
 
     let alice = ScVal::Address(ScAddress::Account(signer.account_id()));
     let bob = ScVal::Address(ScAddress::Account(signer.account_id()));
 
-    let invoke_res = contract
-        .invoke(&contract_id, "send", vec![alice, bob], &provider, &signer)
+    let invoke_res = deployed
+        .invoke("send", vec![alice, bob])
         .await?;
 
     println!("Contract invoked successfully with result {:?}", invoke_res);

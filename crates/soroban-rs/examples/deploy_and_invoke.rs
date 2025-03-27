@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Sets the authorized calls for the account
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
-    account.set_authorized_calls(3);
+    account.set_authorized_calls(3_u16);
 
     // Path to the contract wasm file
     let contract = Contract::new("./fixtures/soroban-helpers-example.wasm", None)?;

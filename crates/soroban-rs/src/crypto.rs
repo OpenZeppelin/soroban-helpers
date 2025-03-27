@@ -150,15 +150,14 @@ mod tests {
         let salt = generate_salt();
         let network_id = Hash([0; 32]);
 
-        match calculate_contract_id(&account_id, &salt, &network_id) {
-            Ok(contract_id) => {
-                assert_eq!(contract_id.0.len(), 32);
-                assert!(
-                    contract_id.0.iter().any(|&x| x != 0),
-                    "Contract ID should not be all zeros"
-                );
-            }
-            Err(e) => panic!("Failed to calculate contract id: {}", e),
-        }
+        let result = calculate_contract_id(&account_id, &salt, &network_id);
+        assert!(result.is_ok(), "Contract ID calculation should succeed");
+
+        let contract_id = result.unwrap();
+        assert_eq!(contract_id.0.len(), 32);
+        assert!(
+            contract_id.0.iter().any(|&x| x != 0),
+            "Contract ID should not be all zeros"
+        );
     }
 }
