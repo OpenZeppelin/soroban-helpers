@@ -1,11 +1,16 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType, Signer,
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
+    Signer,
     xdr::{ScAddress, ScVal},
 };
+use soroban_rs_macros::soroban;
 use std::{env, error::Error, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
+
+// generates TokenMockClient binding TokenMock contract.
+soroban!("fixtures/lib.rs");
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -37,19 +42,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let contract = Contract::new("./fixtures/soroban-helpers-example.wasm", None)?;
 
     // Deploys the contract
-    let mut deployed = contract
+    let deployed = contract
         .deploy(&env, &mut account, Some(vec![ScVal::U32(42)]))
         .await?;
 
     println!(
         "Contract deployed successfully with ID: {:?}",
-        deployed.contract_id()
+        deployed
+            .contract_id()
+            .expect("Contract ID not found")
+            .to_string()
     );
+
+    let client_configs = ClientContractConfigs {
+        contract_id: deployed.contract_id().expect("Contract ID not found"),
+        env: env.clone(),
+        account: account.clone(),
+    };
+    let mut deployed_contract_client = TokenMockClient::new(&client_configs);
 
     // Calls send function in contract from Alice and Bob
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let invoke_res = deployed.invoke("send", vec![alice, bob]).await?;
+
+    let invoke_res = deployed_contract_client.send(alice, bob).await?;
 
     let parser = Parser::new(ParserType::InvokeFunction);
     let result = parser.parse(&invoke_res)?;

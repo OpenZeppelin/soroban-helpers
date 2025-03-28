@@ -4,6 +4,7 @@ mod crypto;
 mod env;
 mod error;
 mod fs;
+pub mod macros;
 mod mock;
 mod operation;
 mod parser;
@@ -14,6 +15,7 @@ mod transaction;
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
 pub use env::{Env, EnvConfigs};
+pub use error::SorobanHelperError;
 pub use parser::{ParseResult, Parser, ParserType};
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
@@ -25,4 +27,6 @@ pub use mock::transaction::{
     mock_transaction_response_with_return_value,
 };
 
+pub use stellar_rpc_client::GetTransactionResponse;
+pub use stellar_strkey::Contract as ContractId;
 pub use stellar_xdr::curr as xdr;

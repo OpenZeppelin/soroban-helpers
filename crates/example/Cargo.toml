@@ -8,6 +8,10 @@ edition.workspace = true
 name = "deploy"
 path = "src/scripts/deploy.rs"
 
+[[example]]
+name = "send"
+path = "src/scripts/send.rs"
+
 [dependencies]
 soroban-test-helpers.workspace = true
 soroban-sdk = { workspace = true }

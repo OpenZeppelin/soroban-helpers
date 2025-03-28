@@ -111,6 +111,23 @@ impl Contract {
         Self::new_with_reader(wasm_path, client_configs, DefaultFileReader)
     }
 
+    /// Creates a new Contract instance from a deployed contract
+    ///
+    /// # Parameters
+    ///
+    /// * `client_configs` - Configuration for interacting with the deployed contract
+    ///
+    /// # Returns
+    ///
+    /// A new Contract instance
+    pub fn from_configs(client_configs: ClientContractConfigs) -> Self {
+        Self {
+            wasm_bytes: Vec::new(),
+            wasm_hash: crypto::sha256_hash(&[]),
+            client_configs: Some(client_configs),
+        }
+    }
+
     /// Creates a new Contract instance from a WASM file path and custom file reader
     ///
     /// ### Parameters
@@ -546,5 +563,27 @@ mod test {
         assert!(contract.client_configs.is_some());
         let set_configs = contract.client_configs.unwrap();
         assert_eq!(set_configs.contract_id.0, contract_id.0);
+    }
+
+    #[test]
+    fn test_from_configs() {
+        let env = mock_env(None, None, None);
+        let account = Account::single(mock_signer1());
+        let contract_id = mock_contract_id(account.clone(), &env);
+
+        let client_configs = ClientContractConfigs {
+            contract_id,
+            env: env.clone(),
+            account: account.clone(),
+        };
+        let contract = Contract::from_configs(client_configs.clone());
+
+        assert!(contract.client_configs.is_some());
+        let stored_configs = contract.client_configs.unwrap();
+        assert_eq!(stored_configs.contract_id.0, contract_id.0);
+
+        // Verify WASM bytes are empty
+        assert!(contract.wasm_bytes.is_empty());
+        assert_eq!(contract.wasm_hash, crypto::sha256_hash(&[]));
     }
 }

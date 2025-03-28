@@ -2122,11 +2122,21 @@ dependencies = [
  "hex",
  "rand 0.9.0",
  "sha2",
+ "soroban-rs-macros",
  "stellar-rpc-client",
  "stellar-strkey 0.0.11",
  "stellar-xdr",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "soroban-rs-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
 ]
 
 [[package]]

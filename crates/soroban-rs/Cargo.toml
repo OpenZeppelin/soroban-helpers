@@ -32,6 +32,9 @@ rand.workspace = true
 hex.workspace = true
 async-trait.workspace = true
 
+# soroban-rs-macros workspace dependency
+soroban-rs-macros.workspace = true
+
 [dev-dependencies]
 # example dependency
 dotenv.workspace = true

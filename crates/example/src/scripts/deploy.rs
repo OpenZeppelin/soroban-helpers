@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Path to the contract wasm file
     let contract = Contract::new(
-        "../../target/wasm32-unknown-unknown/release/soroban_test_helpers_usage.wasm",
+        "../../target/wasm32-unknown-unknown/release/soroban_helpers_example.wasm",
         None,
     )?;
 
