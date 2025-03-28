@@ -1,11 +1,11 @@
-use crate::Signer;
 use crate::error::SorobanHelperError;
 use crate::{Account, Env, EnvConfigs, crypto};
+use crate::{Signer, SorobanTransactionResponse};
 use ed25519_dalek::SigningKey;
 use std::default::Default;
 use std::str::FromStr;
 use std::sync::Arc;
-use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
+use stellar_rpc_client::SimulateTransactionResponse;
 use stellar_strkey::Contract as ContractStrKey;
 use stellar_strkey::ed25519::PrivateKey;
 use stellar_xdr::curr::{
@@ -28,7 +28,7 @@ pub fn mock_env(
     simulate_transaction_envelope_result: Option<
         Result<SimulateTransactionResponse, SorobanHelperError>,
     >,
-    send_transaction_polling_result: Option<Result<GetTransactionResponse, SorobanHelperError>>,
+    send_transaction_polling_result: Option<Result<SorobanTransactionResponse, SorobanHelperError>>,
 ) -> Env {
     let random_id = rand::random::<u64>();
     let network_passphrase = format!("Mock Test Random Network {}", random_id);

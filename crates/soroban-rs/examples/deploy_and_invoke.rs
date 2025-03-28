@@ -1,10 +1,6 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{
-    Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
-    Signer,
-    xdr::{ScAddress, ScVal},
-};
+use soroban_rs::{Account, ClientContractConfigs, Contract, Env, EnvConfigs, IntoScVal, Signer};
 use soroban_rs_macros::soroban;
 use std::{env, error::Error, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
@@ -38,12 +34,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
     account.set_authorized_calls(3);
 
+    println!(
+        "Deploying contract using account: {:?}",
+        account.account_id().to_string()
+    );
+
     // Path to the contract wasm file
     let contract = Contract::new("./fixtures/soroban-helpers-example.wasm", None)?;
 
     // Deploys the contract
     let deployed = contract
-        .deploy(&env, &mut account, Some(vec![ScVal::U32(42)]))
+        .deploy(&env, &mut account, Some(vec![(42_u32).into_val()]))
         .await?;
 
     println!(
@@ -62,19 +63,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut deployed_contract_client = TokenMockClient::new(&client_configs);
 
     // Calls send function in contract from Alice and Bob
-    let alice = ScVal::Address(ScAddress::Account(account.account_id()));
-    let bob = ScVal::Address(ScAddress::Account(account.account_id()));
+    let alice = account.account_id().try_into_val()?;
+    let bob = account.account_id().try_into_val()?;
 
     let invoke_res = deployed_contract_client.send(alice, bob).await?;
 
-    let parser = Parser::new(ParserType::InvokeFunction);
-    let result = parser.parse(&invoke_res)?;
-
-    match result {
-        ParseResult::InvokeFunction(Some(sc_val)) => {
-            println!("Invocation result: {:?}", sc_val);
-            Ok(())
-        }
-        _ => Err("Failed to parse InvokeFunction result".into()),
-    }
+    println!("Result value: {:?}", invoke_res.get_return_value());
+    Ok(())
 }

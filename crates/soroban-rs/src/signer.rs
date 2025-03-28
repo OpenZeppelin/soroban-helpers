@@ -37,6 +37,12 @@ use stellar_xdr::curr::{
     TransactionSignaturePayloadTaggedTransaction, WriteXdr,
 };
 
+impl From<&[u8; 32]> for Signer {
+    fn from(bytes: &[u8; 32]) -> Self {
+        Signer::new(SigningKey::from_bytes(bytes))
+    }
+}
+
 /// A transaction signer for Soroban operations.
 ///
 /// The Signer manages an Ed25519 key pair and provides methods to sign Stellar transactions.

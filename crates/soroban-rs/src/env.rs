@@ -29,12 +29,13 @@
 //! }
 //! ```
 use crate::{
+    SorobanTransactionResponse,
     error::SorobanHelperError,
     rpc::{ExternalRpcClient, RpcClient},
 };
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
-use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
+use stellar_rpc_client::SimulateTransactionResponse;
 use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
 
 /// Configuration for a Soroban environment.
@@ -180,7 +181,7 @@ impl Env {
     pub async fn send_transaction(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<GetTransactionResponse, SorobanHelperError> {
+    ) -> Result<SorobanTransactionResponse, SorobanHelperError> {
         self.rpc_client
             .send_transaction_polling(tx_envelope)
             .await

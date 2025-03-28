@@ -1,8 +1,7 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, ClientContractConfigs, ContractId, Env, EnvConfigs, GetTransactionResponse,
-    ParseResult, Parser, ParserType, Signer, SorobanHelperError,
+    Account, ClientContractConfigs, ContractId, Env, EnvConfigs, Signer,
     macros::soroban,
     xdr::{ScAddress, ScVal},
 };
@@ -68,17 +67,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let alice = ScVal::Address(ScAddress::Account(account.account_id()));
     let bob = ScVal::Address(ScAddress::Account(account.account_id()));
-    let res: Result<GetTransactionResponse, SorobanHelperError> =
-        token_client.send(alice, bob).await;
+    let res = token_client.send(alice, bob).await?;
 
-    let parser = Parser::new(ParserType::InvokeFunction);
-    let result = parser.parse(&res.unwrap())?;
-
-    match result {
-        ParseResult::InvokeFunction(Some(sc_val)) => {
-            println!("Invocation result: {:?}", sc_val);
-            Ok(())
-        }
-        _ => Err("Failed to parse InvokeFunction result".into()),
-    }
+    println!("Invocation result: {:?}", res.get_return_value());
+    Ok(())
 }

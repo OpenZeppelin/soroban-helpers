@@ -9,8 +9,9 @@ A collection of Rust libraries designed to simplify development and testing with
 This project provides three main components:
 
 1. **soroban-rs**: A high-level client library for interacting with the Soroban RPC API
-2. **soroban-test-helpers**: A procedural macro library that simplifies writing tests for Soroban smart contracts
-3. **example**: An example contract demonstrating how to use the test helpers.
+2. **soroban-rs-macros**: A procedural macro that introduces `soroban!` macro for generating smart contract clients from Soroban contract definitions.
+3. **soroban-test-helpers**: A procedural macro library that simplifies writing tests for Soroban smart contracts
+4. **example**: An example contract demonstrating how to use the test helpers.
 
 ## Components
 
@@ -31,6 +32,31 @@ For detailed examples of how to use `soroban-rs`, please refer to the [examples]
 - `deploy_and_invoke.rs`: Demonstrates deploying and invoking a contract.
 - `invoke_contract.rs`: Demonstrates invoking an already deployed contract.
 - `create_multisig.rs`: Demonstrates adding signers to an existing account.
+
+### soroban-rs-macros
+
+A procedural macro that introduces `soroban!` macro for generating smart contract clients from Soroban contract definitions.
+
+#### Example
+
+```rust
+use soroban_rs_macros::soroban;
+
+soroban!(r#"
+    pub struct Token;
+
+    impl Token {
+        pub fn transfer(env: &Env, from: Address, to: Address, amount: u128) -> bool {
+            // Contract implementation...
+        }
+    }
+"#);
+
+async fn main() {
+    let token = TokenClient::new();
+    let res =token.transfer(from, to, amount).await;
+}
+```
 
 ### soroban-test-helpers
 
@@ -70,10 +96,11 @@ fn test_injected_args(e: Env, alice: Address, bob: Address) {
 
 ### Example
 
-An example crate demonstrating how to use the `soroban-test-helpers` and `soroban-rs` libraries for testing Soroban contracts. This serves as a reference implementation to show how to:
+An example crate demonstrating how to use the `soroban-test-helpers`, `soroban-rs-macros` and `soroban-rs` libraries for testing Soroban contracts. This serves as a reference implementation to show how to:
 
 - Write testsusing both traditional methods and the simplified `soroban-test-helpers` approach.
 - Add scripts to your soroban project for deploying and invoking contracts.
+- Use the `soroban!` macro to generate client code for interacting with Soroban contracts.
 
 ## Contributing
 

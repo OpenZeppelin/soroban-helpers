@@ -1,13 +1,16 @@
 use std::convert::TryInto;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
 use stellar_xdr::curr::{
-    AccountEntry, AccountId, ExtensionPoint, Hash, LedgerEntry, LedgerEntryChange, LedgerEntryData,
-    LedgerEntryExt, Memo, MuxedAccount, Operation, OperationBody, OperationMeta, OperationResult,
-    Preconditions, ScAddress, ScVal, SequenceNumber, SetOptionsOp, SorobanTransactionMeta,
+    AccountEntry, AccountId, ContractEvent, ContractEventBody, ContractEventType, ContractEventV0,
+    ExtensionPoint, Hash, LedgerEntry, LedgerEntryChange, LedgerEntryData, LedgerEntryExt, Memo,
+    MuxedAccount, Operation, OperationBody, OperationMeta, OperationResult, Preconditions,
+    ScAddress, ScVal, SequenceNumber, SetOptionsOp, SorobanTransactionMeta,
     SorobanTransactionMetaExt, Transaction, TransactionEnvelope, TransactionExt, TransactionMeta,
     TransactionMetaV3, TransactionResult, TransactionResultExt, TransactionResultResult,
     TransactionV1Envelope, Uint256, VecM,
 };
+
+use crate::SorobanTransactionResponse;
 
 pub struct MockTransactionResult {
     pub success: bool,
@@ -149,13 +152,17 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response() -> GetTransactionResponse {
-    mock_transaction_response_impl(MockResponseType::Basic)
+pub fn mock_transaction_response() -> SorobanTransactionResponse {
+    SorobanTransactionResponse::from(mock_transaction_response_impl(MockResponseType::Basic))
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction_response_with_return_value(return_val: ScVal) -> GetTransactionResponse {
-    mock_transaction_response_impl(MockResponseType::WithReturnValue(return_val))
+pub fn mock_transaction_response_with_return_value(
+    return_val: ScVal,
+) -> SorobanTransactionResponse {
+    SorobanTransactionResponse::from(mock_transaction_response_impl(
+        MockResponseType::WithReturnValue(return_val),
+    ))
 }
 
 #[allow(dead_code)]
@@ -235,4 +242,17 @@ fn create_tx_meta_from_mock(mock: &MockTransactionMeta) -> TransactionMeta {
         tx_changes_after: Default::default(),
         operations: Default::default(),
     })
+}
+
+#[allow(dead_code)]
+pub fn create_mock_contract_event() -> ContractEvent {
+    ContractEvent {
+        body: ContractEventBody::V0(ContractEventV0 {
+            data: ScVal::I32(0),
+            topics: VecM::default(),
+        }),
+        ext: ExtensionPoint::V0,
+        contract_id: Some(Hash([1; 32])),
+        type_: ContractEventType::Contract,
+    }
 }

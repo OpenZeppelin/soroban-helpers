@@ -41,7 +41,7 @@
 //! }
 //! ```
 use crate::{
-    Account, Env, ParseResult, Parser, ParserType, crypto,
+    Account, Env, ParseResult, Parser, ParserType, SorobanTransactionResponse, crypto,
     error::SorobanHelperError,
     fs::{DefaultFileReader, FileReader},
     operation::Operations,
@@ -206,7 +206,7 @@ impl Contract {
         let tx_result = env.send_transaction(&tx_envelope).await?;
 
         let parser = Parser::new(ParserType::Deploy);
-        let result = parser.parse(&tx_result)?;
+        let result = parser.parse(&tx_result.response)?;
 
         let contract_id = match result {
             ParseResult::Deploy(Some(contract_id)) => contract_id,
@@ -294,7 +294,7 @@ impl Contract {
         &mut self,
         function_name: &str,
         args: Vec<ScVal>,
-    ) -> Result<stellar_rpc_client::GetTransactionResponse, SorobanHelperError> {
+    ) -> Result<SorobanTransactionResponse, SorobanHelperError> {
         let client_configs = self
             .client_configs
             .as_mut()
@@ -480,13 +480,12 @@ mod test {
 
         let signer_1_account_id = mock_signer1().account_id().0.to_string();
         let get_account_result = mock_account_entry(&signer_1_account_id);
-
-        let send_transaction_result = Ok(mock_transaction_response());
+        let send_transaction_result = mock_transaction_response();
 
         let env = mock_env(
             Some(Ok(get_account_result)),
             Some(Ok(simulate_transaction_envelope_result)),
-            Some(send_transaction_result),
+            Some(Ok(send_transaction_result)),
         );
         let wasm_path = "path/to/wasm";
         let account = Account::single(mock_signer1());
@@ -502,8 +501,8 @@ mod test {
         let res = contract.invoke("function_name", vec![]).await;
         assert!(res.is_ok());
         assert_eq!(
-            res.unwrap().result_meta,
-            mock_transaction_response().result_meta
+            res.unwrap().response.result_meta,
+            mock_transaction_response().response.result_meta
         );
     }
 

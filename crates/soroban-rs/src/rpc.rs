@@ -4,9 +4,10 @@
 //! It defines a trait for RPC operations and provides a concrete implementation using
 //! the official Stellar RPC client.
 //!
+use crate::SorobanTransactionResponse;
 use crate::error::SorobanHelperError;
 use stellar_rpc_client::Client;
-use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
+use stellar_rpc_client::SimulateTransactionResponse;
 use stellar_xdr::curr::{AccountEntry, TransactionEnvelope};
 
 /// Interface for RPC operations with Soroban servers.
@@ -24,7 +25,7 @@ pub trait RpcClient: Send + Sync {
     async fn send_transaction_polling(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<GetTransactionResponse, SorobanHelperError>;
+    ) -> Result<SorobanTransactionResponse, SorobanHelperError>;
 }
 
 /// Implementation of the RPC client using the official Stellar RPC client.
@@ -107,10 +108,11 @@ impl RpcClient for ExternalRpcClient {
     async fn send_transaction_polling(
         &self,
         tx_envelope: &TransactionEnvelope,
-    ) -> Result<GetTransactionResponse, SorobanHelperError> {
+    ) -> Result<SorobanTransactionResponse, SorobanHelperError> {
         self.client
             .send_transaction_polling(tx_envelope)
             .await
+            .map(SorobanTransactionResponse::from)
             .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Error: {}", e)))
     }
 }

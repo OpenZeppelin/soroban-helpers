@@ -1,6 +1,5 @@
 use dotenv::from_path;
-use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Parser, ParserType, Signer};
+use soroban_rs::{Account, AccountConfig, Env, EnvConfigs, Signer};
 use std::{env, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -23,9 +22,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .expect("Invalid private key");
 
     // Create signers
-    let signer_1 = Signer::new(SigningKey::from_bytes(&private_key_1.0));
-    let signer_2 = Signer::new(SigningKey::from_bytes(&private_key_2.0));
-    let signer_3 = Signer::new(SigningKey::from_bytes(&private_key_3.0));
+    let signer_1 = Signer::from(&private_key_1.0);
+    let signer_2 = Signer::from(&private_key_2.0);
+    let signer_3 = Signer::from(&private_key_3.0);
 
     // Create account that will become multisig
     let target_account = Account::single(signer_3.clone());
@@ -47,14 +46,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tx_envelope = target_account.configure(&env, config).await?;
 
     // Send transaction
-    let response = env
+    let result = env
         .send_transaction(&tx_envelope)
         .await
         .expect("Failed to send transaction");
 
-    let parser = Parser::new(ParserType::AccountSetOptions);
-    let result = parser.parse(&response)?;
-
-    println!("{:?}", result);
+    println!("Result: {:?}", result.response.status);
     Ok(())
 }

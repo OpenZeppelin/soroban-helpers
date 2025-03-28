@@ -8,7 +8,9 @@ pub mod macros;
 mod mock;
 mod operation;
 mod parser;
+mod response;
 mod rpc;
+mod scval;
 mod signer;
 mod transaction;
 
@@ -17,6 +19,7 @@ pub use contract::{ClientContractConfigs, Contract};
 pub use env::{Env, EnvConfigs};
 pub use error::SorobanHelperError;
 pub use parser::{ParseResult, Parser, ParserType};
+pub use response::SorobanTransactionResponse;
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
@@ -30,3 +33,6 @@ pub use mock::transaction::{
 pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
 pub use stellar_xdr::curr as xdr;
+
+// traits
+pub use scval::IntoScVal;
