@@ -36,8 +36,10 @@ use std::{env, path::Path};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let private_key =
+    let private_key_str =
         env::var("SOROBAN_PRIVATE_KEY").expect("SOROBAN_PRIVATE_KEY must be set");
+    let private_key = PrivateKey::from_string(&private_key_str).expect("Invalid private key");
+    let signing_key = SigningKey::from_bytes(&private_key.0);
 
     let configs = EnvConfigs {
         rpc_url: "https://soroban-testnet.stellar.org".to_string(),
