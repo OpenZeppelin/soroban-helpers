@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut account = Account::single(Signer::new(signing_key));
 
     // Sets the authorized calls for the account
-    account.set_authorized_calls(1_u16);
+    account.set_authorized_calls(1);
 
     // Get the contract ID from env (this would be obtained from the deploy step)
     let contract_id =
