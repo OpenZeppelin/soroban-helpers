@@ -1,9 +1,8 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, ClientContractConfigs, Contract, Env, EnvConfigs, ParseResult, Parser, ParserType,
-    Signer,
-    xdr::{ScAddress, ScVal},
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, IntoScVal, ParseResult, Parser,
+    ParserType, Signer, xdr::ScVal,
 };
 use std::{env, error::Error, path::Path};
 use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
@@ -36,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut account = Account::single(signer_1);
     // let account2 = Account::single(signer_2);
 
-    account.set_authorized_calls(1_u16);
+    account.set_authorized_calls(1);
 
     // Get the contract ID from env (this would be obtained from the deploy step)
     let contract_id =
@@ -57,14 +56,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Account: {:?}", account.account_id());
 
-    let address_val = ScVal::Address(ScAddress::Account(account.account_id()));
+    let address_val = account.account_id().try_into_val()?;
     let val = ScVal::U32(10);
     let invoke_res = contract
         .invoke("increment", vec![address_val, val], true)
         .await?;
 
     let parser = Parser::new(ParserType::InvokeFunction);
-    let result = parser.parse(&invoke_res)?;
+    let result = parser.parse(&invoke_res.response)?;
 
     match result {
         ParseResult::InvokeFunction(Some(sc_val)) => {

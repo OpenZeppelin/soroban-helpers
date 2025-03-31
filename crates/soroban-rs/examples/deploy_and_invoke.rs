@@ -65,7 +65,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Calls send function in contract from Alice and Bob
     let alice = account.account_id().try_into_val()?;
     let bob = account.account_id().try_into_val()?;
-    let invoke_res = deployed.invoke("send", vec![alice, bob], true).await?;
 
     let invoke_res = deployed_contract_client.send(alice, bob).await?;
 

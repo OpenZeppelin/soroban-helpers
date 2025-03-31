@@ -167,7 +167,7 @@ pub fn soroban(input: TokenStream) -> TokenStream {
         Some(quote! {
             pub async fn #method_name(&mut self, #(#transformed_inputs),*) #transformed_output {
                 // internally calls invoke API.
-                self.contract.invoke(stringify!(#method_name), vec![#(#param_names),*]).await
+                self.contract.invoke(stringify!(#method_name), vec![#(#param_names),*], false).await
             }
         })
     });
