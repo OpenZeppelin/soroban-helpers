@@ -263,10 +263,7 @@ impl MultisigAccount {
     /// * `account_id` - The identifier for this account
     /// * `signers` - A vector of signers for this account
     /// * `authorized_calls` - The number of calls to authorize
-    pub fn new(
-        account_id: AccountId,
-        signers: Vec<Signer>,
-    ) -> Self {
+    pub fn new(account_id: AccountId, signers: Vec<Signer>) -> Self {
         Self {
             account_id,
             signers,
@@ -670,7 +667,10 @@ mod test {
     use crate::account::AccountSequence;
     use crate::guard::Guard;
     use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
-    use crate::{Account, AccountConfig, MultisigAccount, SingleAccount, SorobanHelperError, TransactionBuilder};
+    use crate::{
+        Account, AccountConfig, MultisigAccount, SingleAccount, SorobanHelperError,
+        TransactionBuilder,
+    };
 
     #[tokio::test]
     async fn load_account() {
