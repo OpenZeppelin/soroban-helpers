@@ -13,8 +13,10 @@ mod rpc;
 mod scval;
 mod signer;
 mod transaction;
+mod guard;
 
 pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
+pub use guard::Guard;
 pub use contract::{ClientContractConfigs, Contract};
 pub use env::{Env, EnvConfigs};
 pub use error::SorobanHelperError;
