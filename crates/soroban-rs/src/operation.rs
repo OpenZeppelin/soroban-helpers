@@ -189,6 +189,7 @@ impl Operations {
     /// * `contract_id` - The ID of the deployed contract
     /// * `function_name` - The name of the function to invoke
     /// * `args` - Arguments to pass to the function
+    /// * `add_auth_entry` - Optional boolean to add a SorobanCredentials for creating authorization entries
     ///
     /// # Returns
     ///
@@ -203,6 +204,8 @@ impl Operations {
         contract_id: &stellar_strkey::Contract,
         function_name: &str,
         args: Vec<ScVal>,
+        add_auth_entry: bool,
+        // auth_entries: Option<Vec<SorobanCredentials>>,
     ) -> Result<Operation, SorobanHelperError> {
         let invoke_contract_args = InvokeContractArgs {
             contract_address: ScAddress::Contract(Hash(contract_id.0)),
@@ -214,11 +217,31 @@ impl Operations {
             })?,
         };
 
+        let auth = if add_auth_entry {
+            let mut auth_vec = Vec::new();
+            let auth_entry = SorobanAuthorizationEntry {
+                credentials: SorobanCredentials::SourceAccount,
+                root_invocation: SorobanAuthorizedInvocation {
+                    function: SorobanAuthorizedFunction::ContractFn(invoke_contract_args.clone()),
+                    sub_invocations: VecM::default(),
+                },
+            };
+            auth_vec.push(auth_entry);
+            auth_vec.try_into().map_err(|e| {
+                SorobanHelperError::XdrEncodingFailed(format!(
+                    "Failed to encode auth entries: {}",
+                    e
+                ))
+            })?
+        } else {
+            VecM::default()
+        };
+
         Ok(Operation {
             source_account: None,
             body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
                 host_function: HostFunction::InvokeContract(invoke_contract_args),
-                auth: VecM::default(),
+                auth,
             }),
         })
     }
@@ -324,7 +347,7 @@ mod test {
         let function_name = "test_function";
         let args = vec![ScVal::I32(42), ScVal::Bool(true)];
         let operation =
-            Operations::invoke_contract(&contract_id, function_name, args.clone()).unwrap();
+            Operations::invoke_contract(&contract_id, function_name, args.clone(), false).unwrap();
 
         assert!(matches!(
             operation.body,
@@ -355,7 +378,7 @@ mod test {
         let invalid_function_name = "a".repeat(33); // ScSymbol has a max length of 32
         let args = vec![];
 
-        let result = Operations::invoke_contract(&contract_id, &invalid_function_name, args);
+        let result = Operations::invoke_contract(&contract_id, &invalid_function_name, args, false);
 
         assert!(result.is_err());
         assert!(matches!(

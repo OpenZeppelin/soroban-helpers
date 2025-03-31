@@ -32,9 +32,13 @@
 //!     env.send_transaction(&tx_envelope).await.unwrap();
 //! }
 //! ```
+use std::collections::HashSet;
+
 use crate::{Account, Env, error::SorobanHelperError};
+use stellar_rpc_client::SimulateTransactionResponse;
 use stellar_xdr::curr::{
-    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
+    Memo, Operation, OperationBody, Preconditions, SequenceNumber, SorobanAuthorizationEntry,
+    Transaction, TransactionExt,
 };
 
 /// Default transaction fee in stroops (0.00001 XLM)
@@ -197,12 +201,92 @@ impl TransactionBuilder {
         })
     }
 
+    /// Validates the authorization entries from operations against simulation results
+    ///
+    /// # Parameters
+    ///
+    /// * `operations` - The operations to validate
+    /// * `simulation_response` - The simulation results containing auth entries
+    ///
+    /// # Returns
+    ///
+    /// Ok(()) if validation succeeds, or an error if validation fails
+    fn validate_auth(
+        operations: &[Operation],
+        simulation_response: &SimulateTransactionResponse,
+    ) -> Result<(), SorobanHelperError> {
+        let unauthorized_error = if let Some(error) = &simulation_response.error {
+            error.contains("Unauthorized")
+        } else {
+            false
+        };
+
+        // Extract auth entries from operations
+        let auth_entries: HashSet<SorobanAuthorizationEntry> = operations
+            .iter()
+            .filter_map(|op| {
+                if let OperationBody::InvokeHostFunction(invoke_op) = &op.body {
+                    Some(invoke_op.auth.iter().cloned())
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect();
+
+        let simulation_auths: HashSet<SorobanAuthorizationEntry> =
+            if let Ok(results) = simulation_response.results() {
+                results
+                    .iter()
+                    .flat_map(|r| r.auth.iter().cloned())
+                    .collect()
+            } else {
+                HashSet::new()
+            };
+
+        // If no auth entries found, nothing to validate
+        if auth_entries.is_empty() && simulation_auths.is_empty() {
+            return Ok(());
+        }
+
+        if auth_entries.is_empty() && !simulation_auths.is_empty() {
+            return Err(SorobanHelperError::InvalidArgument(
+                "Transaction is missing one or more auth entries".to_string(),
+            ));
+        }
+
+        if auth_entries.len() > simulation_auths.len() {
+            if unauthorized_error {
+                return Err(SorobanHelperError::InvalidArgument(
+                    "One or more auth entries are unauthorized".to_string(),
+                ));
+            } else {
+                let diff = auth_entries.len() - simulation_auths.len();
+                return Err(SorobanHelperError::InvalidArgument(format!(
+                    "Transaction has more auth entries than needed: {} extra. This can be a security risk.",
+                    diff
+                )));
+            }
+        }
+
+        if auth_entries.len() != simulation_auths.len() {
+            return Err(SorobanHelperError::InvalidArgument(format!(
+                "Auth entries count mismatch: found {} in operations but simulation requires {}",
+                auth_entries.len(),
+                simulation_auths.len()
+            )));
+        }
+
+        Ok(())
+    }
+
     /// Builds a transaction with simulation to determine proper fees and resources.
     ///
     /// This method:
     /// 1. Builds a transaction with default fees
     /// 2. Simulates the transaction to determine required resources
     /// 3. Updates the transaction with the correct fees and resource data
+    /// 4. Validates auth entries from operations against simulation results
     ///
     /// This is the recommended way to build Soroban transactions, as it ensures
     /// they have sufficient fees and resources for execution.
@@ -231,6 +315,15 @@ impl TransactionBuilder {
         let tx = self.build().await?;
         let tx_envelope = account.sign_transaction_unsafe(&tx, &env.network_id())?;
         let simulation = env.simulate_transaction(&tx_envelope).await?;
+
+        Self::validate_auth(&tx.operations, &simulation)?;
+
+        if let Some(error) = simulation.error {
+            return Err(SorobanHelperError::TransactionFailed(format!(
+                "Simulation failed: {}",
+                error
+            )));
+        }
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
             u32::try_from(
@@ -281,7 +374,7 @@ mod test {
 
         let env = mock_env(Some(get_account_result), None, None);
         let contract_id = mock_contract_id(account.clone(), &env);
-        let operation = Operations::invoke_contract(&contract_id, "test", vec![]).unwrap();
+        let operation = Operations::invoke_contract(&contract_id, "test", vec![], false).unwrap();
         let transaction = TransactionBuilder::new(&account, &env)
             .add_operation(operation)
             .build()
@@ -303,7 +396,7 @@ mod test {
 
         let env = mock_env(Some(get_account_result), Some(simulate_tx_result), None);
         let contract_id = mock_contract_id(account.clone(), &env);
-        let operation = Operations::invoke_contract(&contract_id, "test", vec![]).unwrap();
+        let operation = Operations::invoke_contract(&contract_id, "test", vec![], false).unwrap();
         let tx_builder = TransactionBuilder::new(&account, &env).add_operation(operation.clone());
 
         let tx = tx_builder.simulate_and_build(&env, &account).await.unwrap();
@@ -382,8 +475,10 @@ mod test {
         let env = mock_env(None, None, None);
         let contract_id = mock_contract_id(account.clone(), &env);
 
-        let operation1 = Operations::invoke_contract(&contract_id, "function1", vec![]).unwrap();
-        let operation2 = Operations::invoke_contract(&contract_id, "function2", vec![]).unwrap();
+        let operation1 =
+            Operations::invoke_contract(&contract_id, "function1", vec![], false).unwrap();
+        let operation2 =
+            Operations::invoke_contract(&contract_id, "function2", vec![], false).unwrap();
 
         let tx_builder = TransactionBuilder::new(&account, &env);
         assert_eq!(tx_builder.operations.len(), 0);

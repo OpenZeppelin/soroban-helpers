@@ -281,6 +281,7 @@ impl Contract {
     ///
     /// * `function_name` - The name of the function to invoke
     /// * `args` - The arguments to pass to the function
+    /// * `add_auth_entry` - Optional boolean to add a SorobanCredentials for creating authorization entries
     ///
     /// # Returns
     ///
@@ -294,6 +295,7 @@ impl Contract {
         &mut self,
         function_name: &str,
         args: Vec<ScVal>,
+        add_auth_entry: bool,
     ) -> Result<SorobanTransactionResponse, SorobanHelperError> {
         let client_configs = self
             .client_configs
@@ -303,10 +305,11 @@ impl Contract {
         let contract_id = client_configs.contract_id;
         let env = client_configs.env.clone();
 
-        let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
+        let invoke_operation =
+            Operations::invoke_contract(&contract_id, function_name, args, add_auth_entry)?;
 
-        let builder =
-            TransactionBuilder::new(&client_configs.account, &env).add_operation(invoke_operation);
+        let source_account = &client_configs.account;
+        let builder = TransactionBuilder::new(source_account, &env).add_operation(invoke_operation);
 
         let invoke_tx = builder
             .simulate_and_build(&env, &client_configs.account)
@@ -498,7 +501,7 @@ mod test {
         let mut contract =
             Contract::new_with_reader(wasm_path, Some(client_configs), file_reader).unwrap();
 
-        let res = contract.invoke("function_name", vec![]).await;
+        let res = contract.invoke("function_name", vec![], false).await;
         assert!(res.is_ok());
         assert_eq!(
             res.unwrap().response.result_meta,

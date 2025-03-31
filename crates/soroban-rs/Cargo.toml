@@ -10,16 +10,16 @@ readme = "README.md"
 categories = ["development-tools"]
 
 [[example]]
-name = "deploy_and_invoke"
-path = "examples/deploy_and_invoke.rs"
-
-[[example]]
 name = "create_multisig"
 path = "examples/create_multisig.rs"
 
 [[example]]
 name = "invoke_contract"
 path = "examples/invoke_contract.rs"
+
+[[example]]
+name = "invoke_contract_auth"
+path = "examples/invoke_contract_auth.rs"
 
 [dependencies]
 tokio.workspace = true
