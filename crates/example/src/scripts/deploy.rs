@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Sets the authorized calls for the account
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
-    account.set_authorized_calls(2_u16);
+    account.set_authorized_calls(2);
 
     // Path to the contract wasm file
     let contract = Contract::new(

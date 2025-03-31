@@ -515,7 +515,7 @@ impl Account {
     /// # Parameters
     ///
     /// * `authorized_calls` - The number of calls to authorize
-    pub fn set_authorized_calls(&mut self, authorized_calls: impl Into<AuthorizedCalls>) {
+    pub fn set_authorized_calls(&mut self, authorized_calls: i16) {
         *self.authorized_calls_mut() = authorized_calls.into();
     }
 
