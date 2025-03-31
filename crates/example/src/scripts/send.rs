@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
 use soroban_rs::{
-    Account, ClientContractConfigs, ContractId, Env, EnvConfigs, Signer,
+    Account, ClientContractConfigs, ContractId, Env, EnvConfigs, Guard, Signer,
     macros::soroban,
     xdr::{ScAddress, ScVal},
 };
@@ -52,8 +52,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut account = Account::single(Signer::new(signing_key));
 
     // Sets the authorized calls for the account
-    // deployment consumes 2 calls (1 for upload wasm, 1 for create)
-    account.set_authorized_calls(2);
+    let guard = Guard::NumberOfAllowedCalls(1);
+    account.add_guard(guard);
 
     let contract_id =
         ContractId::from_string("CDJJN63F35UQA5FQTW77FTWO3VFF3PP2KD4AZ3BODTZE2XCDEMGRSWHI")?;

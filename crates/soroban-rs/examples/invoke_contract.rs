@@ -1,6 +1,6 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, ClientContractConfigs, Env, EnvConfigs, IntoScVal, Signer};
+use soroban_rs::{Account, ClientContractConfigs, Env, EnvConfigs, Guard, IntoScVal, Signer};
 use soroban_rs_macros::soroban;
 use std::{env, path::Path};
 use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
@@ -30,7 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut account = Account::single(Signer::new(signing_key));
 
     // Sets the authorized calls for the account
-    account.set_authorized_calls(1);
+    let guard = Guard::NumberOfAllowedCalls(1);
+    account.add_guard(guard);
 
     // Get the contract ID from env (this would be obtained from the deploy step)
     let contract_id =

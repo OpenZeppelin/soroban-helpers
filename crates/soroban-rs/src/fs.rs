@@ -1,10 +1,30 @@
+/// File system utilities for Soroban helpers.
+///
+/// This module provides abstractions for file operations that can be used
+/// within Soroban applications, particularly for reading contract files
+/// and other assets needed during contract deployment or interaction.
 use crate::error::SorobanHelperError;
 use std::fs;
 
+/// A trait for reading files from the file system.
+///
+/// This trait allows for different file reading implementations,
+/// making it easier to mock file operations during testing.
 pub trait FileReader {
+    /// Reads the contents of a file at the specified path.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to the file to read
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Vec<u8>)` - The contents of the file as a byte vector
+    /// * `Err(SorobanHelperError)` - If the file cannot be read
     fn read(&self, path: &str) -> Result<Vec<u8>, SorobanHelperError>;
 }
 
+/// The default implementation of `FileReader` that uses the standard library's file system functions.
 pub struct DefaultFileReader;
 
 impl FileReader for DefaultFileReader {

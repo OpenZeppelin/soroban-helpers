@@ -29,9 +29,8 @@
 //! // Single-signature account
 //! let account = Account::single(signer);
 //! ```
-use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError};
+use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError, guard::Guard};
 use std::fmt;
-use std::ops::{Deref, DerefMut};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
     AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SetOptionsOp,
@@ -86,81 +85,6 @@ impl From<i64> for AccountSequence {
 impl From<AccountSequence> for i64 {
     fn from(seq: AccountSequence) -> Self {
         seq.0
-    }
-}
-
-/// Tracks and limits the number of authorized transaction calls for an account.
-///
-/// This provides a safety mechanism to limit the number of transactions that can be
-/// submitted from a particular account, helping to prevent accidental or malicious
-/// transaction spamming.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AuthorizedCalls(u16);
-
-impl AuthorizedCalls {
-    /// Creates a new AuthorizedCalls with the specified limit.
-    ///
-    /// # Parameters
-    ///
-    /// * `calls` - The maximum number of calls allowed
-    pub fn new(calls: u16) -> Self {
-        Self(calls)
-    }
-
-    /// Checks if the account can make additional calls.
-    ///
-    /// Returns `true` if there are remaining calls available.
-    pub fn can_call(&self) -> bool {
-        self.0 > 0
-    }
-
-    /// Attempts to decrement the authorized calls counter.
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` if the call counter was successfully decremented
-    /// * `Err` if no calls remain
-    pub fn try_decrement(&mut self) -> Result<(), SorobanHelperError> {
-        if !self.can_call() {
-            return Err(SorobanHelperError::Unauthorized(
-                "Account has reached the max number of authorized calls".to_string(),
-            ));
-        }
-
-        self.0 -= 1;
-        Ok(())
-    }
-}
-
-impl fmt::Display for AuthorizedCalls {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Deref for AuthorizedCalls {
-    type Target = u16;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for AuthorizedCalls {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl From<u16> for AuthorizedCalls {
-    fn from(value: u16) -> Self {
-        Self(value)
-    }
-}
-
-impl From<i16> for AuthorizedCalls {
-    fn from(value: i16) -> Self {
-        Self(value as u16)
     }
 }
 
@@ -294,8 +218,8 @@ pub struct SingleAccount {
     account_id: AccountId,
     /// Signer associated with this account
     signer: Box<Signer>,
-    /// Tracks and limits the number of authorized calls for this account
-    authorized_calls: AuthorizedCalls,
+    /// List of guards associated with this account
+    pub guards: Vec<Guard>,
 }
 
 impl SingleAccount {
@@ -305,11 +229,11 @@ impl SingleAccount {
     ///
     /// * `signer` - The signer for this account
     /// * `authorized_calls` - The number of calls to authorize
-    pub fn new(signer: Signer, authorized_calls: impl Into<AuthorizedCalls>) -> Self {
+    pub fn new(signer: Signer) -> Self {
         Self {
             account_id: signer.account_id(),
             signer: Box::new(signer),
-            authorized_calls: authorized_calls.into(),
+            guards: Vec::new(),
         }
     }
 }
@@ -326,9 +250,9 @@ pub struct MultisigAccount {
     /// The account's identifier
     account_id: AccountId,
     /// Signers associated with this account
-    signers: Vec<Signer>,
-    /// Tracks and limits the number of authorized calls for this account
-    authorized_calls: AuthorizedCalls,
+    pub signers: Vec<Signer>,
+    /// List of guards associated with this account
+    pub guards: Vec<Guard>,
 }
 
 impl MultisigAccount {
@@ -339,15 +263,11 @@ impl MultisigAccount {
     /// * `account_id` - The identifier for this account
     /// * `signers` - A vector of signers for this account
     /// * `authorized_calls` - The number of calls to authorize
-    pub fn new(
-        account_id: AccountId,
-        signers: Vec<Signer>,
-        authorized_calls: impl Into<AuthorizedCalls>,
-    ) -> Self {
+    pub fn new(account_id: AccountId, signers: Vec<Signer>) -> Self {
         Self {
             account_id,
             signers,
-            authorized_calls: authorized_calls.into(),
+            guards: Vec::new(),
         }
     }
 }
@@ -417,7 +337,11 @@ impl Account {
     ///
     /// A new `Account` instance with the KeyPair variant
     pub fn single(signer: Signer) -> Self {
-        Self::KeyPair(SingleAccount::new(signer, i16::MAX))
+        Self::KeyPair(SingleAccount {
+            signer: Box::new(signer.clone()),
+            account_id: signer.account_id(),
+            guards: Vec::new(),
+        })
     }
 
     /// Creates a new multisig Account instance with the provided account ID and signers.
@@ -431,10 +355,12 @@ impl Account {
     ///
     /// A new `Account` instance with the Multisig variant
     pub fn multisig(account_id: AccountId, signers: Vec<Signer>) -> Self {
-        Self::Multisig(MultisigAccount::new(account_id, signers, i16::MAX))
+        Self::Multisig(MultisigAccount {
+            account_id,
+            signers,
+            guards: Vec::new(),
+        })
     }
-
-    // ==== Core Account Methods ====
 
     /// Returns the account's identifier.
     pub fn account_id(&self) -> AccountId {
@@ -449,22 +375,6 @@ impl Account {
         match self {
             Self::KeyPair(account) => std::slice::from_ref(&*account.signer),
             Self::Multisig(account) => &account.signers,
-        }
-    }
-
-    /// Returns the current authorized calls tracker.
-    pub fn authorized_calls(&self) -> AuthorizedCalls {
-        match self {
-            Self::KeyPair(account) => account.authorized_calls,
-            Self::Multisig(account) => account.authorized_calls,
-        }
-    }
-
-    /// Returns a mutable reference to the authorized calls tracker.
-    pub fn authorized_calls_mut(&mut self) -> &mut AuthorizedCalls {
-        match self {
-            Self::KeyPair(account) => &mut account.authorized_calls,
-            Self::Multisig(account) => &mut account.authorized_calls,
         }
     }
 
@@ -508,15 +418,104 @@ impl Account {
         Ok(self.get_sequence(env).await?.next())
     }
 
-    // ==== Transaction and Authorization Methods ====
-
-    /// Sets the number of authorized calls for the account.
+    /// Adds a guard to the account.
+    ///
+    /// Guards are used to control and limit operations that can be performed with this account.
+    /// Multiple guards can be added to an account, and all guards must pass for operations to proceed.
     ///
     /// # Parameters
     ///
-    /// * `authorized_calls` - The number of calls to authorize
-    pub fn set_authorized_calls(&mut self, authorized_calls: i16) {
-        *self.authorized_calls_mut() = authorized_calls.into();
+    /// * `guard` - The guard to add to the account
+    pub fn add_guard(&mut self, guard: Guard) {
+        match self {
+            Self::KeyPair(account) => account.guards.push(guard),
+            Self::Multisig(account) => account.guards.push(guard),
+        }
+    }
+
+    /// Checks if all guards associated with this account are satisfied.
+    ///
+    /// This method evaluates all guards attached to the account and returns
+    /// true only if all of them pass their respective checks.
+    ///
+    /// # Returns
+    ///
+    /// * `true` - If all guards pass their checks (or if there are no guards)
+    /// * `false` - If any guard fails its check
+    pub fn check_guards(&self) -> bool {
+        match self {
+            Self::KeyPair(account) => account.guards.iter().all(|g| g.check()),
+            Self::Multisig(account) => account.guards.iter().all(|g| g.check()),
+        }
+    }
+
+    /// Updates the state of all guards after an operation has been performed.
+    ///
+    /// This method should be called after a successful operation to update
+    /// the internal state of all guards (e.g., decrement remaining allowed calls).
+    pub fn update_guards(&mut self) {
+        match self {
+            Self::KeyPair(account) => account.guards.iter_mut().for_each(|g| g.update()),
+            Self::Multisig(account) => account.guards.iter_mut().for_each(|g| g.update()),
+        }
+    }
+
+    /// Sign a transaction using the account's signers.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx` - The transaction to sign
+    /// * `network_id` - The network ID hash
+    /// * `signers` - The signers to use
+    ///
+    /// # Returns
+    ///
+    /// A vector of decorated signatures
+    fn sign_with_tx(
+        tx: &Transaction,
+        network_id: &Hash,
+        signers: &[Signer],
+    ) -> Result<VecM<DecoratedSignature, 20>, SorobanHelperError> {
+        let signatures: Vec<DecoratedSignature> = signers
+            .iter()
+            .map(|signer| signer.sign_transaction(tx, network_id))
+            .collect::<Result<_, _>>()
+            .map_err(|e| SorobanHelperError::XdrEncodingFailed(e.to_string()))?;
+        signatures.try_into().map_err(|_| {
+            SorobanHelperError::XdrEncodingFailed("Failed to convert signatures to XDR".to_string())
+        })
+    }
+
+    /// Signs a transaction, ensuring the account still has authorized calls.
+    ///
+    /// Decrements the authorized call counter when successful.
+    ///
+    /// # Parameters
+    ///
+    /// * `tx` - The transaction to sign
+    /// * `network_id` - The network ID hash
+    ///
+    /// # Returns
+    ///
+    /// A signed transaction envelope
+    pub fn sign_transaction(
+        &mut self,
+        tx: &Transaction,
+        network_id: &Hash,
+    ) -> Result<TransactionEnvelope, SorobanHelperError> {
+        if !self.check_guards() {
+            return Err(SorobanHelperError::Unauthorized(
+                "The transaction didn't pass one or more guards".to_string(),
+            ));
+        }
+
+        let signatures = Self::sign_with_tx(tx, network_id, self.signers())?;
+        self.update_guards();
+
+        Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
+            tx: tx.clone(),
+            signatures,
+        }))
     }
 
     /// Signs a transaction envelope by appending new signatures.
@@ -534,11 +533,10 @@ impl Account {
         tx_envelope: &TransactionEnvelope,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        if !self.authorized_calls().can_call() {
-            return Err(SorobanHelperError::Unauthorized(format!(
-                "Account {} has reached the max number of authorized calls",
-                self
-            )));
+        if !self.check_guards() {
+            return Err(SorobanHelperError::Unauthorized(
+                "The transaction didn't pass one or more guards".to_string(),
+            ));
         }
 
         let tx_v1 = match tx_envelope {
@@ -561,7 +559,7 @@ impl Account {
             )
         })?;
 
-        self.authorized_calls_mut().try_decrement()?;
+        self.update_guards();
 
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx_v1.tx.clone(),
@@ -600,40 +598,6 @@ impl Account {
 
         let tx = tx.simulate_and_build(env, &self).await?;
         self.sign_transaction(&tx, &env.network_id())
-    }
-
-    /// Signs a transaction, ensuring the account still has authorized calls.
-    ///
-    /// Decrements the authorized call counter when successful.
-    ///
-    /// # Parameters
-    ///
-    /// * `tx` - The transaction to sign
-    /// * `network_id` - The network ID hash
-    ///
-    /// # Returns
-    ///
-    /// A signed transaction envelope
-    pub fn sign_transaction(
-        &mut self,
-        tx: &Transaction,
-        network_id: &Hash,
-    ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        if !self.authorized_calls().can_call() {
-            return Err(SorobanHelperError::Unauthorized(format!(
-                "Account {} has reached the max number of authorized calls",
-                self
-            )));
-        }
-
-        let signatures = Self::sign_with_signers(tx, network_id, self.signers())?;
-
-        self.authorized_calls_mut().try_decrement()?;
-
-        Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
-            tx: tx.clone(),
-            signatures,
-        }))
     }
 
     /// Signs a transaction without checking or decrementing the authorized_calls counter.
@@ -700,9 +664,13 @@ impl Account {
 mod test {
     use stellar_xdr::curr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
 
-    use crate::account::{AccountConfig, AuthorizedCalls, MultisigAccount, SingleAccount};
+    use crate::account::AccountSequence;
+    use crate::guard::Guard;
     use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
-    use crate::{Account, TransactionBuilder};
+    use crate::{
+        Account, AccountConfig, MultisigAccount, SingleAccount, SorobanHelperError,
+        TransactionBuilder,
+    };
 
     #[tokio::test]
     async fn load_account() {
@@ -755,11 +723,23 @@ mod test {
             .await
             .unwrap();
 
-        account.set_authorized_calls(1_i16);
+        let authorized_calls = Guard::NumberOfAllowedCalls(1);
+        account.add_guard(authorized_calls);
 
         let signed_tx = account.sign_transaction(&tx, &env.network_id());
 
         assert!(signed_tx.is_ok());
+
+        // when exceeded number of authorized calls
+        let signed_tx_2 = account.sign_transaction(&tx, &env.network_id());
+        assert!(signed_tx_2.is_err());
+        // asserts it throws the right error
+        assert_eq!(
+            signed_tx_2.err().unwrap(),
+            SorobanHelperError::Unauthorized(
+                "The transaction didn't pass one or more guards".to_string()
+            )
+        );
     }
 
     #[tokio::test]
@@ -776,7 +756,8 @@ mod test {
             .unwrap();
 
         // no authorized calls
-        account.set_authorized_calls(0_i16);
+        let authorized_calls = Guard::NumberOfAllowedCalls(0);
+        account.add_guard(authorized_calls);
 
         // sign unsafe does not check the remaining authorized calls.
         let signed_tx = account.sign_transaction_unsafe(&tx, &env.network_id());
@@ -785,60 +766,9 @@ mod test {
     }
 
     #[test]
-    fn test_authorized_calls_decrement() {
-        let mut auth = AuthorizedCalls::new(2);
-        assert!(auth.can_call());
-        assert!(auth.try_decrement().is_ok());
-        assert!(auth.try_decrement().is_ok());
-        assert!(auth.try_decrement().is_err());
-    }
-
-    #[test]
-    fn test_authorized_calls_value() {
-        let auth_zero = AuthorizedCalls::new(0);
-        assert_eq!(*auth_zero, 0);
-        assert!(!auth_zero.can_call());
-
-        let auth_with_calls = AuthorizedCalls::new(42);
-        assert_eq!(*auth_with_calls, 42);
-        assert!(auth_with_calls.can_call());
-
-        let mut auth_decrement = AuthorizedCalls::new(5);
-        assert_eq!(*auth_decrement, 5);
-
-        assert!(auth_decrement.try_decrement().is_ok());
-        assert_eq!(*auth_decrement, 4);
-
-        assert!(auth_decrement.try_decrement().is_ok());
-        assert_eq!(*auth_decrement, 3);
-    }
-
-    #[test]
-    fn test_authorized_calls_deref_mut() {
-        let mut auth = AuthorizedCalls::new(5);
-        assert_eq!(*auth, 5);
-
-        *auth = 10;
-        assert_eq!(*auth, 10);
-        assert!(auth.can_call());
-    }
-
-    #[test]
-    fn test_authorized_calls_from() {
-        let auth_from_u16 = AuthorizedCalls::from(123_u16);
-        assert_eq!(*auth_from_u16, 123);
-
-        let auth_from_i16 = AuthorizedCalls::from(456_i16);
-        assert_eq!(*auth_from_i16, 456);
-    }
-
-    #[test]
-    fn test_display_implementation() {
-        let seq = crate::account::AccountSequence::new(42);
+    fn test_display_account_sequence() {
+        let seq = AccountSequence::new(42);
         assert_eq!(seq.to_string(), "42");
-
-        let auth = crate::account::AuthorizedCalls::new(123);
-        assert_eq!(auth.to_string(), "123");
     }
 
     #[test]
@@ -874,13 +804,13 @@ mod test {
     #[test]
     fn test_account_display_implementations() {
         let signer = mock_signer1();
-        let single_account = SingleAccount::new(signer.clone(), 10_u16);
+        let single_account = SingleAccount::new(signer.clone());
         let expected_single_display = format!("SingleAccount({})", signer.account_id().0);
         assert_eq!(single_account.to_string(), expected_single_display);
 
         let signers = all_signers();
         let account_id = mock_signer3().account_id();
-        let multisig_account = MultisigAccount::new(account_id.clone(), signers.clone(), 5_u16);
+        let multisig_account = MultisigAccount::new(account_id.clone(), signers.clone());
         let expected_multisig_display = format!(
             "MultisigAccount({}, {} signers)",
             account_id.0,
@@ -898,7 +828,7 @@ mod test {
     #[test]
     fn test_account_from_implementations() {
         let signer1 = mock_signer1();
-        let single_account = SingleAccount::new(signer1.clone(), 10_u16);
+        let single_account = SingleAccount::new(signer1);
         let expected_id = single_account.account_id.0.to_string();
         let account_from_single: Account = single_account.into();
 
@@ -914,7 +844,7 @@ mod test {
         let expected_multi_id = account_id.0.to_string();
         let expected_signers_len = signers.len();
 
-        let multisig_account = MultisigAccount::new(account_id, signers, 5_u16);
+        let multisig_account = MultisigAccount::new(account_id, signers);
         let account_from_multisig: Account = multisig_account.into();
 
         assert!(matches!(account_from_multisig, Account::Multisig(_)));
@@ -1044,8 +974,9 @@ mod test {
         let mut first_account = Account::single(mock_signer1());
         let mut second_account = Account::single(mock_signer3());
 
-        first_account.set_authorized_calls(1_i16);
-        second_account.set_authorized_calls(1_i16);
+        let authorized_calls = Guard::NumberOfAllowedCalls(1);
+        first_account.add_guard(authorized_calls.clone());
+        second_account.add_guard(authorized_calls);
 
         let tx = TransactionBuilder::new(&first_account, &env)
             .build()
@@ -1080,7 +1011,5 @@ mod test {
         let second_public_key = mock_signer3().public_key();
         assert_eq!(final_signatures[0].hint.0, &first_public_key.0[28..32]); // First signature should match first account's public key
         assert_eq!(final_signatures[1].hint.0, &second_public_key.0[28..32]); // Second signature should match second account's public key
-
-        assert_eq!(*second_account.authorized_calls(), 0); // Authorized calls should be decremented after signing
     }
 }

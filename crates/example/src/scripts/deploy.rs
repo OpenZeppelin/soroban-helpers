@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer, xdr::ScVal};
+use soroban_rs::{Account, Contract, Env, EnvConfigs, Guard, Signer, xdr::ScVal};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -27,7 +27,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Sets the authorized calls for the account
     // deployment consumes 2 calls (1 for upload wasm, 1 for create)
-    account.set_authorized_calls(2);
+    let guard = Guard::NumberOfAllowedCalls(2);
+    account.add_guard(guard);
 
     // Path to the contract wasm file
     let contract = Contract::new(

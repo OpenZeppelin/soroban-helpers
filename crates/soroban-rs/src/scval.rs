@@ -12,6 +12,7 @@ pub trait IntoScVal {
     fn into_val(self) -> ScVal;
 }
 
+/// Converts a Stellar `AccountId` into an `ScVal::Address` containing an account.
 impl IntoScVal for AccountId {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::Address(ScAddress::Account(self.clone())))
@@ -22,6 +23,7 @@ impl IntoScVal for AccountId {
     }
 }
 
+/// Converts a 32-bit unsigned integer into an `ScVal::U32`.
 impl IntoScVal for u32 {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::U32(*self))
@@ -32,6 +34,7 @@ impl IntoScVal for u32 {
     }
 }
 
+/// Converts a 64-bit unsigned integer into an `ScVal::U64`.
 impl IntoScVal for u64 {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::U64(*self))
@@ -42,6 +45,7 @@ impl IntoScVal for u64 {
     }
 }
 
+/// Converts a 32-bit signed integer into an `ScVal::I32`.
 impl IntoScVal for i32 {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::I32(*self))
@@ -52,6 +56,7 @@ impl IntoScVal for i32 {
     }
 }
 
+/// Converts a 64-bit signed integer into an `ScVal::I64`.
 impl IntoScVal for i64 {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::I64(*self))
@@ -62,6 +67,7 @@ impl IntoScVal for i64 {
     }
 }
 
+/// Converts a boolean value into an `ScVal::Bool`.
 impl IntoScVal for bool {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         Ok(ScVal::Bool(*self))
@@ -72,6 +78,7 @@ impl IntoScVal for bool {
     }
 }
 
+/// Converts a Rust `String` into an `ScVal::String` by first converting to a Stellar `StringM`.
 impl IntoScVal for String {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         let string_m = StringM::<{ u32::MAX }>::try_from(self).map_err(|_| {
@@ -87,6 +94,7 @@ impl IntoScVal for String {
     }
 }
 
+/// Converts a 32-byte array into an `ScVal::Bytes`.
 impl IntoScVal for [u8; 32] {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         let bytes_m = BytesM::<{ u32::MAX }>::try_from(self).map_err(|_| {
@@ -102,6 +110,7 @@ impl IntoScVal for [u8; 32] {
     }
 }
 
+/// Converts a Rust `Duration` into an `ScVal::Duration` using seconds as the time unit.
 impl IntoScVal for Duration {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         let milis: u64 = self.as_secs();
@@ -114,6 +123,7 @@ impl IntoScVal for Duration {
     }
 }
 
+/// Converts a vector of `ScVal` objects into an `ScVal::Vec`.
 impl IntoScVal for Vec<ScVal> {
     fn try_into_val(&self) -> Result<ScVal, SorobanHelperError> {
         let vec_m = VecM::try_from(self).map_err(|_| {
