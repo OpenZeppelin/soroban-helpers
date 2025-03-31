@@ -1,6 +1,8 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, ClientContractConfigs, Contract, Env, EnvConfigs, Guard, IntoScVal, Signer};
+use soroban_rs::{
+    Account, ClientContractConfigs, Contract, Env, EnvConfigs, Guard, IntoScVal, Signer,
+};
 use soroban_rs_macros::soroban;
 use std::{env, error::Error, path::Path};
 use stellar_strkey::ed25519::PrivateKey;
@@ -61,6 +63,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         env: env.clone(),
         account: account.clone(),
     };
+    // Instances the client for the deployed contract.
     let mut deployed_contract_client = TokenMockClient::new(&client_configs);
 
     // Calls send function in contract from Alice and Bob

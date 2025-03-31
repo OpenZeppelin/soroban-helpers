@@ -29,7 +29,7 @@
 //! // Single-signature account
 //! let account = Account::single(signer);
 //! ```
-use crate::{error::SorobanHelperError, guard::Guard, Env, Signer, TransactionBuilder};
+use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError, guard::Guard};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
     AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SetOptionsOp,
@@ -284,6 +284,14 @@ impl Account {
         }
     }
 
+    /// Adds a guard to the account.
+    ///
+    /// Guards are used to control and limit operations that can be performed with this account.
+    /// Multiple guards can be added to an account, and all guards must pass for operations to proceed.
+    ///
+    /// # Parameters
+    ///
+    /// * `guard` - The guard to add to the account
     pub fn add_guard(&mut self, guard: Guard) {
         match self {
             Self::KeyPair(account) => account.guards.push(guard),
@@ -291,6 +299,15 @@ impl Account {
         }
     }
 
+    /// Checks if all guards associated with this account are satisfied.
+    ///
+    /// This method evaluates all guards attached to the account and returns
+    /// true only if all of them pass their respective checks.
+    ///
+    /// # Returns
+    ///
+    /// * `true` - If all guards pass their checks (or if there are no guards)
+    /// * `false` - If any guard fails its check
     pub fn check_guards(&self) -> bool {
         match self {
             Self::KeyPair(account) => account.guards.iter().all(|g| g.check()),
@@ -298,6 +315,10 @@ impl Account {
         }
     }
 
+    /// Updates the state of all guards after an operation has been performed.
+    ///
+    /// This method should be called after a successful operation to update
+    /// the internal state of all guards (e.g., decrement remaining allowed calls).
     pub fn update_guards(&mut self) {
         match self {
             Self::KeyPair(account) => account.guards.iter_mut().for_each(|g| g.update()),
@@ -512,7 +533,7 @@ mod test {
 
     use crate::guard::Guard;
     use crate::mock::{all_signers, mock_env, mock_signer1, mock_signer3};
-    use crate::{Account, AccountConfig, TransactionBuilder};
+    use crate::{Account, AccountConfig, SorobanHelperError, TransactionBuilder};
 
     #[tokio::test]
     async fn load_account() {
@@ -571,6 +592,17 @@ mod test {
         let signed_tx = account.sign_transaction(&tx, &env.network_id());
 
         assert!(signed_tx.is_ok());
+
+        // when exceeded number of authorized calls
+        let signed_tx_2 = account.sign_transaction(&tx, &env.network_id());
+        assert!(signed_tx_2.is_err());
+        // asserts it throws the right error
+        assert_eq!(
+            signed_tx_2.err().unwrap(),
+            SorobanHelperError::Unauthorized(
+                "The transaction didn't pass one or more guards".to_string()
+            )
+        );
     }
 
     #[tokio::test]

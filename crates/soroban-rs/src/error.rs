@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 ///
 /// This enum covers errors from various operations including transaction
 /// submission, signing, contract deployment, and network communication.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SorobanHelperError {
     /// Error when a transaction fails to execute successfully.
     TransactionFailed(String),

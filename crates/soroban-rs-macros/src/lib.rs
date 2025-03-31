@@ -75,6 +75,8 @@ use syn::{File, FnArg, Item, ReturnType, parse_macro_input};
 ///         }
 ///     }
 /// "#);
+/// // or
+/// soroban!("path/to/counter.rs");
 ///
 /// // Use the generated client:
 /// let mut counter_client = CounterClient::new(&client_configs);
