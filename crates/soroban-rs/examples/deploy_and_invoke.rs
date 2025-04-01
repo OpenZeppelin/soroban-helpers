@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client_configs = ClientContractConfigs {
         contract_id: deployed.contract_id().expect("Contract ID not found"),
         env: env.clone(),
-        account: account.clone(),
+        source_account: account.clone(),
     };
     // Instances the client for the deployed contract.
     let mut deployed_contract_client = TokenMockClient::new(&client_configs);

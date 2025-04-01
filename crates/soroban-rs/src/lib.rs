@@ -19,11 +19,12 @@ pub use account::{Account, AccountConfig, MultisigAccount, SingleAccount};
 pub use contract::{ClientContractConfigs, Contract};
 pub use env::{Env, EnvConfigs};
 pub use error::SorobanHelperError;
-pub use guard::Guard;
+pub use guard::{Guard, AuthorizedCallsForContract};
 pub use parser::{ParseResult, Parser, ParserType};
 pub use response::SorobanTransactionResponse;
 pub use signer::Signer;
 pub use transaction::TransactionBuilder;
+pub use operation::Operations;
 
 // Re-export mock utilities for testing
 pub use mock::transaction::{
@@ -34,6 +35,8 @@ pub use mock::transaction::{
 
 pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
+
+// re-exports
 pub use stellar_xdr::curr as xdr;
 
 // traits

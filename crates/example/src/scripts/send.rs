@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client_configs = ClientContractConfigs {
         env: env.clone(),
         contract_id,
-        account: account.clone(),
+        source_account: account.clone(),
     };
     let mut token_client = TokenClient::new(&client_configs);
 

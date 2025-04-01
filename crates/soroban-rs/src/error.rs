@@ -14,6 +14,9 @@ pub enum SorobanHelperError {
     /// Error when a transaction fails to execute successfully.
     TransactionFailed(String),
 
+    /// Error when a transaction simulation fails.
+    TransactionSimulationFailed(String),
+
     /// Error when attempting to upload contract code that already exists.
     ContractCodeAlreadyExists,
 
@@ -43,12 +46,16 @@ pub enum SorobanHelperError {
 
     /// Error when a conversion fails.
     ConversionError(String),
+
+    // Some client operations taht it's still not supported
+    NotSupported(String)
 }
 
 impl fmt::Display for SorobanHelperError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TransactionFailed(msg) => write!(f, "Transaction failed: {}", msg),
+            Self::TransactionSimulationFailed(msg) => write!(f, "Transaction simulation failed: {}", msg),
             Self::ContractCodeAlreadyExists => write!(f, "Contract code already exists"),
             Self::NetworkRequestFailed(msg) => write!(f, "Network request failed: {}", msg),
             Self::SigningFailed(msg) => write!(f, "Signing operation failed: {}", msg),
@@ -59,6 +66,7 @@ impl fmt::Display for SorobanHelperError {
             Self::ContractDeployedConfigsNotSet => write!(f, "Contract deployed configs not set"),
             Self::FileReadError(msg) => write!(f, "File read error: {}", msg),
             Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
+            Self::NotSupported(msg) => write!(f, "Not supported: {}", msg),
         }
     }
 }

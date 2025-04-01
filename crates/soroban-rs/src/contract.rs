@@ -66,7 +66,7 @@ pub struct ClientContractConfigs {
     /// The environment for interacting with the network
     pub env: Env,
     /// The account used for signing transactions
-    pub account: Account,
+    pub source_account: Account,
 }
 
 /// Represents a Soroban smart contract
@@ -216,7 +216,7 @@ impl Contract {
         self.set_client_configs(ClientContractConfigs {
             contract_id,
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         });
 
         Ok(self)
@@ -306,13 +306,14 @@ impl Contract {
         let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
 
         let builder =
-            TransactionBuilder::new(&client_configs.account, &env).add_operation(invoke_operation);
+            TransactionBuilder::new(&client_configs.source_account, &env).add_operation(invoke_operation);
 
         let invoke_tx = builder
-            .simulate_and_build(&env, &client_configs.account)
+            .simulate_and_build(&env, &client_configs.source_account)
             .await?;
+
         let tx_envelope = client_configs
-            .account
+            .source_account
             .sign_transaction(&invoke_tx, &env.network_id())?;
 
         env.send_transaction(&tx_envelope).await
@@ -344,7 +345,7 @@ mod test {
         let client_configs = Some(ClientContractConfigs {
             contract_id: mock_contract_id(account.clone(), &env),
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         });
 
         let original_contract = Contract {
@@ -401,7 +402,7 @@ mod test {
             client_configs: Some(ClientContractConfigs {
                 contract_id,
                 env: env.clone(),
-                account: account.clone(),
+                source_account: account.clone(),
             }),
         };
 
@@ -435,7 +436,7 @@ mod test {
         let client_configs = ClientContractConfigs {
             contract_id: mock_contract_id(account.clone(), &env),
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
         let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
         let contract =
@@ -463,7 +464,7 @@ mod test {
         let client_configs = ClientContractConfigs {
             contract_id: mock_contract_id(account.clone(), &env),
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
         let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
         let contract =
@@ -492,7 +493,7 @@ mod test {
         let client_configs = ClientContractConfigs {
             contract_id: mock_contract_id(account.clone(), &env),
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
         let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
         let mut contract =
@@ -526,7 +527,7 @@ mod test {
         let client_configs = ClientContractConfigs {
             contract_id: mock_contract_id(account.clone(), &env),
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
         let file_reader = MockFileReader::new(Ok(b"mock wasm bytes".to_vec()));
 
@@ -554,7 +555,7 @@ mod test {
         let configs = ClientContractConfigs {
             contract_id,
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
 
         contract.set_client_configs(configs.clone());
@@ -573,7 +574,7 @@ mod test {
         let client_configs = ClientContractConfigs {
             contract_id,
             env: env.clone(),
-            account: account.clone(),
+            source_account: account.clone(),
         };
         let contract = Contract::from_configs(client_configs.clone());
 
