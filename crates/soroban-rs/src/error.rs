@@ -48,14 +48,16 @@ pub enum SorobanHelperError {
     ConversionError(String),
 
     // Some client operations taht it's still not supported
-    NotSupported(String)
+    NotSupported(String),
 }
 
 impl fmt::Display for SorobanHelperError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TransactionFailed(msg) => write!(f, "Transaction failed: {}", msg),
-            Self::TransactionSimulationFailed(msg) => write!(f, "Transaction simulation failed: {}", msg),
+            Self::TransactionSimulationFailed(msg) => {
+                write!(f, "Transaction simulation failed: {}", msg)
+            }
             Self::ContractCodeAlreadyExists => write!(f, "Contract code already exists"),
             Self::NetworkRequestFailed(msg) => write!(f, "Network request failed: {}", msg),
             Self::SigningFailed(msg) => write!(f, "Signing operation failed: {}", msg),

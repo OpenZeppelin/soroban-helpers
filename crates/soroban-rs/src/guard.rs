@@ -28,7 +28,7 @@ pub enum Guard {
     // ... other variants
 }
 
-impl Guard { 
+impl Guard {
     /// Checks if the guard condition is satisfied.
     ///
     /// # Returns
@@ -39,7 +39,7 @@ impl Guard {
             Guard::NumberOfAllowedCalls(remaining) => Ok(*remaining > 0),
             Guard::AuthorizedCallsFor(calls_for_contract) => {
                 Ok(calls_for_contract.check(transaction))
-            },
+            }
             // handle other variants
         }
     }
@@ -55,11 +55,11 @@ impl Guard {
                     *remaining -= 1;
                 }
                 Ok(())
-            },
+            }
             Guard::AuthorizedCallsFor(calls_for_contract) => {
                 calls_for_contract.update(transaction);
                 Ok(())
-            },
+            }
             // handle other variants
         }
     }

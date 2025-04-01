@@ -305,8 +305,8 @@ impl Contract {
 
         let invoke_operation = Operations::invoke_contract(&contract_id, function_name, args)?;
 
-        let builder =
-            TransactionBuilder::new(&client_configs.source_account, &env).add_operation(invoke_operation);
+        let builder = TransactionBuilder::new(&client_configs.source_account, &env)
+            .add_operation(invoke_operation);
 
         let invoke_tx = builder
             .simulate_and_build(&env, &client_configs.source_account)

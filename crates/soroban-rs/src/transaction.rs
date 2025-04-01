@@ -34,7 +34,7 @@
 //! ```
 use crate::{Account, Env, error::SorobanHelperError};
 use stellar_xdr::curr::{
-    Memo, Operation, Preconditions, SequenceNumber, SorobanCredentials, Transaction, TransactionExt
+    Memo, Operation, Preconditions, SequenceNumber, SorobanCredentials, Transaction, TransactionExt,
 };
 
 /// Default transaction fee in stroops (0.00001 XLM)
@@ -243,7 +243,10 @@ impl TransactionBuilder {
         );
 
         if simulation.error.is_some() {
-            println!("[WARN] Transaction simulation failed with error: {:?}", simulation.error);
+            println!(
+                "[WARN] Transaction simulation failed with error: {:?}",
+                simulation.error
+            );
         }
 
         let sim_results = simulation.results().unwrap_or_default();

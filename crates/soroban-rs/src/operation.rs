@@ -4,7 +4,10 @@
 //! These operations represent the fundamental actions that can be performed with Soroban,
 //! such as uploading contract code, deploying contracts, and invoking contract functions.
 use stellar_xdr::curr::{
-    AccountId, Asset, ContractExecutable, ContractIdPreimage, CreateContractArgs, CreateContractArgsV2, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation, OperationBody, PaymentOp, ScAddress, ScSymbol, ScVal, SorobanAuthorizationEntry, SorobanAuthorizedFunction, SorobanAuthorizedInvocation, SorobanCredentials, VecM
+    AccountId, Asset, ContractExecutable, ContractIdPreimage, CreateContractArgs,
+    CreateContractArgsV2, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
+    OperationBody, PaymentOp, ScAddress, ScSymbol, ScVal, SorobanAuthorizationEntry,
+    SorobanAuthorizedFunction, SorobanAuthorizedInvocation, SorobanCredentials, VecM,
 };
 
 use crate::error::SorobanHelperError;
@@ -220,13 +223,20 @@ impl Operations {
         })
     }
 
-    pub fn send_payment(to: AccountId, amount: i64, asset: Asset) -> Result<Operation, SorobanHelperError> {
+    pub fn send_payment(
+        to: AccountId,
+        amount: i64,
+        asset: Asset,
+    ) -> Result<Operation, SorobanHelperError> {
         Ok(Operation {
             source_account: None,
             body: OperationBody::Payment(PaymentOp {
                 amount,
                 destination: to.try_into().map_err(|e| {
-                    SorobanHelperError::XdrEncodingFailed(format!("Failed to encode destination account: {}", e))
+                    SorobanHelperError::XdrEncodingFailed(format!(
+                        "Failed to encode destination account: {}",
+                        e
+                    ))
                 })?,
                 asset,
             }),

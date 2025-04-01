@@ -450,7 +450,7 @@ impl Account {
                     }
                 }
                 Ok(true)
-            },
+            }
             Self::Multisig(account) => {
                 for guard in &account.guards {
                     if !guard.check(tx)? {
@@ -458,7 +458,7 @@ impl Account {
                     }
                 }
                 Ok(true)
-            },
+            }
         }
     }
 
@@ -473,13 +473,13 @@ impl Account {
                     guard.update(tx)?;
                 }
                 Ok(())
-            },
+            }
             Self::Multisig(account) => {
                 for guard in &mut account.guards {
                     guard.update(tx)?;
                 }
                 Ok(())
-            },
+            }
         }
     }
 
@@ -681,8 +681,8 @@ impl Account {
             )
         })
     }
-}/// * `true` - If all guards pass their checks (or if there are no guards)
-    
+}
+/// * `true` - If all guards pass their checks (or if there are no guards)
 
 #[cfg(test)]
 mod test {

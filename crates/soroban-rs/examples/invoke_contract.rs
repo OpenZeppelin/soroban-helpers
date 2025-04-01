@@ -1,6 +1,9 @@
 use dotenv::from_path;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, AuthorizedCallsForContract, ClientContractConfigs, Env, EnvConfigs, Guard, IntoScVal, Signer};
+use soroban_rs::{
+    Account, AuthorizedCallsForContract, ClientContractConfigs, Env, EnvConfigs, Guard, IntoScVal,
+    Signer,
+};
 use soroban_rs_macros::soroban;
 use std::{env, path::Path};
 use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
@@ -34,12 +37,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ContractId::from_string("CD6FS7UDM5J6XDDTUBZCVKLRRKYHVOE3B4OX5W3JEBV6QBR2HSGWRMBC")?;
 
     // Sets the authorized calls for the account
-    let contract_calls_guard = Guard::AuthorizedCallsFor(AuthorizedCallsForContract { 
+    let contract_calls_guard = Guard::AuthorizedCallsFor(AuthorizedCallsForContract {
         contract_id,
-        remaining: 1
+        remaining: 1,
     });
     account.add_guard(contract_calls_guard);
-
 
     // Initialize contract with existing contract ID
     let client_configs = ClientContractConfigs {
