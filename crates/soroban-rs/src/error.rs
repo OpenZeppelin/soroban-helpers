@@ -14,6 +14,9 @@ pub enum SorobanHelperError {
     /// Error when a transaction fails to execute successfully.
     TransactionFailed(String),
 
+    /// Error when a transaction simulation fails.
+    TransactionSimulationFailed(String),
+
     /// Error when attempting to upload contract code that already exists.
     ContractCodeAlreadyExists,
 
@@ -43,12 +46,18 @@ pub enum SorobanHelperError {
 
     /// Error when a conversion fails.
     ConversionError(String),
+
+    // Some client operations taht it's still not supported
+    NotSupported(String),
 }
 
 impl fmt::Display for SorobanHelperError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TransactionFailed(msg) => write!(f, "Transaction failed: {}", msg),
+            Self::TransactionSimulationFailed(msg) => {
+                write!(f, "Transaction simulation failed: {}", msg)
+            }
             Self::ContractCodeAlreadyExists => write!(f, "Contract code already exists"),
             Self::NetworkRequestFailed(msg) => write!(f, "Network request failed: {}", msg),
             Self::SigningFailed(msg) => write!(f, "Signing operation failed: {}", msg),
@@ -59,6 +68,7 @@ impl fmt::Display for SorobanHelperError {
             Self::ContractDeployedConfigsNotSet => write!(f, "Contract deployed configs not set"),
             Self::FileReadError(msg) => write!(f, "File read error: {}", msg),
             Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
+            Self::NotSupported(msg) => write!(f, "Not supported: {}", msg),
         }
     }
 }
@@ -78,7 +88,6 @@ impl From<std::io::Error> for SorobanHelperError {
         Self::InvalidArgument(format!("File operation failed: {}", err))
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,6 +136,18 @@ mod tests {
                 SorobanHelperError::FileReadError("file not found".to_string()),
                 "File read error: file not found",
             ),
+            (
+                SorobanHelperError::ConversionError("invalid type conversion".to_string()),
+                "Conversion error: invalid type conversion",
+            ),
+            (
+                SorobanHelperError::TransactionSimulationFailed("bad input".to_string()),
+                "Transaction simulation failed: bad input",
+            ),
+            (
+                SorobanHelperError::NotSupported("feature not implemented".to_string()),
+                "Not supported: feature not implemented",
+            ),
         ];
 
         for (error, expected_msg) in cases {
@@ -147,5 +168,54 @@ mod tests {
         let error_string = helper_error.to_string();
         assert!(error_string.contains("file not found"));
         assert!(error_string.contains("File operation failed"));
+    }
+
+    #[test]
+    fn test_from_xdr_error() {
+        // Create a mock XDR error
+        let xdr_error = stellar_xdr::curr::Error::Invalid;
+        let helper_error = SorobanHelperError::from(xdr_error);
+
+        assert!(
+            matches!(helper_error, SorobanHelperError::XdrEncodingFailed(_)),
+            "Expected XdrEncodingFailed variant"
+        );
+
+        let error_string = helper_error.to_string();
+        assert!(error_string.contains("XDR encoding failed"));
+    }
+
+    #[test]
+    fn test_error_trait_implementation() {
+        // Test that SorobanHelperError implements the Error trait correctly
+        let error = SorobanHelperError::InvalidArgument("test error".to_string());
+        let _: &dyn Error = &error; // This will fail to compile if Error is not implemented
+
+        // Test Debug implementation
+        let debug_str = format!("{:?}", error);
+        assert!(debug_str.contains("InvalidArgument"));
+    }
+
+    #[test]
+    fn test_error_equality() {
+        // Test PartialEq implementation
+        let error1 = SorobanHelperError::InvalidArgument("test error".to_string());
+        let error2 = SorobanHelperError::InvalidArgument("test error".to_string());
+        let error3 = SorobanHelperError::InvalidArgument("different error".to_string());
+
+        assert_eq!(error1, error2);
+        assert_ne!(error1, error3);
+
+        let different_type = SorobanHelperError::NetworkRequestFailed("test error".to_string());
+        assert_ne!(error1, different_type);
+    }
+
+    #[test]
+    fn test_error_cloning() {
+        // Test Clone implementation
+        let original = SorobanHelperError::TransactionFailed("test failure".to_string());
+        let cloned = original.clone();
+
+        assert_eq!(original, cloned);
     }
 }

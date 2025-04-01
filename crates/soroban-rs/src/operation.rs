@@ -4,10 +4,10 @@
 //! These operations represent the fundamental actions that can be performed with Soroban,
 //! such as uploading contract code, deploying contracts, and invoking contract functions.
 use stellar_xdr::curr::{
-    ContractExecutable, ContractIdPreimage, CreateContractArgs, CreateContractArgsV2, Hash,
-    HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation, OperationBody, ScAddress,
-    ScSymbol, ScVal, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
-    SorobanAuthorizedInvocation, SorobanCredentials, VecM,
+    AccountId, Asset, ContractExecutable, ContractIdPreimage, CreateContractArgs,
+    CreateContractArgsV2, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
+    OperationBody, PaymentOp, ScAddress, ScSymbol, ScVal, SorobanAuthorizationEntry,
+    SorobanAuthorizedFunction, SorobanAuthorizedInvocation, SorobanCredentials, VecM,
 };
 
 use crate::error::SorobanHelperError;
@@ -219,6 +219,21 @@ impl Operations {
             body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
                 host_function: HostFunction::InvokeContract(invoke_contract_args),
                 auth: VecM::default(),
+            }),
+        })
+    }
+
+    pub fn send_payment(
+        to: AccountId,
+        amount: i64,
+        asset: Asset,
+    ) -> Result<Operation, SorobanHelperError> {
+        Ok(Operation {
+            source_account: None,
+            body: OperationBody::Payment(PaymentOp {
+                amount,
+                destination: to.into(),
+                asset,
             }),
         })
     }

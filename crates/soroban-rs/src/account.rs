@@ -440,12 +440,25 @@ impl Account {
     ///
     /// # Returns
     ///
-    /// * `true` - If all guards pass their checks (or if there are no guards)
     /// * `false` - If any guard fails its check
-    pub fn check_guards(&self) -> bool {
+    pub fn check_guards(&self, tx: &Transaction) -> Result<bool, SorobanHelperError> {
         match self {
-            Self::KeyPair(account) => account.guards.iter().all(|g| g.check()),
-            Self::Multisig(account) => account.guards.iter().all(|g| g.check()),
+            Self::KeyPair(account) => {
+                for guard in &account.guards {
+                    if !guard.check(tx)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            Self::Multisig(account) => {
+                for guard in &account.guards {
+                    if !guard.check(tx)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
         }
     }
 
@@ -453,10 +466,20 @@ impl Account {
     ///
     /// This method should be called after a successful operation to update
     /// the internal state of all guards (e.g., decrement remaining allowed calls).
-    pub fn update_guards(&mut self) {
+    pub fn update_guards(&mut self, tx: &Transaction) -> Result<(), SorobanHelperError> {
         match self {
-            Self::KeyPair(account) => account.guards.iter_mut().for_each(|g| g.update()),
-            Self::Multisig(account) => account.guards.iter_mut().for_each(|g| g.update()),
+            Self::KeyPair(account) => {
+                for guard in &mut account.guards {
+                    guard.update(tx)?;
+                }
+                Ok(())
+            }
+            Self::Multisig(account) => {
+                for guard in &mut account.guards {
+                    guard.update(tx)?;
+                }
+                Ok(())
+            }
         }
     }
 
@@ -503,14 +526,14 @@ impl Account {
         tx: &Transaction,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        if !self.check_guards() {
+        if !self.check_guards(tx)? {
             return Err(SorobanHelperError::Unauthorized(
                 "The transaction didn't pass one or more guards".to_string(),
             ));
         }
 
         let signatures = Self::sign_with_tx(tx, network_id, self.signers())?;
-        self.update_guards();
+        self.update_guards(tx)?;
 
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx.clone(),
@@ -533,12 +556,6 @@ impl Account {
         tx_envelope: &TransactionEnvelope,
         network_id: &Hash,
     ) -> Result<TransactionEnvelope, SorobanHelperError> {
-        if !self.check_guards() {
-            return Err(SorobanHelperError::Unauthorized(
-                "The transaction didn't pass one or more guards".to_string(),
-            ));
-        }
-
         let tx_v1 = match tx_envelope {
             TransactionEnvelope::Tx(tx_v1) => tx_v1,
             _ => {
@@ -547,6 +564,12 @@ impl Account {
                 ));
             }
         };
+
+        if !self.check_guards(&tx_v1.tx)? {
+            return Err(SorobanHelperError::Unauthorized(
+                "The transaction didn't pass one or more guards".to_string(),
+            ));
+        }
 
         let prev_signatures = tx_v1.signatures.clone();
         let new_signatures = Self::sign_with_signers(&tx_v1.tx, network_id, self.signers())?;
@@ -559,7 +582,7 @@ impl Account {
             )
         })?;
 
-        self.update_guards();
+        self.update_guards(&tx_v1.tx)?;
 
         Ok(TransactionEnvelope::Tx(TransactionV1Envelope {
             tx: tx_v1.tx.clone(),
@@ -636,7 +659,7 @@ impl Account {
     /// # Returns
     ///
     /// A vector of decorated signatures
-    fn sign_with_signers(
+    pub fn sign_with_signers(
         tx: &Transaction,
         network_id: &Hash,
         signers: &[Signer],
@@ -724,8 +747,7 @@ mod test {
             .unwrap();
 
         let authorized_calls = Guard::NumberOfAllowedCalls(1);
-        account.add_guard(authorized_calls);
-
+        account.add_guard(authorized_calls.clone());
         let signed_tx = account.sign_transaction(&tx, &env.network_id());
 
         assert!(signed_tx.is_ok());

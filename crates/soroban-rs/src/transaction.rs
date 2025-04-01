@@ -34,7 +34,7 @@
 //! ```
 use crate::{Account, Env, error::SorobanHelperError};
 use stellar_xdr::curr::{
-    Memo, Operation, Preconditions, SequenceNumber, Transaction, TransactionExt,
+    Memo, Operation, Preconditions, SequenceNumber, SorobanCredentials, Transaction, TransactionExt,
 };
 
 /// Default transaction fee in stroops (0.00001 XLM)
@@ -226,10 +226,10 @@ impl TransactionBuilder {
     pub async fn simulate_and_build(
         self,
         env: &Env,
-        account: &Account,
+        source_account: &Account,
     ) -> Result<Transaction, SorobanHelperError> {
         let tx = self.build().await?;
-        let tx_envelope = account.sign_transaction_unsafe(&tx, &env.network_id())?;
+        let tx_envelope = source_account.sign_transaction_unsafe(&tx, &env.network_id())?;
         let simulation = env.simulate_transaction(&tx_envelope).await?;
 
         let updated_fee = DEFAULT_TRANSACTION_FEES.max(
@@ -241,6 +241,24 @@ impl TransactionBuilder {
                 SorobanHelperError::InvalidArgument("Transaction fee too high".to_string())
             })?,
         );
+
+        if simulation.error.is_some() {
+            println!(
+                "[WARN] Transaction simulation failed with error: {:?}",
+                simulation.error
+            );
+        }
+
+        let sim_results = simulation.results().unwrap_or_default();
+        for result in &sim_results {
+            for auth in &result.auth {
+                if matches!(auth.credentials, SorobanCredentials::Address(_)) {
+                    return Err(SorobanHelperError::NotSupported(
+                        "Address authorization not yet supported".to_string(),
+                    ));
+                }
+            }
+        }
 
         let mut tx = Transaction {
             fee: updated_fee,
