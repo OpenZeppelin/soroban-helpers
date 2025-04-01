@@ -682,7 +682,6 @@ impl Account {
         })
     }
 }
-/// * `true` - If all guards pass their checks (or if there are no guards)
 
 #[cfg(test)]
 mod test {
