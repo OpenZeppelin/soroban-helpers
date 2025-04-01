@@ -232,12 +232,7 @@ impl Operations {
             source_account: None,
             body: OperationBody::Payment(PaymentOp {
                 amount,
-                destination: to.try_into().map_err(|e| {
-                    SorobanHelperError::XdrEncodingFailed(format!(
-                        "Failed to encode destination account: {}",
-                        e
-                    ))
-                })?,
+                destination: to.into(),
                 asset,
             }),
         })
