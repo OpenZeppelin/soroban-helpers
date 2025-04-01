@@ -39,8 +39,7 @@ impl Guard {
             Guard::NumberOfAllowedCalls(remaining) => Ok(*remaining > 0),
             Guard::AuthorizedCallsFor(calls_for_contract) => {
                 Ok(calls_for_contract.check(transaction))
-            }
-            // handle other variants
+            } // handle other variants
         }
     }
 
@@ -59,8 +58,7 @@ impl Guard {
             Guard::AuthorizedCallsFor(calls_for_contract) => {
                 calls_for_contract.update(transaction);
                 Ok(())
-            }
-            // handle other variants
+            } // handle other variants
         }
     }
 }
