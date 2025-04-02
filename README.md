@@ -122,7 +122,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) and check the [Security Po
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Security
 
