@@ -34,14 +34,14 @@ enum MockResponseType {
 }
 
 #[allow(dead_code)]
-pub fn mock_transaction(account_id: AccountId) -> Transaction {
+pub fn mock_transaction(account_id: AccountId, operations: Vec<Operation>) -> Transaction {
     Transaction {
         fee: 100,
         seq_num: SequenceNumber::from(1),
         source_account: account_id.into(),
         cond: Preconditions::None,
         memo: Memo::None,
-        operations: VecM::default(),
+        operations: operations.try_into().unwrap_or_default(),
         ext: TransactionExt::V0,
     }
 }
@@ -49,7 +49,7 @@ pub fn mock_transaction(account_id: AccountId) -> Transaction {
 #[allow(dead_code)]
 pub fn mock_transaction_envelope(account_id: AccountId) -> TransactionEnvelope {
     TransactionEnvelope::Tx(TransactionV1Envelope {
-        tx: mock_transaction(account_id),
+        tx: mock_transaction(account_id, vec![]),
         signatures: Default::default(),
     })
 }

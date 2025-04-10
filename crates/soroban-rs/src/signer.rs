@@ -191,7 +191,7 @@ mod tests {
 
         let signer = Signer::new(signing_key);
 
-        let transaction = mock_transaction(account_id);
+        let transaction = mock_transaction(account_id, vec![]);
         let network_id = Hash::from([42; 32]);
 
         let decorated_signature = signer.sign_transaction(&transaction, &network_id).unwrap();
