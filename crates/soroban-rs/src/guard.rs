@@ -15,7 +15,9 @@
 //! }
 //! ```
 use stellar_strkey::Contract as ContractId;
-use stellar_xdr::curr::{HostFunction, OperationBody, Transaction};
+use stellar_xdr::curr::{
+    OperationBody, SorobanAuthorizedFunction, SorobanAuthorizedInvocation, Transaction,
+};
 
 use crate::SorobanHelperError;
 
@@ -70,15 +72,26 @@ pub struct AuthorizedCallsForContract {
 }
 
 impl AuthorizedCallsForContract {
+    fn count_authorized_calls(&self, invocation: &SorobanAuthorizedInvocation) -> u16 {
+        let mut count = 0;
+        if let SorobanAuthorizedFunction::ContractFn(args) = &invocation.function {
+            if args.contract_address.to_string() == self.contract_id.to_string() {
+                count += 1;
+            }
+        }
+        // visit all nodes in the tree of invocations.
+        for sub_invocation in invocation.sub_invocations.iter() {
+            count += self.count_authorized_calls(sub_invocation);
+        }
+        count
+    }
+
     fn extract_contract_calls(&self, tx: &Transaction) -> u16 {
         let mut calls = 0;
         for op in tx.operations.iter() {
             if let OperationBody::InvokeHostFunction(invoke_op) = &op.body {
-                if let HostFunction::InvokeContract(args) = &invoke_op.host_function {
-                    let addr_string = args.contract_address.to_string();
-                    if addr_string == self.contract_id.to_string() {
-                        calls += 1;
-                    }
+                for auth_entry in invoke_op.auth.iter() {
+                    calls += self.count_authorized_calls(&auth_entry.root_invocation);
                 }
             }
         }
@@ -95,5 +108,130 @@ impl AuthorizedCallsForContract {
         if calls > 0 && self.remaining >= calls {
             self.remaining -= calls;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ed25519_dalek::SigningKey;
+    use stellar_strkey::{Contract as ContractId, ed25519::PublicKey};
+    use stellar_xdr::curr::{
+        AccountId, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
+        OperationBody, ScAddress, ScSymbol, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
+        SorobanAuthorizedInvocation, SorobanCredentials, VecM,
+    };
+
+    use crate::{
+        Account, AuthorizedCallsForContract, Signer,
+        mock::{mock_contract_id, mock_env, mock_transaction},
+    };
+
+    fn create_invocation(
+        target_address: &ContractId,
+        sub_invocations: Vec<SorobanAuthorizedInvocation>,
+    ) -> SorobanAuthorizedInvocation {
+        SorobanAuthorizedInvocation {
+            function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
+                contract_address: ScAddress::Contract(Hash(target_address.0)),
+                function_name: ScSymbol("dummy_fn".try_into().unwrap()),
+                args: VecM::default(),
+            }),
+            sub_invocations: sub_invocations.try_into().unwrap(),
+        }
+    }
+
+    #[test]
+    fn test_authorized_calls_check_and_update_success() {
+        let signing_key = SigningKey::from_bytes(&[42; 32]);
+        let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
+        let account_id = AccountId(stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(
+            public_key.0.into(),
+        ));
+        let signer = Signer::new(signing_key);
+        let account = Account::single(signer);
+        let env = mock_env(None, None, None);
+
+        let contract_id = mock_contract_id(account, &env);
+
+        let sub_invocation = create_invocation(&contract_id, vec![]);
+        let root_invocation = create_invocation(
+            &contract_id,
+            vec![sub_invocation.clone(), sub_invocation.clone()],
+        );
+
+        let auth_entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::SourceAccount,
+            root_invocation,
+        };
+        let invoke_op = InvokeHostFunctionOp {
+            host_function: HostFunction::InvokeContract(InvokeContractArgs {
+                contract_address: ScAddress::Contract(Hash(contract_id.0)),
+                function_name: ScSymbol("dummy_fn".try_into().unwrap()),
+                args: VecM::default(),
+            }),
+            auth: vec![auth_entry].try_into().unwrap(),
+        };
+
+        let op = Operation {
+            source_account: None,
+            body: OperationBody::InvokeHostFunction(invoke_op),
+        };
+
+        let transaction = mock_transaction(account_id.clone(), vec![op]);
+
+        let mut guard = AuthorizedCallsForContract {
+            contract_id,
+            remaining: 3,
+        };
+
+        assert_eq!(guard.extract_contract_calls(&transaction), 3);
+        assert!(guard.check(&transaction));
+        guard.update(&transaction);
+        assert_eq!(guard.remaining, 0);
+    }
+
+    #[test]
+    fn test_authorized_calls_for_contract_check_and_update_fail() {
+        let signing_key = SigningKey::from_bytes(&[42; 32]);
+        let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
+        let account_id = AccountId(stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(
+            public_key.0.into(),
+        ));
+        let signer = Signer::new(signing_key);
+        let account = Account::single(signer);
+        let env = mock_env(None, None, None);
+
+        let contract_id = mock_contract_id(account, &env);
+
+        let sub_invocation = create_invocation(&contract_id, vec![]);
+        let root_invocation = create_invocation(&contract_id, vec![sub_invocation.clone()]);
+
+        let auth_entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::SourceAccount,
+            root_invocation,
+        };
+        let invoke_op = InvokeHostFunctionOp {
+            host_function: HostFunction::InvokeContract(InvokeContractArgs {
+                contract_address: ScAddress::Contract(Hash(contract_id.0)),
+                function_name: ScSymbol("dummy_fn".try_into().unwrap()),
+                args: VecM::default(),
+            }),
+            auth: vec![auth_entry].try_into().unwrap(),
+        };
+
+        let op = Operation {
+            source_account: None,
+            body: OperationBody::InvokeHostFunction(invoke_op),
+        };
+
+        let transaction = mock_transaction(account_id.clone(), vec![op]);
+
+        let guard = AuthorizedCallsForContract {
+            contract_id,
+            remaining: 1,
+        };
+
+        assert_eq!(guard.extract_contract_calls(&transaction), 2);
+        assert!(!guard.check(&transaction));
     }
 }
