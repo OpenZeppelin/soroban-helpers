@@ -180,12 +180,12 @@ mod tests {
         let transaction = mock_transaction(account_id.clone(), vec![op]);
 
         let mut guard = AuthorizedCallsForContract {
-            contract_id: contract_id.clone(),
+            contract_id,
             remaining: 3,
         };
 
         assert_eq!(guard.extract_contract_calls(&transaction), 3);
-        assert_eq!(guard.check(&transaction), true);
+        assert!(guard.check(&transaction));
         guard.update(&transaction);
         assert_eq!(guard.remaining, 0);
     }
@@ -227,11 +227,11 @@ mod tests {
         let transaction = mock_transaction(account_id.clone(), vec![op]);
 
         let guard = AuthorizedCallsForContract {
-            contract_id: contract_id.clone(),
+            contract_id,
             remaining: 1,
         };
 
         assert_eq!(guard.extract_contract_calls(&transaction), 2);
-        assert_eq!(guard.check(&transaction), false);
+        assert!(!guard.check(&transaction));
     }
 }
