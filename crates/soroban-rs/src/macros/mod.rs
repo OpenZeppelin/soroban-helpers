@@ -6,11 +6,12 @@ pub mod test {
 
     use super::*;
     use crate::{
-        self as soroban_rs, Account, ClientContractConfigs,
+        self as soroban_rs,
         mock::{
             account::mock_signer2, mock_account_entry, mock_contract_id, mock_env, mock_signer1,
             mock_simulate_tx_response, mock_transaction_response,
         },
+        Account, ClientContractConfigs,
     };
 
     soroban!(

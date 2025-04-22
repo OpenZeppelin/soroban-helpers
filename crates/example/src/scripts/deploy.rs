@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use ed25519_dalek::SigningKey;
-use soroban_rs::{Account, Contract, Env, EnvConfigs, Guard, Signer, xdr::ScVal};
+use soroban_rs::{xdr::ScVal, Account, Contract, Env, EnvConfigs, Guard, Signer};
 use std::{env, error::Error};
 use stellar_strkey::ed25519::PrivateKey;
 

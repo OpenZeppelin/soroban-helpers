@@ -9,7 +9,7 @@ members = [
 default-members = ["crates/soroban-test-helpers"]
 
 [workspace.package]
-edition = "2024"
+edition = "2021"
 rust-version = "1.85.0" #MSRV
 repository = "https://github.com/OpenZeppelin/soroban-helpers"
 documentation = "https://github.com/OpenZeppelin/soroban-helpers"

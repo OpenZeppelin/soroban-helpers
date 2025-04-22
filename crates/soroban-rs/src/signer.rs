@@ -28,7 +28,7 @@
 //! }
 //! ```
 use crate::error::SorobanHelperError;
-use ed25519_dalek::{SigningKey, ed25519::signature::SignerMut};
+use ed25519_dalek::{ed25519::signature::SignerMut, SigningKey};
 use sha2::{Digest, Sha256};
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{

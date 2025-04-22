@@ -41,11 +41,12 @@
 //! }
 //! ```
 use crate::{
-    Account, Env, ParseResult, Parser, ParserType, SorobanTransactionResponse, crypto,
+    crypto,
     error::SorobanHelperError,
     fs::{DefaultFileReader, FileReader},
     operation::Operations,
     transaction::TransactionBuilder,
+    Account, Env, ParseResult, Parser, ParserType, SorobanTransactionResponse,
 };
 use stellar_strkey::Contract as ContractId;
 use stellar_xdr::curr::{
@@ -323,7 +324,7 @@ impl Contract {
 #[cfg(test)]
 mod test {
     use crate::{
-        Account, ClientContractConfigs, Contract, crypto,
+        crypto,
         error::SorobanHelperError,
         mock::{
             fs::MockFileReader,
@@ -331,6 +332,7 @@ mod test {
             mock_simulate_tx_response, mock_transaction_response,
             transaction::{create_contract_id_val, mock_transaction_response_with_return_value},
         },
+        Account, ClientContractConfigs, Contract,
     };
     use std::io::Write;
     use tempfile::NamedTempFile;

@@ -32,7 +32,7 @@
 //!     env.send_transaction(&tx_envelope).await.unwrap();
 //! }
 //! ```
-use crate::{Account, Env, error::SorobanHelperError};
+use crate::{error::SorobanHelperError, Account, Env};
 use stellar_xdr::curr::{
     Memo, Operation, Preconditions, SequenceNumber, SorobanCredentials, Transaction, TransactionExt,
 };
@@ -283,12 +283,12 @@ impl TransactionBuilder {
 #[cfg(test)]
 mod test {
     use crate::{
-        Account, TransactionBuilder,
         mock::{
             mock_account_entry, mock_contract_id, mock_env, mock_signer1, mock_simulate_tx_response,
         },
         operation::Operations,
         transaction::DEFAULT_TRANSACTION_FEES,
+        Account, TransactionBuilder,
     };
     use stellar_xdr::curr::{Memo, Preconditions, TimeBounds, TimePoint};
 
@@ -326,7 +326,7 @@ mod test {
 
         let tx = tx_builder.simulate_and_build(&env, &account).await.unwrap();
 
-        assert!(tx.fee == 142); // DEFAULT_TRANSACTION_FEE + SIMULATION_FEE 
+        assert!(tx.fee == 142); // DEFAULT_TRANSACTION_FEE + SIMULATION_FEE
         assert!(tx.operations.len() == 1);
         assert!(tx.operations[0].body == operation.body);
     }

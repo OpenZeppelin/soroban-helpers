@@ -29,7 +29,7 @@
 //! // Single-signature account
 //! let account = Account::single(signer);
 //! ```
-use crate::{Env, Signer, TransactionBuilder, error::SorobanHelperError, guard::Guard};
+use crate::{error::SorobanHelperError, guard::Guard, Env, Signer, TransactionBuilder};
 use std::fmt;
 use stellar_strkey::ed25519::PublicKey;
 use stellar_xdr::curr::{
