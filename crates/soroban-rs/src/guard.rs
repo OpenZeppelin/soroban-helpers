@@ -114,7 +114,7 @@ impl AuthorizedCallsForContract {
 #[cfg(test)]
 mod tests {
     use ed25519_dalek::SigningKey;
-    use stellar_strkey::{Contract as ContractId, ed25519::PublicKey};
+    use stellar_strkey::{ed25519::PublicKey, Contract as ContractId};
     use stellar_xdr::curr::{
         AccountId, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
         OperationBody, ScAddress, ScSymbol, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
@@ -122,8 +122,8 @@ mod tests {
     };
 
     use crate::{
-        Account, AuthorizedCallsForContract, Signer,
         mock::{mock_contract_id, mock_env, mock_transaction},
+        Account, AuthorizedCallsForContract, Signer,
     };
 
     fn create_invocation(

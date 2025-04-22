@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{Address, Env, testutils::Address as AddressTrait, vec};
+use soroban_sdk::{testutils::Address as AddressTrait, vec, Address, Env};
 
 // Default test implementation.
 #[test]

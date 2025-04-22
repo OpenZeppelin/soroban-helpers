@@ -6,7 +6,7 @@ use soroban_rs::{
 };
 use soroban_rs_macros::soroban;
 use std::{env, path::Path};
-use stellar_strkey::{Contract as ContractId, ed25519::PrivateKey};
+use stellar_strkey::{ed25519::PrivateKey, Contract as ContractId};
 
 // generates TokenMockClient binding TokenMock contract.
 soroban!("fixtures/lib.rs");

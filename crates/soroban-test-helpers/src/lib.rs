@@ -25,7 +25,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{FnArg, parse_macro_input};
+use syn::{parse_macro_input, FnArg};
 
 /// A procedural macro for simplifying Soroban contract tests.
 ///
