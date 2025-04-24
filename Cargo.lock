@@ -2087,7 +2087,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-helpers-example"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "dotenv",
  "ed25519-dalek",
@@ -2114,7 +2114,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-rs"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "async-trait",
  "dotenv",
@@ -2132,7 +2132,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-rs-macros"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2211,7 +2211,7 @@ dependencies = [
 
 [[package]]
 name = "soroban-test-helpers"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "proc-macro2",
  "quote",

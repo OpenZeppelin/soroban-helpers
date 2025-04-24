@@ -37,4 +37,4 @@ tempfile = "3.10.1"
 # members
 soroban-test-helpers = { path = "crates/soroban-test-helpers" }
 soroban-rs = { path = "crates/soroban-rs" }
-soroban-rs-macros = { path = "crates/soroban-rs-macros", version = "0.1.0" }
+soroban-rs-macros = { path = "crates/soroban-rs-macros", version = "0.2.3" }
