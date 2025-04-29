@@ -37,6 +37,7 @@ pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
 
 // re-exports
+pub use stellar_rpc_client;
 pub use stellar_xdr::curr as xdr;
 
 // traits
