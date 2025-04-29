@@ -38,6 +38,7 @@ pub use stellar_strkey::Contract as ContractId;
 
 // re-exports
 pub use stellar_xdr::curr as xdr;
+pub use stellar_rpc_client;
 
 // traits
 pub use scval::IntoScVal;
