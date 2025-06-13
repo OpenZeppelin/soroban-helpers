@@ -2094,7 +2094,7 @@ dependencies = [
  "soroban-rs",
  "soroban-sdk",
  "soroban-test-helpers",
- "stellar-strkey 0.0.11",
+ "stellar-strkey 0.0.13",
  "tokio",
 ]
 
@@ -2124,7 +2124,7 @@ dependencies = [
  "sha2",
  "soroban-rs-macros",
  "stellar-rpc-client",
- "stellar-strkey 0.0.11",
+ "stellar-strkey 0.0.13",
  "stellar-xdr",
  "tempfile",
  "tokio",
@@ -2298,9 +2298,9 @@ dependencies = [
 
 [[package]]
 name = "stellar-strkey"
-version = "0.0.11"
+version = "0.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0989c9a05eccbd08b60e603a1c7e3ed3ec92c0de73b8681fc964d272ab2b2697"
+checksum = "ee1832fb50c651ad10f734aaf5d31ca5acdfb197a6ecda64d93fcdb8885af913"
 dependencies = [
  "crate-git-revision",
  "data-encoding",
@@ -2318,6 +2318,7 @@ dependencies = [
  "escape-bytes",
  "hex",
  "serde",
+ "serde_json",
  "serde_with",
  "stellar-strkey 0.0.9",
 ]
