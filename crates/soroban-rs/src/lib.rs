@@ -27,11 +27,8 @@ pub use signer::Signer;
 pub use transaction::TransactionBuilder;
 
 // Re-export mock utilities for testing
-pub use mock::transaction::{
-    create_contract_id_val, create_mock_set_options_tx_envelope,
-    mock_transaction_response_with_account_entry, mock_transaction_response_with_return_value,
-    MockGetTransactionResponse, MockTransactionMeta, MockTransactionResult,
-};
+pub use mock::account::*;
+pub use mock::transaction::*;
 
 pub use stellar_rpc_client::GetTransactionResponse;
 pub use stellar_strkey::Contract as ContractId;
