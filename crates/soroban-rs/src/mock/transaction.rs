@@ -57,7 +57,9 @@ pub fn mock_transaction_envelope(account_id: AccountId) -> TransactionEnvelope {
 #[allow(dead_code)]
 pub fn create_contract_id_val() -> ScVal {
     let contract_hash = Hash([1; 32]);
-    ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(contract_hash)))
+    ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(
+        contract_hash,
+    )))
 }
 
 #[allow(dead_code)]

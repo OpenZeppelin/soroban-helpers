@@ -147,7 +147,9 @@ impl Parser {
 
     fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
         match val {
-            ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(hash))) => Some(ContractId(hash.0)),
+            ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(hash))) => {
+                Some(ContractId(hash.0))
+            }
             _ => None,
         }
     }

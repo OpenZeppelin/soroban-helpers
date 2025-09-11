@@ -205,7 +205,9 @@ impl Operations {
         args: Vec<ScVal>,
     ) -> Result<Operation, SorobanHelperError> {
         let invoke_contract_args = InvokeContractArgs {
-            contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(contract_id.0))),
+            contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(
+                contract_id.0,
+            ))),
             function_name: ScSymbol(function_name.try_into().map_err(|e| {
                 SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e))
             })?),
