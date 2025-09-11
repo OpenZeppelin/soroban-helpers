@@ -147,7 +147,7 @@ impl Parser {
 
     fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
         match val {
-            ScVal::Address(ScAddress::Contract(hash)) => Some(ContractId(hash.0)),
+            ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(hash))) => Some(ContractId(hash.0)),
             _ => None,
         }
     }
@@ -283,6 +283,11 @@ mod tests {
             envelope: None,
             result: None, // This is what we're testing - no result
             result_meta: None,
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
 
         let parser = Parser::new(ParserType::InvokeFunction);
@@ -311,6 +316,11 @@ mod tests {
                 result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
                 ext: TransactionResultExt::V0,
             }),
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
 
         // Test the fallback code path where an operation result is checked
@@ -351,6 +361,11 @@ mod tests {
                 ext: TransactionResultExt::V0,
             }),
             result_meta: None,
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
 
         let result = parser.parse(&response_no_meta);

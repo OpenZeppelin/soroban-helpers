@@ -205,7 +205,7 @@ impl Operations {
         args: Vec<ScVal>,
     ) -> Result<Operation, SorobanHelperError> {
         let invoke_contract_args = InvokeContractArgs {
-            contract_address: ScAddress::Contract(Hash(contract_id.0)),
+            contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(contract_id.0))),
             function_name: ScSymbol(function_name.try_into().map_err(|e| {
                 SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e))
             })?),
@@ -351,7 +351,7 @@ mod test {
 
             if let HostFunction::InvokeContract(args) = op.host_function {
                 assert!(
-                    matches!(args.contract_address, ScAddress::Contract(hash) if hash.0 == contract_bytes)
+                    matches!(args.contract_address, ScAddress::Contract(stellar_xdr::curr::ContractId(hash)) if hash.0 == contract_bytes)
                 );
                 assert_eq!(args.function_name.0.as_slice(), function_name.as_bytes());
 

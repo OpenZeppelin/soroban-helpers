@@ -91,7 +91,7 @@ impl RpcClient for ExternalRpcClient {
         tx_envelope: &TransactionEnvelope,
     ) -> Result<SimulateTransactionResponse, SorobanHelperError> {
         self.client
-            .simulate_transaction_envelope(tx_envelope)
+            .simulate_transaction_envelope(tx_envelope, None)
             .await
             .map_err(|e| SorobanHelperError::NetworkRequestFailed(format!("Error: {}", e)))
     }

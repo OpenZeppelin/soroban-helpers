@@ -132,7 +132,7 @@ mod tests {
     ) -> SorobanAuthorizedInvocation {
         SorobanAuthorizedInvocation {
             function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
-                contract_address: ScAddress::Contract(Hash(target_address.0)),
+                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(target_address.0))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
                 args: VecM::default(),
             }),
@@ -165,7 +165,7 @@ mod tests {
         };
         let invoke_op = InvokeHostFunctionOp {
             host_function: HostFunction::InvokeContract(InvokeContractArgs {
-                contract_address: ScAddress::Contract(Hash(contract_id.0)),
+                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(contract_id.0))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
                 args: VecM::default(),
             }),
@@ -212,7 +212,7 @@ mod tests {
         };
         let invoke_op = InvokeHostFunctionOp {
             host_function: HostFunction::InvokeContract(InvokeContractArgs {
-                contract_address: ScAddress::Contract(Hash(contract_id.0)),
+                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(contract_id.0))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
                 args: VecM::default(),
             }),
