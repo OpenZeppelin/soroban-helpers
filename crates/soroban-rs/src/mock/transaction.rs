@@ -117,6 +117,7 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
         envelope: None,
         result: Some(create_success_tx_result()),
         result_meta: None,
+        ledger: None,
         events: stellar_rpc_client::GetTransactionEvents {
             contract_events: vec![],
             diagnostic_events: vec![],

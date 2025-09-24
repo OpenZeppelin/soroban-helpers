@@ -163,6 +163,7 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            ledger: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -207,6 +208,7 @@ mod tests {
             envelope: None,
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
+            ledger: Some(123456), // Example ledger number
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -241,6 +243,7 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            ledger: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -290,6 +293,7 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            ledger: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -337,6 +341,7 @@ mod tests {
             envelope: None,
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
+            ledger: Some(123456), // Example ledger number
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],

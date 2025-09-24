@@ -21,7 +21,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-soroban-test-helpers = "0.1.0"
+soroban-test-helpers = "0.2.4"
 ```
 
 ## Usage Example

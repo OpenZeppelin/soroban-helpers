@@ -17,8 +17,8 @@ Add the dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-soroban-rs-macros = { version = "0.2.3" }
-soroban-rs = { version = "0.2.3" }
+soroban-rs-macros = { version = "0.2.4" }
+soroban-rs = { version = "0.2.6" }
 ```
 
 ### Example
