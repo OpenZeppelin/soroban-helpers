@@ -285,6 +285,7 @@ mod tests {
             envelope: None,
             result: None, // This is what we're testing - no result
             result_meta: None,
+            ledger: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -313,6 +314,7 @@ mod tests {
             status: "SUCCESS".to_string(),
             envelope: None,
             result_meta: None,
+            ledger: None,
             result: Some(TransactionResult {
                 fee_charged: 100,
                 result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
@@ -357,6 +359,7 @@ mod tests {
         let response_no_meta = GetTransactionResponse {
             status: "SUCCESS".to_string(),
             envelope: None,
+            ledger: None,
             result: Some(TransactionResult {
                 fee_charged: 100,
                 result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
