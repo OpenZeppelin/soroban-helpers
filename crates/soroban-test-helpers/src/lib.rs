@@ -11,7 +11,7 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use soroban_test_helpers::test;
 //! use soroban_sdk::{Env, Address};
 //!

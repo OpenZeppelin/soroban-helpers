@@ -57,7 +57,9 @@ pub fn mock_transaction_envelope(account_id: AccountId) -> TransactionEnvelope {
 #[allow(dead_code)]
 pub fn create_contract_id_val() -> ScVal {
     let contract_hash = Hash([1; 32]);
-    ScVal::Address(ScAddress::Contract(contract_hash))
+    ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(
+        contract_hash,
+    )))
 }
 
 #[allow(dead_code)]
@@ -115,6 +117,11 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
         envelope: None,
         result: Some(create_success_tx_result()),
         result_meta: None,
+        events: stellar_rpc_client::GetTransactionEvents {
+            contract_events: vec![],
+            diagnostic_events: vec![],
+            transaction_events: vec![],
+        },
     };
 
     match response_type {
@@ -252,7 +259,7 @@ pub fn create_mock_contract_event() -> ContractEvent {
             topics: VecM::default(),
         }),
         ext: ExtensionPoint::V0,
-        contract_id: Some(Hash([1; 32])),
+        contract_id: Some(stellar_xdr::curr::ContractId(Hash([1; 32]))),
         type_: ContractEventType::Contract,
     }
 }

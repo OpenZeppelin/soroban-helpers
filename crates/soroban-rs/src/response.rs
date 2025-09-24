@@ -163,6 +163,11 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
         let soroban_response = SorobanTransactionResponse::new(response);
 
@@ -202,6 +207,11 @@ mod tests {
             envelope: None,
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         }
     }
 
@@ -231,6 +241,11 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
         let soroban_response = SorobanTransactionResponse::new(response);
 
@@ -275,6 +290,11 @@ mod tests {
             envelope: None,
             result: None,
             result_meta: None,
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         };
         let soroban_response = SorobanTransactionResponse::new(response);
 
@@ -317,6 +337,11 @@ mod tests {
             envelope: None,
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
+            events: stellar_rpc_client::GetTransactionEvents {
+                contract_events: vec![],
+                diagnostic_events: vec![],
+                transaction_events: vec![],
+            },
         }
     }
 }

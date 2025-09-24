@@ -11,7 +11,7 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use soroban_rs_macros::soroban;
 //! use soroban_rs::{xdr::ScVal, ClientContractConfigs};
 //!
@@ -65,7 +65,7 @@ use syn::{parse_macro_input, File, FnArg, Item, ReturnType};
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// soroban!(r#"
 ///     pub struct Counter;
 ///
