@@ -24,7 +24,7 @@ jobs:
           cache-on-failure: true
       - name: "Add LLVM Tools Preview"
         run: rustup component add llvm-tools-preview
-      - uses: taiki-e/install-action@c99cc51b309eee71a866715cfa08c922f11cf898 # v2.56.19
+      - uses: taiki-e/install-action@3a911424851a96b72dc168c8dd71fd98ed215d66 # v2.68.36
         with:
           tool: cargo-nextest,cargo-llvm-cov
       - name: 'Run tests with coverage'
