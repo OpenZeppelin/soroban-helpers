@@ -22,8 +22,8 @@ syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"
 soroban-sdk = "25.1.0"
-tokio = { version = "1.42.0", features = ["full"] }
-stellar-rpc-client = "25.1.0"
+tokio = { git = "https://github.com/dicej/tokio", branch = "wasip2-take2", features = ["rt", "net", "io-util", "time", "macros", "sync"] }
+stellar-rpc-client = { git = "https://github.com/warp-driver/rs-stellar-rpc-client", branch = "wasip2-support" }
 stellar-xdr = { version = "25.0.0", features = ["serde", "serde_json"] }
 stellar-strkey = "0.0.16"
 ed25519-dalek = "2.1.1"
@@ -38,3 +38,9 @@ tempfile = "3.10.1"
 soroban-test-helpers = { path = "crates/soroban-test-helpers" }
 soroban-rs = { path = "crates/soroban-rs" }
 soroban-rs-macros = { path = "crates/soroban-rs-macros", version = "0.2.3" }
+
+[patch.crates-io]
+# wasip2 support (not yet released)
+socket2 = { git = "https://github.com/rust-lang/socket2", branch = "master" }
+mio = { git = "https://github.com/tokio-rs/mio", branch = "master" }
+tokio = { git = "https://github.com/dicej/tokio", branch = "wasip2-take2" }
