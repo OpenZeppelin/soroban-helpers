@@ -10,7 +10,7 @@ use stellar_strkey::ed25519::PrivateKey;
 // generates TokenMockClient binding TokenMock contract.
 soroban!("fixtures/lib.rs");
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
     from_path(Path::new("examples/.env")).ok();
 

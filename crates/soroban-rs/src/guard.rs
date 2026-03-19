@@ -75,7 +75,7 @@ impl AuthorizedCallsForContract {
     fn count_authorized_calls(&self, invocation: &SorobanAuthorizedInvocation) -> u16 {
         let mut count = 0;
         if let SorobanAuthorizedFunction::ContractFn(args) = &invocation.function {
-            if args.contract_address.to_string() == self.contract_id.to_string() {
+            if args.contract_address.to_string() == self.contract_id.to_string().as_str() {
                 count += 1;
             }
         }
