@@ -2263,7 +2263,9 @@ version = "0.2.4"
 dependencies = [
  "proc-macro2",
  "quote",
+ "soroban-rs",
  "syn 2.0.106",
+ "tokio",
 ]
 
 [[package]]

@@ -17,3 +17,7 @@ proc-macro = true
 syn.workspace = true
 quote.workspace = true
 proc-macro2.workspace = true
+
+[dev-dependencies]
+soroban-rs.workspace = true
+tokio.workspace = true

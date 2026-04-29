@@ -36,7 +36,7 @@
 //! ```
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, File, FnArg, Item, ReturnType};
+use syn::{parse_macro_input, File, FnArg, Item};
 
 /// A procedural macro for generating Soroban contract client code.
 ///
@@ -158,12 +158,11 @@ pub fn soroban(input: TokenStream) -> TokenStream {
             })
             .collect::<Vec<_>>();
 
-        // Transform return type to ScVal
-        let transformed_output = match &method.sig.output {
-            ReturnType::Default => quote! {},
-            ReturnType::Type(_, _) => {
-                quote! { -> Result<soroban_rs::SorobanTransactionResponse, soroban_rs::SorobanHelperError>  }
-            }
+        // Generated methods always return the result of `contract.invoke(...).await`, which
+        // is `Result<SorobanTransactionResponse, SorobanHelperError>` — regardless of whether
+        // the source contract method returns a value or unit.
+        let transformed_output = quote! {
+            -> Result<soroban_rs::SorobanTransactionResponse, soroban_rs::SorobanHelperError>
         };
 
         Some(quote! {
