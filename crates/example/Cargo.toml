@@ -24,4 +24,4 @@ soroban-rs.workspace = true
 dotenv.workspace = true
 ed25519-dalek.workspace = true
 stellar-strkey.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }

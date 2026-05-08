@@ -164,6 +164,10 @@ mod tests {
             result: None,
             result_meta: None,
             ledger: None,
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -209,6 +213,10 @@ mod tests {
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
             ledger: Some(123456), // Example ledger number
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -244,6 +252,10 @@ mod tests {
             result: None,
             result_meta: None,
             ledger: None,
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -294,6 +306,10 @@ mod tests {
             result: None,
             result_meta: None,
             ledger: None,
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -342,6 +358,10 @@ mod tests {
             result: Some(transaction_result),
             result_meta: Some(TransactionMeta::V3(meta_v3)),
             ledger: Some(123456), // Example ledger number
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],

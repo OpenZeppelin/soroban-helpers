@@ -118,6 +118,10 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
         result: Some(create_success_tx_result()),
         result_meta: None,
         ledger: None,
+        application_order: None,
+        fee_bump: None,
+        tx_hash: None,
+        created_at: None,
         events: stellar_rpc_client::GetTransactionEvents {
             contract_events: vec![],
             diagnostic_events: vec![],

@@ -286,6 +286,10 @@ mod tests {
             result: None, // This is what we're testing - no result
             result_meta: None,
             ledger: None,
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -320,6 +324,10 @@ mod tests {
                 result: TransactionResultResult::TxSuccess(vec![].try_into().unwrap()),
                 ext: TransactionResultExt::V0,
             }),
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
@@ -366,6 +374,10 @@ mod tests {
                 ext: TransactionResultExt::V0,
             }),
             result_meta: None,
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             events: stellar_rpc_client::GetTransactionEvents {
                 contract_events: vec![],
                 diagnostic_events: vec![],
