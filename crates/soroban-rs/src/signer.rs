@@ -9,7 +9,7 @@
 //! ```rust,no_run
 //! use soroban_rs::{Env, Signer};
 //! use ed25519_dalek::SigningKey;
-//! use stellar_xdr::curr::Transaction;
+//! use stellar_xdr::Transaction;
 //!
 //! async fn example(tx: Transaction, env: Env) {
 //!     // Create a signer from a signing key
@@ -31,7 +31,7 @@ use crate::error::SorobanHelperError;
 use ed25519_dalek::{ed25519::signature::SignerMut, SigningKey};
 use sha2::{Digest, Sha256};
 use stellar_strkey::ed25519::PublicKey;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountId, DecoratedSignature, Hash, Limits, PublicKey as XDRPublicKey, Signature,
     SignatureHint, Transaction, TransactionSignaturePayload,
     TransactionSignaturePayloadTaggedTransaction, WriteXdr,
@@ -158,7 +158,7 @@ impl Signer {
 
 #[cfg(test)]
 mod tests {
-    use stellar_xdr::curr::BytesM;
+    use stellar_xdr::BytesM;
 
     use crate::mock::mock_transaction;
 

@@ -14,7 +14,7 @@
 //!
 //! ```rust,no_run
 //! use soroban_rs::{Account, Contract, Env, EnvConfigs, Signer};
-//! use stellar_xdr::curr::ScVal;
+//! use stellar_xdr::ScVal;
 //! use ed25519_dalek::SigningKey;
 //!
 //! async fn deploy_and_invoke() {
@@ -49,9 +49,7 @@ use crate::{
     Account, Env, ParseResult, Parser, ParserType, SorobanTransactionResponse,
 };
 use stellar_strkey::Contract as ContractId;
-use stellar_xdr::curr::{
-    ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal,
-};
+use stellar_xdr::{ContractIdPreimage, ContractIdPreimageFromAddress, Hash, ScAddress, ScVal};
 
 /// Name of the constructor function
 const CONSTRUCTOR_FUNCTION_NAME: &str = "__constructor";

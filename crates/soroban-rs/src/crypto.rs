@@ -4,7 +4,7 @@
 //! hashing, random salt generation, and contract ID calculation.
 use crate::error::SorobanHelperError;
 use sha2::{Digest, Sha256};
-use stellar_xdr::curr::{
+use stellar_xdr::{
     ContractIdPreimage, ContractIdPreimageFromAddress, Hash, HashIdPreimage,
     HashIdPreimageContractId, Limits, ScAddress, Uint256, WriteXdr,
 };
@@ -50,7 +50,7 @@ pub fn generate_salt() -> Uint256 {
 /// Returns `SorobanHelperError::XdrEncodingFailed` if the HashIdPreimage
 /// cannot be encoded to XDR format
 pub fn calculate_contract_id(
-    account_id: &stellar_xdr::curr::AccountId,
+    account_id: &stellar_xdr::AccountId,
     salt: &Uint256,
     network_id: &Hash,
 ) -> Result<stellar_strkey::Contract, SorobanHelperError> {
@@ -135,8 +135,8 @@ mod tests {
 
     #[test]
     fn test_calculate_contract_id() {
-        let public_key = stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519([0; 32].into());
-        let account_id = stellar_xdr::curr::AccountId(public_key);
+        let public_key = stellar_xdr::PublicKey::PublicKeyTypeEd25519([0; 32].into());
+        let account_id = stellar_xdr::AccountId(public_key);
         let salt = generate_salt();
         let network_id = Hash([0; 32]);
 

@@ -14,7 +14,7 @@
 //!
 //! ```rust
 //! use soroban_rs::{Env, EnvConfigs};
-//! use stellar_xdr::curr::TransactionEnvelope;
+//! use stellar_xdr::TransactionEnvelope;
 //!
 //! async fn example() {
 //!     // Create a new environment for the Stellar testnet
@@ -36,7 +36,7 @@ use crate::{
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use stellar_rpc_client::SimulateTransactionResponse;
-use stellar_xdr::curr::{AccountEntry, Hash, TransactionEnvelope};
+use stellar_xdr::{AccountEntry, Hash, TransactionEnvelope};
 
 /// Configuration for a Soroban environment.
 ///

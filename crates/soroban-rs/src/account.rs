@@ -32,7 +32,7 @@
 use crate::{error::SorobanHelperError, guard::Guard, Env, Signer, TransactionBuilder};
 use std::fmt;
 use stellar_strkey::ed25519::PublicKey;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountEntry, AccountId, DecoratedSignature, Hash, Operation, OperationBody, SetOptionsOp,
     Signer as XdrSigner, SignerKey, Transaction, TransactionEnvelope, TransactionV1Envelope, VecM,
 };
@@ -685,7 +685,7 @@ impl Account {
 
 #[cfg(test)]
 mod test {
-    use stellar_xdr::curr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
+    use stellar_xdr::{OperationBody, Signer as XdrSigner, SignerKey, TransactionEnvelope};
 
     use crate::account::AccountSequence;
     use crate::guard::Guard;

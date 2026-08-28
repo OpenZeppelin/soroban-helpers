@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::SorobanHelperError;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountId, BytesM, Duration as XDRDuration, ScAddress, ScBytes, ScString, ScVal, ScVec,
     StringM, VecM,
 };
@@ -141,7 +141,7 @@ impl IntoScVal for Vec<ScVal> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use stellar_xdr::curr::{PublicKey, Uint256};
+    use stellar_xdr::{PublicKey, Uint256};
 
     #[test]
     fn test_account_id_into_scval() {

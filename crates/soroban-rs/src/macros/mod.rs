@@ -2,7 +2,7 @@ pub use soroban_rs_macros::soroban;
 
 #[cfg(test)]
 pub mod test {
-    use stellar_xdr::curr::{ScAddress, ScVal};
+    use stellar_xdr::{ScAddress, ScVal};
 
     use super::*;
     use crate::{

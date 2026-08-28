@@ -1,5 +1,5 @@
 use stellar_rpc_client::GetTransactionResponse;
-use stellar_xdr::curr::{ScVal, SorobanTransactionMeta, TransactionMeta, TransactionMetaV3};
+use stellar_xdr::{ScVal, SorobanTransactionMeta, TransactionMeta, TransactionMetaV3};
 
 use crate::SorobanHelperError;
 
@@ -55,7 +55,7 @@ impl SorobanTransactionResponse {
     /// - The transaction metadata is not available
     /// - The transaction metadata is not in V3 format
     /// - The Soroban metadata is not available
-    pub fn get_events(&self) -> Result<Vec<stellar_xdr::curr::ContractEvent>, SorobanHelperError> {
+    pub fn get_events(&self) -> Result<Vec<stellar_xdr::ContractEvent>, SorobanHelperError> {
         // Check if result_meta exists
         let result_meta = self.response.result_meta.as_ref().ok_or_else(|| {
             SorobanHelperError::InvalidArgument("Transaction metadata not available".to_string())
@@ -88,7 +88,7 @@ impl SorobanTransactionResponse {
     fn extract_soroban_events(
         &self,
         meta_v3: &TransactionMetaV3,
-    ) -> Result<Vec<stellar_xdr::curr::ContractEvent>, SorobanHelperError> {
+    ) -> Result<Vec<stellar_xdr::ContractEvent>, SorobanHelperError> {
         // Extract the Soroban metadata
         let soroban_meta = meta_v3.soroban_meta.as_ref().ok_or_else(|| {
             SorobanHelperError::InvalidArgument("Soroban metadata not available".to_string())
@@ -139,7 +139,7 @@ mod tests {
     use crate::mock::create_mock_contract_event;
 
     use super::*;
-    use stellar_xdr::curr::{
+    use stellar_xdr::{
         ContractEvent, ExtensionPoint, LedgerEntryChanges, SorobanTransactionMetaExt,
         TransactionResult, TransactionResultExt, TransactionResultResult, VecM,
     };
@@ -159,6 +159,10 @@ mod tests {
     fn test_get_return_value_no_meta() {
         // Create a mock GetTransactionResponse with no transaction meta
         let response = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "success".to_string(),
             envelope: None,
             result: None,
@@ -204,6 +208,10 @@ mod tests {
 
         // Create a mock GetTransactionResponse
         GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "success".to_string(),
             envelope: None,
             result: Some(transaction_result),
@@ -239,6 +247,10 @@ mod tests {
     fn test_get_events_no_meta() {
         // Create a mock GetTransactionResponse with no transaction meta
         let response = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "success".to_string(),
             envelope: None,
             result: None,
@@ -289,6 +301,10 @@ mod tests {
     fn test_get_soroban_meta_no_meta() {
         // Create a mock GetTransactionResponse with no transaction meta
         let response = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "success".to_string(),
             envelope: None,
             result: None,
@@ -310,7 +326,7 @@ mod tests {
     // Helper function to create a mock GetTransactionResponse with custom events
     fn create_mock_response_with_events(
         return_value: Option<ScVal>,
-        events: VecM<stellar_xdr::curr::ContractEvent>,
+        events: VecM<stellar_xdr::ContractEvent>,
     ) -> GetTransactionResponse {
         // Create a mock Soroban transaction meta
         let soroban_meta = SorobanTransactionMeta {
@@ -337,6 +353,10 @@ mod tests {
 
         // Create a mock GetTransactionResponse
         GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "success".to_string(),
             envelope: None,
             result: Some(transaction_result),

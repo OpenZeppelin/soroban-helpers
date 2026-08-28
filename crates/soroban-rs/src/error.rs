@@ -76,8 +76,8 @@ impl fmt::Display for SorobanHelperError {
 impl Error for SorobanHelperError {}
 
 /// Convert XDR errors into SorobanHelperError
-impl From<stellar_xdr::curr::Error> for SorobanHelperError {
-    fn from(err: stellar_xdr::curr::Error) -> Self {
+impl From<stellar_xdr::Error> for SorobanHelperError {
+    fn from(err: stellar_xdr::Error) -> Self {
         Self::XdrEncodingFailed(err.to_string())
     }
 }
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn test_from_xdr_error() {
         // Create a mock XDR error
-        let xdr_error = stellar_xdr::curr::Error::Invalid;
+        let xdr_error = stellar_xdr::Error::Invalid;
         let helper_error = SorobanHelperError::from(xdr_error);
 
         assert!(

@@ -15,7 +15,7 @@
 //!
 //! ```rust,no_run
 //! use soroban_rs::{Account, Env, TransactionBuilder, simulate_transaction};
-//! use stellar_xdr::curr::{Memo, Operation, Preconditions};
+//! use stellar_xdr::{Memo, Operation, Preconditions};
 //!
 //! async fn example(account: &mut Account, env: &Env, operation: Operation) {
 //!     // Option 1: Build and simulate separately (more flexible)
@@ -36,7 +36,7 @@
 //! }
 //! ```
 use crate::{error::SorobanHelperError, Account, Env, Operations};
-use stellar_xdr::curr::{
+use stellar_xdr::{
     Memo, Operation, Preconditions, SequenceNumber, SorobanCredentials, Transaction, TransactionExt,
 };
 
@@ -338,7 +338,7 @@ mod test {
         transaction::{simulate_transaction, DEFAULT_TRANSACTION_FEES},
         Account, TransactionBuilder,
     };
-    use stellar_xdr::curr::{Memo, Preconditions, TimeBounds, TimePoint};
+    use stellar_xdr::{Memo, Preconditions, TimeBounds, TimePoint};
 
     #[tokio::test]
     async fn test_build_transaction() {
