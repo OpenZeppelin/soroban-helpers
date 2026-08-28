@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use std::default::Default;
 use std::sync::RwLock;
 use stellar_rpc_client::SimulateTransactionResponse;
-use stellar_xdr::curr::{AccountEntry, TransactionEnvelope};
+use stellar_xdr::{AccountEntry, TransactionEnvelope};
 
 use super::{mock_account_entry, mock_transaction_response};
 

@@ -15,7 +15,7 @@
 //! }
 //! ```
 use stellar_strkey::Contract as ContractId;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     OperationBody, SorobanAuthorizedFunction, SorobanAuthorizedInvocation, Transaction,
 };
 
@@ -115,7 +115,7 @@ impl AuthorizedCallsForContract {
 mod tests {
     use ed25519_dalek::SigningKey;
     use stellar_strkey::{ed25519::PublicKey, Contract as ContractId};
-    use stellar_xdr::curr::{
+    use stellar_xdr::{
         AccountId, Hash, HostFunction, InvokeContractArgs, InvokeHostFunctionOp, Operation,
         OperationBody, ScAddress, ScSymbol, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
         SorobanAuthorizedInvocation, SorobanCredentials, VecM,
@@ -132,7 +132,7 @@ mod tests {
     ) -> SorobanAuthorizedInvocation {
         SorobanAuthorizedInvocation {
             function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
-                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(
+                contract_address: ScAddress::Contract(stellar_xdr::ContractId(Hash(
                     target_address.0,
                 ))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
@@ -146,7 +146,7 @@ mod tests {
     fn test_authorized_calls_check_and_update_success() {
         let signing_key = SigningKey::from_bytes(&[42; 32]);
         let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
-        let account_id = AccountId(stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(
+        let account_id = AccountId(stellar_xdr::PublicKey::PublicKeyTypeEd25519(
             public_key.0.into(),
         ));
         let signer = Signer::new(signing_key);
@@ -167,9 +167,7 @@ mod tests {
         };
         let invoke_op = InvokeHostFunctionOp {
             host_function: HostFunction::InvokeContract(InvokeContractArgs {
-                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(
-                    contract_id.0,
-                ))),
+                contract_address: ScAddress::Contract(stellar_xdr::ContractId(Hash(contract_id.0))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
                 args: VecM::default(),
             }),
@@ -198,7 +196,7 @@ mod tests {
     fn test_authorized_calls_for_contract_check_and_update_fail() {
         let signing_key = SigningKey::from_bytes(&[42; 32]);
         let public_key = PublicKey(*signing_key.verifying_key().as_bytes());
-        let account_id = AccountId(stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(
+        let account_id = AccountId(stellar_xdr::PublicKey::PublicKeyTypeEd25519(
             public_key.0.into(),
         ));
         let signer = Signer::new(signing_key);
@@ -216,9 +214,7 @@ mod tests {
         };
         let invoke_op = InvokeHostFunctionOp {
             host_function: HostFunction::InvokeContract(InvokeContractArgs {
-                contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(
-                    contract_id.0,
-                ))),
+                contract_address: ScAddress::Contract(stellar_xdr::ContractId(Hash(contract_id.0))),
                 function_name: ScSymbol("dummy_fn".try_into().unwrap()),
                 args: VecM::default(),
             }),

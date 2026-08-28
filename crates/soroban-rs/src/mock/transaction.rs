@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 use stellar_rpc_client::{GetTransactionResponse, SimulateTransactionResponse};
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountEntry, AccountId, ContractEvent, ContractEventBody, ContractEventType, ContractEventV0,
     ExtensionPoint, Hash, LedgerEntry, LedgerEntryChange, LedgerEntryData, LedgerEntryExt, Memo,
     MuxedAccount, Operation, OperationBody, OperationMeta, OperationResult, Preconditions,
@@ -57,9 +57,7 @@ pub fn mock_transaction_envelope(account_id: AccountId) -> TransactionEnvelope {
 #[allow(dead_code)]
 pub fn create_contract_id_val() -> ScVal {
     let contract_hash = Hash([1; 32]);
-    ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(
-        contract_hash,
-    )))
+    ScVal::Address(ScAddress::Contract(stellar_xdr::ContractId(contract_hash)))
 }
 
 #[allow(dead_code)]
@@ -113,6 +111,10 @@ pub fn mock_simulate_tx_response(min_resource_fee: Option<u64>) -> SimulateTrans
 #[allow(dead_code)]
 fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransactionResponse {
     let mut response = GetTransactionResponse {
+        application_order: None,
+        fee_bump: None,
+        tx_hash: None,
+        created_at: None,
         status: "SUCCESS".to_string(),
         envelope: None,
         result: Some(create_success_tx_result()),
@@ -140,7 +142,7 @@ fn mock_transaction_response_impl(response_type: MockResponseType) -> GetTransac
             let change = LedgerEntryChange::Updated(ledger_entry);
             let changes = VecM::try_from(vec![change]).unwrap_or_default();
             let op_meta = OperationMeta {
-                changes: stellar_xdr::curr::LedgerEntryChanges(changes),
+                changes: stellar_xdr::LedgerEntryChanges(changes),
             };
 
             let operations = VecM::try_from(vec![op_meta]).unwrap_or_default();
@@ -228,7 +230,7 @@ fn create_tx_meta_from_mock(mock: &MockTransactionMeta) -> TransactionMeta {
         let change = LedgerEntryChange::Updated(ledger_entry);
         let changes = VecM::try_from(vec![change]).unwrap_or_default();
         let op_meta = OperationMeta {
-            changes: stellar_xdr::curr::LedgerEntryChanges(changes),
+            changes: stellar_xdr::LedgerEntryChanges(changes),
         };
 
         let operations = VecM::try_from(vec![op_meta]).unwrap_or_default();
@@ -260,7 +262,7 @@ pub fn create_mock_contract_event() -> ContractEvent {
             topics: VecM::default(),
         }),
         ext: ExtensionPoint::V0,
-        contract_id: Some(stellar_xdr::curr::ContractId(Hash([1; 32]))),
+        contract_id: Some(stellar_xdr::ContractId(Hash([1; 32]))),
         type_: ContractEventType::Contract,
     }
 }

@@ -1,7 +1,7 @@
 use crate::error::SorobanHelperError;
 use stellar_rpc_client::GetTransactionResponse;
 use stellar_strkey::Contract as ContractId;
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountEntry, LedgerEntryChange, LedgerEntryData, OperationResult, ScAddress, ScVal,
     TransactionMeta, TransactionResultResult,
 };
@@ -94,7 +94,7 @@ impl Parser {
 
     fn check_tx_success<'a>(
         &self,
-        tx_result: &'a Option<stellar_xdr::curr::TransactionResult>,
+        tx_result: &'a Option<stellar_xdr::TransactionResult>,
     ) -> Result<&'a [OperationResult], SorobanHelperError> {
         let tx_result = tx_result.as_ref().ok_or_else(|| {
             SorobanHelperError::TransactionFailed("No transaction result available".to_string())
@@ -136,9 +136,9 @@ impl Parser {
 
     fn extract_operation_result(&self, op_result: &OperationResult) -> Option<ScVal> {
         match op_result {
-            OperationResult::OpInner(stellar_xdr::curr::OperationResultTr::InvokeHostFunction(
-                stellar_xdr::curr::InvokeHostFunctionResult::Success(value),
-            )) => Some(ScVal::Symbol(stellar_xdr::curr::ScSymbol(
+            OperationResult::OpInner(stellar_xdr::OperationResultTr::InvokeHostFunction(
+                stellar_xdr::InvokeHostFunctionResult::Success(value),
+            )) => Some(ScVal::Symbol(stellar_xdr::ScSymbol(
                 value.0.to_vec().try_into().unwrap_or_default(),
             ))),
             _ => None,
@@ -147,7 +147,7 @@ impl Parser {
 
     fn extract_contract_id(&self, val: &ScVal) -> Option<ContractId> {
         match val {
-            ScVal::Address(ScAddress::Contract(stellar_xdr::curr::ContractId(hash))) => {
+            ScVal::Address(ScAddress::Contract(stellar_xdr::ContractId(hash))) => {
                 Some(ContractId(hash.0))
             }
             _ => None,
@@ -164,7 +164,7 @@ mod tests {
     };
     use crate::parser::{ParseResult, Parser, ParserType};
     use stellar_rpc_client::GetTransactionResponse;
-    use stellar_xdr::curr::{
+    use stellar_xdr::{
         AccountEntry, InvokeHostFunctionResult, OperationResult, OperationResultTr, ScVal,
         TransactionResult, TransactionResultExt, TransactionResultResult,
     };
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn test_extract_operation_result_success() {
         let hash_data = [42u8; 32];
-        let hash = stellar_xdr::curr::Hash(hash_data);
+        let hash = stellar_xdr::Hash(hash_data);
 
         let parser = Parser::new(ParserType::InvokeFunction);
         let result = parser
@@ -200,7 +200,7 @@ mod tests {
 
         // non-InvokeHostFunction operation result
         let op_result = OperationResult::OpInner(OperationResultTr::CreateAccount(
-            stellar_xdr::curr::CreateAccountResult::Success,
+            stellar_xdr::CreateAccountResult::Success,
         ));
 
         let extracted = parser.extract_operation_result(&op_result);
@@ -251,20 +251,18 @@ mod tests {
 
         // Create a mock account entry
         let account_entry = AccountEntry {
-            account_id: stellar_xdr::curr::AccountId(
-                stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(stellar_xdr::curr::Uint256(
-                    [0; 32],
-                )),
-            ),
+            account_id: stellar_xdr::AccountId(stellar_xdr::PublicKey::PublicKeyTypeEd25519(
+                stellar_xdr::Uint256([0; 32]),
+            )),
             balance: 1000,
             seq_num: 123.into(),
             num_sub_entries: 0,
             inflation_dest: None,
             flags: 0,
-            home_domain: stellar_xdr::curr::String32(vec![].try_into().unwrap()),
-            thresholds: stellar_xdr::curr::Thresholds([0, 0, 0, 0]),
-            signers: stellar_xdr::curr::VecM::default(),
-            ext: stellar_xdr::curr::AccountEntryExt::V0,
+            home_domain: stellar_xdr::String32(vec![].try_into().unwrap()),
+            thresholds: stellar_xdr::Thresholds([0, 0, 0, 0]),
+            signers: stellar_xdr::VecM::default(),
+            ext: stellar_xdr::AccountEntryExt::V0,
         };
         let response = mock_transaction_response_with_account_entry(account_entry.clone());
 
@@ -281,6 +279,10 @@ mod tests {
     #[test]
     fn test_no_transaction_result() {
         let response = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "SUCCESS".to_string(),
             envelope: None,
             result: None, // This is what we're testing - no result
@@ -311,6 +313,10 @@ mod tests {
         // Create a transaction with no metadata but with operation results
         // We simulate a successful transaction but with no result_meta
         let response = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "SUCCESS".to_string(),
             envelope: None,
             result_meta: None,
@@ -357,6 +363,10 @@ mod tests {
         assert!(matches!(result, Ok(ParseResult::Deploy(None))));
 
         let response_no_meta = GetTransactionResponse {
+            application_order: None,
+            fee_bump: None,
+            tx_hash: None,
+            created_at: None,
             status: "SUCCESS".to_string(),
             envelope: None,
             ledger: None,

@@ -3,7 +3,7 @@
 //! This module provides functionality for creating Stellar operations for Soroban contracts.
 //! These operations represent the fundamental actions that can be performed with Soroban,
 //! such as uploading contract code, deploying contracts, and invoking contract functions.
-use stellar_xdr::curr::{
+use stellar_xdr::{
     AccountId, Asset, ContractExecutable, ContractIdPreimage, CreateContractArgs,
     CreateContractArgsV2, ExtendFootprintTtlOp, Hash, HostFunction, InvokeContractArgs,
     InvokeHostFunctionOp, Operation, OperationBody, PaymentOp, ScAddress, ScSymbol, ScVal,
@@ -206,9 +206,7 @@ impl Operations {
         args: Vec<ScVal>,
     ) -> Result<Operation, SorobanHelperError> {
         let invoke_contract_args = InvokeContractArgs {
-            contract_address: ScAddress::Contract(stellar_xdr::curr::ContractId(Hash(
-                contract_id.0,
-            ))),
+            contract_address: ScAddress::Contract(stellar_xdr::ContractId(Hash(contract_id.0))),
             function_name: ScSymbol(function_name.try_into().map_err(|e| {
                 SorobanHelperError::InvalidArgument(format!("Invalid function name: {}", e))
             })?),
@@ -257,7 +255,7 @@ impl Operations {
         Ok(Operation {
             source_account: None,
             body: OperationBody::ExtendFootprintTtl(ExtendFootprintTtlOp {
-                ext: stellar_xdr::curr::ExtensionPoint::V0,
+                ext: stellar_xdr::ExtensionPoint::V0,
                 extend_to,
             }),
         })
@@ -267,7 +265,7 @@ impl Operations {
 #[cfg(test)]
 mod test {
     use super::*;
-    use stellar_xdr::curr::{ContractIdPreimageFromAddress, PublicKey, ScVal};
+    use stellar_xdr::{ContractIdPreimageFromAddress, PublicKey, ScVal};
 
     #[test]
     fn test_upload_wasm() {
@@ -289,8 +287,7 @@ mod test {
 
     #[test]
     fn test_create_contract_without_args() {
-        let account_id =
-            stellar_xdr::curr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
+        let account_id = stellar_xdr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account_id),
             salt: [1; 32].into(),
@@ -318,8 +315,7 @@ mod test {
 
     #[test]
     fn test_create_contract_with_args() {
-        let account_id =
-            stellar_xdr::curr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
+        let account_id = stellar_xdr::AccountId(PublicKey::PublicKeyTypeEd25519([0; 32].into()));
         let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
             address: ScAddress::Account(account_id),
             salt: [1; 32].into(),
@@ -376,7 +372,7 @@ mod test {
 
             if let HostFunction::InvokeContract(args) = op.host_function {
                 assert!(
-                    matches!(args.contract_address, ScAddress::Contract(stellar_xdr::curr::ContractId(hash)) if hash.0 == contract_bytes)
+                    matches!(args.contract_address, ScAddress::Contract(stellar_xdr::ContractId(hash)) if hash.0 == contract_bytes)
                 );
                 assert_eq!(args.function_name.0.as_slice(), function_name.as_bytes());
 
@@ -416,7 +412,7 @@ mod test {
 
         if let OperationBody::ExtendFootprintTtl(op) = operation.body {
             assert_eq!(op.extend_to, extend_to);
-            assert!(matches!(op.ext, stellar_xdr::curr::ExtensionPoint::V0));
+            assert!(matches!(op.ext, stellar_xdr::ExtensionPoint::V0));
         }
     }
 
